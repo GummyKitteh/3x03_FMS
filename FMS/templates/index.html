@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% include 'header.html' %}
+
+{% block title %} Home {% endblock %}
+
+{% block body %}
+<div class="container">
+    <div class="row">
+        <div class="col md-12">
+            <div class="jumbotron p-3">
+                <h2>Manage <b>Employees</b> <button type="button" class="btn btn-success float-right" data-toggle="modal" data-target="#mymodal">Add New Employees</button></h2>
+
+                <table class="table table-hover table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Action</th>
+                    </tr>
+                    <tr>
+                        <td>01</td>
+                        <td>Prawiz</td>
+                        <td>par@gmail.com</td>
+                        <td>98347493</td>
+                        <td>
+                            <a href="" class="btn btn-warning btn-xs" data-toggle="modal" data-target="#modaledit">Edit</a>
+                            <a href="" class="btn btn-danger btn-xs" onclick="return confirm('Are You Sure To Delete?')">Delete</a>
+                        </td>
+                    </tr>
+                    <!-- Modal Edit Employees -->
+                    <div id="modaledit" class="modal fade" role="dialog">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                <h4 class="modal-title">Update Information</h4>
+                                </div>
+                                <div class="modal-body">
+                                    <form action="{{url_for('insert')}}" method="POST">
+                                        <div class="form-group">
+                                            <label>Name: </label>
+                                            <input type="text" class="form-control" name="name" required="1">
+                                            <label>Email: </label>
+                                            <input type="email" class="form-control" name="email" required="1">
+                                            <label>Phone: </label>
+                                            <input type="number" class="form-control" name="phone" required="1">
+                                            <br>
+                                            <button class="btn btn-primary" type="submit">Add Employee</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </table>
+                <!-- Modal add Employees -->
+                <div id="mymodal" class="modal fade" role="dialog">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                            <h4 class="modal-title">Add Employee</h4>
+                            </div>
+                            <div class="modal-body">
+                                <form action="insert" method="POST">
+                                    <div class="form-group">
+                                        <label>Name: </label>
+                                        <input type="text" class="form-control" name="name" required="1">
+                                        <label>Email: </label>
+                                        <input type="email" class="form-control" name="email" required="1">
+                                        <label>Phone: </label>
+                                        <input type="number" class="form-control" name="phone" required="1">
+                                        <br>
+                                        <button class="btn btn-primary" type="submit">Add Employee</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
