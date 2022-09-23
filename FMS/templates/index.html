@@ -41,7 +41,7 @@
                         <td>{{row.phone}}</td>
                         <td>
                             <a href="/update/{{row.id}}" class="btn btn-warning btn-xs" data-toggle="modal" data-target="#modaledit{{row.id}}">Edit</a>
-                            <a href="" class="btn btn-danger btn-xs" onclick="return confirm('Are You Sure To Delete?')">Delete</a>
+                            <a href="/delete/{{row.id}}" class="btn btn-danger btn-xs" onclick="return confirm('Are You Sure To Delete?')">Delete</a>
                         </td>
                     </tr>
                     <!-- Modal Edit Employees -->
@@ -55,6 +55,7 @@
                                     <form action="{{url_for('update')}}" method="POST">
                                         <div class="form-group">
                                             <label>Name: </label>
+                                            <input type="hidden" name="id" value="{{row.id}}">
                                             <input type="text" class="form-control" name="name" value="{{row.name}}">
                                             <label>Email: </label>
                                             <input type="email" class="form-control" name="email" value="{{row.email}}">

@@ -36,18 +36,29 @@ def insert():
         flash("Employee Inserted Sucessfully")
         return redirect(url_for('index'))
 
-# @app.route('/update', methods=['GET','POST'])
-# def update():
-#     if request.method == 'POST':
-#         my_data = Data.query.get(request.form.get('id'))
-#         my_data.name = request.form['name']
-#         my_data.email = request.form['email']
-#         my_data.phone = request.form['name']
-#         print("Testing Data Output = " +my_data.name, my_data.email, my_data.phone)
-#         db.session.commit()
+@app.route('/update', methods = ['GET', 'POST'])
+def update():
+    if request.method == 'POST':
+        my_data = Data.query.get(request.form.get('id'))
+        my_data.name = request.form['name']
+        my_data.email = request.form['email']
+        my_data.phone = request.form['phone']
 
-#         flash("Employee Updated Sucessfully")
-#         return redirect(url_for('index'))
+        db.session.commit()
+        flash("Employee Updated Successfully")
+
+        return redirect(url_for('index'))
+
+@app.route('/delete/<id>/', methods=['GET','POST'])
+def delete(id):
+    if request.method == 'GET':
+        my_data = Data.query.get(id)
+        print("DATA DELEED HELLLLO")
+        db.session.delete(my_data)
+        db.session.commit()
+
+        flash("Employee Delete Sucessfully")
+        return redirect(url_for('index'))
 if __name__ == "__main__":
     app.run(debug=True)
 
