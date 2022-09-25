@@ -8,7 +8,12 @@
     <div class="row">
         <div class="col md-12">
             <div class="jumbotron p-3">
-                <h2>Manage <b>Employees</b> <button type="button" class="btn btn-success float-right" data-toggle="modal" data-target="#mymodal">Add New Employees</button></h2>
+                <h2>Manage <b>Employees</b></h2>
+                <form action="{{url_for('insert')}}" method="POST"> 
+                    <label for="search" class="float-left">Search:  </label>
+                    <input type="text" class="float-left" id="search" name="search"> 
+                </form>
+                    <button type="button" class="btn btn-success float-right" data-toggle="modal" data-target="#mymodal">Add New Employees</button></h2>
                 {%  with messages = get_flashed_messages() %}
 
                 {% if messages %}
@@ -35,10 +40,11 @@
                     </tr>
                     {% for row in employees %}
                     <tr>
-                        <td>{{row.id}}</td>
-                        <td>{{row.name}}</td>
-                        <td>{{row.email}}</td>
-                        <td>{{row.phone}}</td>
+                        <td>{{row.EmployeeID}}</td>
+                        <td>{{row.FullName}}</td>
+                        <td>{{row.Email}}</td>
+                        <td>{{row.Email}}</td>
+                        <td>{{row.Role}}</td>
                         <td>
                             <a href="/update/{{row.id}}" class="btn btn-warning btn-xs" data-toggle="modal" data-target="#modaledit{{row.id}}">Edit</a>
                             <a href="/delete/{{row.id}}" class="btn btn-danger btn-xs" onclick="return confirm('Are You Sure To Delete?')">Delete</a>
