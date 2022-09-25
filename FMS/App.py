@@ -1,7 +1,10 @@
+from ast import Pass
 from logging import exception
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
+from model import *
 
+#Database connection
 app = Flask(__name__)
 app.secret_key = "abcd"
 
@@ -29,6 +32,16 @@ def index():
     all_data = Data.query.all()
     return render_template("index.html", employees=all_data)
 
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:Barney-123@localhost/fmssql'
+#app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:B33pb33p!@178.128.17.35/fmssql"
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+@app.route('/')
+def index():
+    all_data = Data.query.all()
+    print(all_data)
+    return render_template("index.html", employees = all_data)
 
 @app.route("/insert", methods=["POST"])
 def insert():
@@ -62,7 +75,6 @@ def update():
 def delete(id):
     if request.method == "GET":
         my_data = Data.query.get(id)
-        print("DATA DELEED HELLLLO")
         db.session.delete(my_data)
         db.session.commit()
 
