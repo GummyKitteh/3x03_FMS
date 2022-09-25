@@ -36,15 +36,13 @@
                         <th>Name</th>
                         <th>Email</th>
                         <th>Phone</th>
-                        <th>Action</th>
                     </tr>
                     {% for row in employees %}
                     <tr>
-                        <td>{{row.EmployeeID}}</td>
-                        <td>{{row.FullName}}</td>
-                        <td>{{row.Email}}</td>
-                        <td>{{row.Email}}</td>
-                        <td>{{row.Role}}</td>
+                        <td>{{row.id}}</td>
+                        <td>{{row.name}}</td>
+                        <td>{{row.email}}</td>
+                        <td>{{row.phone}}</td>
                         <td>
                             <a href="/update/{{row.id}}" class="btn btn-warning btn-xs" data-toggle="modal" data-target="#modaledit{{row.id}}">Edit</a>
                             <a href="/delete/{{row.id}}" class="btn btn-danger btn-xs" onclick="return confirm('Are You Sure To Delete?')">Delete</a>
