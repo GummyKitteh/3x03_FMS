@@ -4,12 +4,12 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 
 
-#Database connection
+# Database connection
 app = Flask(__name__)
 app.secret_key = "abcd"
 
 
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:Barney-123@localhost/fmssql'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:Barney-123@localhost/fmssql'
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:qwerty1234@localhost/fmssql'
 app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:B33pb33p!@178.128.17.35/fmssql"
 
@@ -33,6 +33,7 @@ class Data(db.Model):
 def index():
     all_data = Data.query.all()
     return render_template("index.html", employees=all_data)
+
 
 @app.route("/insert", methods=["POST"])
 def insert():
@@ -76,6 +77,11 @@ def delete(id):
 @app.route("/login")
 def login():
     return render_template("login.html")
+
+
+@app.route("/reset")
+def reset():
+    return render_template("reset.html")
 
 
 if __name__ == "__main__":
