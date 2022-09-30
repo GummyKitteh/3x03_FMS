@@ -6,11 +6,11 @@ endblock %} {% block body %}
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login</title>
+    <title>Forget Password</title>
   </head>
   <body class="">
     <main class="form-signin w-100 m-auto">
-      <h1 class="display-5 my-5">Login</h1>
+      <h1 class="display-5 my-5">Reset Password</h1>
       <form>
         <div class="input-group mb-3">
           <span class="input-group-text" id="usernameID">Username</span>
@@ -33,11 +33,16 @@ endblock %} {% block body %}
           />
         </div>
         <button class="w-100 btn btn-md btn-primary" type="submit">
-          Login
+          Reset
         </button>
         <hr class="my-4" />
-        <small class="text-muted"
-          >Click here to <a href="./reset">Forget Password</a>.
+        <small class="text-muted">
+          <a
+            class="btn btn-outline-secondary btn-sm"
+            href="./login"
+            class="stretched-link"
+            >Back to Login</a
+          >
         </small>
       </form>
     </main>
