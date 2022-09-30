@@ -143,25 +143,25 @@ endblock %} {% block body %}
                 </div>
                 <div class="modal-body">
                   <form action="{{url_for('insert')}}" method="POST">
-                    <div class="form-group">
+                    <div class="form-group text-start m-3 w-7">
                       <label>Name: </label>
                       <input
                         type="text"
-                        class="form-control"
+                        class="form-control m-2"
                         name="name"
                         required="1"
                       />
                       <label>Email: </label>
                       <input
                         type="email"
-                        class="form-control"
+                        class="form-control m-2"
                         name="email"
                         required="1"
                       />
                       <label>Phone: </label>
                       <input
                         type="number"
-                        class="form-control"
+                        class="form-control m-2"
                         name="phone"
                         required="1"
                       />
