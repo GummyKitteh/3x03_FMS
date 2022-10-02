@@ -3,8 +3,9 @@ Employees {% endblock %} {% block body %}
 
 <div class="container">
   <div class="row mt-5">
-    <h2 class="border-bottom">Manage <b>Employees</b></h2>
+    <h2 class="">Manage <b>Employees</b></h2>
   </div>
+  <hr />
   <div class="px-3 py-2 my-3">
     <div class="container d-flex flex-wrap justify-content-center">
       <form
@@ -72,10 +73,10 @@ Employees {% endblock %} {% block body %}
           </tr>
           {% for row in employees %}
           <tr>
-            <td>{{row.id}}</td>
-            <td>{{row.name}}</td>
-            <td>{{row.email}}</td>
-            <td>{{row.phone}}</td>
+            <td>{{row.EmployeeId}}</td>
+            <td>{{row.FullName}}</td>
+            <td>{{row.Email}}</td>
+            <td>{{row.ContactNumber}}</td>
             <td>
               <a
                 href="/employees/update/{{row.id}}"
@@ -149,12 +150,18 @@ Employees {% endblock %} {% block body %}
         <div class="modal-body">
           <form action="{{url_for('insert')}}" method="POST">
             <div class="form-group text-start">
-              {{ form.hidden_tag() }} {{ form.name.label(class="form-label
-              mt-3")}} {{ form.name(class="form-control") }} {{
-              form.email.label(class="form-label mt-3") }} {{
-              form.email(class="form-control ")}} {{
-              form.phone.label(class="form-label mt-3") }} {{
-              form.phone(class="form-control ")}}
+              {{ form.hidden_tag() }} {{ form.FullName.label(class="form-label
+              mt-3")}} {{ form.FullName(class="form-control") }} {{
+              form.Email.label(class="form-label mt-3") }} {{
+              form.Email(class="form-control ")}} {{
+              form.ContactNumber.label(class="form-label mt-3") }} {{
+              form.ContactNumber(class="form-control ")}} {{
+              form.DOB.label(class="form-label mt-3") }} {{
+              form.DOB(class="form-control ")}} {{
+              form.Role.label(class="form-label mt-3") }} {{
+              form.Role(class="form-control ")}} {{
+              form.Password.label(class="form-label mt-3") }} {{
+              form.Password(class="form-control ")}}
               <br />
               {{form.submit(class="btn btn-secondary")}}
             </div>
