@@ -45,18 +45,24 @@ class datainsert(FlaskForm):
 
 @app.route("/")
 def index():
+    return render_template("index.html")
+
+
+@app.route("/employees")
+def employees():
     all_data = Data.query.all()
     form = datainsert()
-    return render_template("index.html", employees=all_data)
+    return render_template("employees.html", employees=all_data)
+    # return render_template("employees.html")
 
 
 @app.context_processor
-def index():
+def employees():
     form = datainsert()
     return dict(form=form)
 
 
-@app.route("/insert", methods=["POST"])
+@app.route("/employees/insert", methods=["POST"])
 def insert():
     form = datainsert()
     name = None
@@ -73,10 +79,10 @@ def insert():
         db.session.add(my_data)
         db.session.commit()
         flash("Employee Inserted Sucessfully")
-        return redirect("/")
+        return redirect("/employees")
 
 
-@app.route("/update", methods=["GET", "POST"])
+@app.route("/employees/update", methods=["GET", "POST"])
 def update():
     if request.method == "POST":
         my_data = Data.query.get(request.form.get("id"))
@@ -87,10 +93,10 @@ def update():
         db.session.commit()
         flash("Employee Updated Successfully")
 
-        return redirect(url_for("index"))
+        return redirect(url_for("employees"))
 
 
-@app.route("/delete/<id>/", methods=["GET", "POST"])
+@app.route("/employees/delete/<id>/", methods=["GET", "POST"])
 def delete(id):
     if request.method == "GET":
         my_data = Data.query.get(id)
@@ -98,7 +104,7 @@ def delete(id):
         db.session.commit()
 
         flash("Employee Delete Sucessfully")
-        return redirect(url_for("index"))
+        return redirect(url_for("employees"))
 
 
 @app.route("/login")
