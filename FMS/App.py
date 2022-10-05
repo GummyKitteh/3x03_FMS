@@ -1,8 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
-from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
-from wtforms.validators import DataRequired, Length, Email
+from torch import equal
+from form import datainsert, SearchForm
 
 app = Flask(__name__)
 app.secret_key = "abcd"
@@ -26,23 +25,18 @@ class Data(db.Model):
         self.name = name
         self.email = email
         self.phone = phone
-class datainsert(FlaskForm):
-    name = StringField("Name",[DataRequired(),Length(max=50)])
-    email = StringField("Email",[DataRequired(),Email(), Length(max=100)])
-    phone = StringField("Phone",[DataRequired(), Length(min=8), Length(max=8)])
-    submit = SubmitField("Submit",[DataRequired()])
+
 
 @app.route("/")
 def index():
     all_data = Data.query.all()
-    form = datainsert()
     return render_template("index.html", employees=all_data)
 @app.context_processor
 def index():
     form = datainsert()
     return dict(form=form)
-@app.route("/insert", methods=["POST"])
-def insert():
+@app.route("/employeeinsert", methods=["POST"])
+def employeeinsert():
     form = datainsert()
     name = None
     email = None
@@ -85,7 +79,23 @@ def delete(id):
 
         flash("Employee Delete Sucessfully")
         return redirect(url_for("index"))
-
+@app.context_processor
+def index():
+    searchform = SearchForm()
+    return dict(searchform=searchform)
+@app.route("/employeesearch",methods=["POST"])
+def employeesearch():
+    searchform = SearchForm()
+    posts = Data.query
+    if request.method == "POST" and searchform.validate_on_submit():
+        postsearched = searchform.searched.data
+        searchform.searched.data = ''
+        posts = posts.filter(Data.name.like('%' + postsearched + '%'))
+        posts = posts.order_by(Data.id).all()
+        if posts != 0:
+            return render_template("index.html", searchform=searchform, searched = postsearched, posts = posts)
+        else:
+            flash("Cannot find Employee")
 
 @app.route("/login")
 def login():

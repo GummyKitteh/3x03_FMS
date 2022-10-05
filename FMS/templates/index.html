@@ -6,28 +6,14 @@ endblock %} {% block body %}
 
     <div class="px-3 py-2 border-bottom mb-3">
       <div class="container d-flex flex-wrap justify-content-center">
-        <form
-          action="/"
-          method="POST"
+        <!-- Search bar -->
+        <form action="{{url_for('employeesearch')}}" method="POST"
           class="col-12 col-lg-auto mb-2 mb-lg-0 me-lg-auto"
         >
           <div class="input-group w-100">
-            <input
-              type="text"
-              class="form-control"
-              id="search"
-              name="search"
-              placeholder="Search"
-              aria-label="Search"
-              aria-describedby="seat"
-            />
-            <button
-              class="btn btn-outline-success"
-              type="button"
-              id="button-addon2"
-            >
-              Search
-            </button>
+            {{searchform.hidden_tag()}}            
+            {{ searchform.searched(class="form-control") }}
+            {{searchform.submit(class="btn btn-outline-success")}}
           </div>
         </form>
 
@@ -61,6 +47,53 @@ endblock %} {% block body %}
               <th>Phone</th>
               <th></th>
             </tr>
+            {% if posts != 0 %}
+            {% for post in posts %}
+            <tr>
+              <td>{{post.id}}</td>
+              <td>{{post.name}}</td>
+              <td>{{post.email}}</td>
+              <td>{{post.phone}}</td>
+              <td>
+                <a href="/update/{{post.id}}" 
+                class="btn btn-warning btn-xs"
+                data-bs-toggle="modal"
+                data-bs-target="#modaledit{{post.id}}">Edit</a>
+                <a
+                  href="/delete/{{post.id}}"
+                  class="btn btn-danger btn-xs"
+                  onclick="return confirm('Are You Sure To Delete?')"
+                  >Delete</a
+                >
+              </td>
+            </tr>
+                        <!-- Modal Edit Employees -->
+                        <div id="modaledit{{post.id}}" class="modal fade" role="dialog">
+                          <div class="modal-dialog">
+                              <div class="modal-content">
+                                  <div class="modal-header">
+                                  <h4 class="modal-title">Update Information</h4>
+                                  </div>
+                                  <div class="modal-body">
+                                      <form action="{{url_for('update')}}" method="POST">
+                                          <div class="form-group text-start">
+                                              <label class="form-label mt-3">Name </label>
+                                              <input type="hidden" name="id" value="{{post.id}}">
+                                              <input type="text" class="form-control" name="name" value="{{post.name}}">
+                                              <label class="form-label mt-3">Email </label>
+                                              <input type="email" class="form-control" name="email" value="{{post.email}}">
+                                              <label class="form-label mt-3" >Phone </label>
+                                              <input type="number" class="form-control" name="phone" value="{{post.phone}}">
+                                              <br>
+                                              <button class="btn btn-primary" type="submit">Update Employee</button>
+                                          </div>
+                                      </form>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+            {% endfor %}
+            
             {% for row in employees %}
             <tr>
               <td>{{row.id}}</td>
@@ -106,6 +139,8 @@ endblock %} {% block body %}
               </div>
           </div>
             {% endfor %}
+            {% endif %}
+            
           </table>
           <!-- Modal add Employees -->
           <div id="addEmployee" class="modal fade" role="dialog">
@@ -115,7 +150,7 @@ endblock %} {% block body %}
                   <h4 class="modal-title">Add Employee</h4>
                 </div>
                 <div class="modal-body">
-                  <form action="{{url_for('insert')}}" method="POST">
+                  <form action="{{url_for('employeeinsert')}}" method="POST">
                     <div class="form-group text-start">
 
                     {{ form.hidden_tag() }}
