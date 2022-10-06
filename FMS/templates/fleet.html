@@ -1,16 +1,16 @@
-{% extends 'base.html' %} {% include 'header.html' %} {% block title %}
-Employees {% endblock %} {% block body %}
+{% extends 'base.html' %} {% include 'header.html' %} {% block title %} Fleet {%
+endblock %} {% block body %}
 
 <div class="container">
   <div class="row mt-5">
-    <h2 class="">Manage <b>Employees</b></h2>
+    <h2 class="">Manage <b>Fleet</b></h2>
   </div>
   <hr />
   <div class="px-3 py-2 my-3">
     <div class="container d-flex flex-wrap justify-content-center">
       <!-- Search bar -->
       <form
-        action="{{url_for('employeesearch')}}"
+        action="{{url_for('fleetsearch')}}"
         method="POST"
         class="col-12 col-lg-auto mb-2 mb-lg-0 me-lg-auto"
       >
@@ -20,15 +20,14 @@ Employees {% endblock %} {% block body %}
           {{searchform.submit(class="btn btn-outline-success")}}
         </div>
       </form>
-
       <div class="text-end order-md-last d-flex flex-row-reverse">
         <button
           type="button"
           class="btn btn-primary align-end"
           data-bs-toggle="modal"
-          data-bs-target="#addEmployee"
+          data-bs-target="#addVehicle"
         >
-          Add New Employees
+          Add New Vehicle
         </button>
       </div>
     </div>
@@ -53,18 +52,18 @@ Employees {% endblock %} {% block body %}
         {% endfor %} {% endif %} {% endwith %}
         <table class="table table-hover table-dark">
           <tr>
-            <th>ID</th>
-            <th>Full Name</th>
-            <th>Email</th>
-            <th>Contact Number</th>
+            <th>Vehicle ID</th>
+            <th>Number Plate</th>
+            <th>Capacity</th>
+            <th>Vehicle Status</th>
             <th></th>
           </tr>
           {% if posts != 0 %} {% for post in posts %}
           <tr>
-            <td>{{post.EmployeeId}}</td>
-            <td>{{post.FullName}}</td>
-            <td>{{post.Email}}</td>
-            <td>{{post.ContactNumber}}</td>
+            <td>{{post.VehicleId}}</td>
+            <td>{{post.BusNumberPlate}}</td>
+            <td>{{post.VehicleCapacity}}</td>
+            <td>{{post.VehicleStatus}}</td>
             <td>
               <a
                 href="/update/{{post.id}}"
@@ -81,34 +80,30 @@ Employees {% endblock %} {% block body %}
               >
             </td>
           </tr>
-          {% endfor %} {% endif %} {% for row in employees %}
+          {% endfor %} {% endif %} {% for row in fleet %}
           <tr>
-            <td>{{row.EmployeeId}}</td>
-            <td>{{row.FullName}}</td>
-            <td>{{row.Email}}</td>
-            <td>{{row.ContactNumber}}</td>
+            <td>{{row.VehicleId}}</td>
+            <td>{{row.BusNumberPlate}}</td>
+            <td>{{row.VehicleCapacity}}</td>
+            <td>{{row.VehicleStatus}}</td>
             <td>
               <a
-                href="/employees/view/{{row.EmployeeId}}"
+                href="/fleet/view/{{row.VehicleId}}"
                 class="btn btn-warning btn-xs"
                 data-bs-toggle="modal"
-                data-bs-target="#modaledit{{row.EmployeeId}}"
+                data-bs-target="#modaledit{{row.VehicleId}}"
                 >View</a
               >
               <a
-                href="/employees/delete/{{row.EmployeeId}}"
+                href="/fleet/delete/{{row.VehicleId}}"
                 class="btn btn-danger btn-xs"
                 onclick="return confirm('Confirm Delete?')"
                 >Delete</a
               >
             </td>
           </tr>
-          <!-- Modal Edit Employees -->
-          <div
-            id="modaledit{{row.EmployeeId}}"
-            class="modal fade"
-            role="dialog"
-          >
+          <!-- Modal Edit Fleet -->
+          <div id="modaledit{{row.VehicleId}}" class="modal fade" role="dialog">
             <div class="modal-dialog">
               <div class="modal-content">
                 <div class="modal-header">
@@ -116,12 +111,10 @@ Employees {% endblock %} {% block body %}
                 </div>
                 <div class="modal-body">
                   <div class="form-group text-start">
-                    <p>Employee Id: {{row.EmployeeId}}</p>
-                    <p>Full Name: {{row.FullName}}</p>
-                    <p>Email: {{row.Email}}</p>
-                    <p>Contact Number: {{row.ContactNumber}}</p>
-                    <p>Date of Birth: {{row.DOB}}</p>
-                    <p>Role: {{row.Role.value}}</p>
+                    <p>Vehicle Id: {{row.VehicleId}}</p>
+                    <p>Number Plate Number: {{row.BusNumberPlate}}</p>
+                    <p>Vehicle Capacity: {{row.VehicleCapacity}}</p>
+                    <p>Vehicle Status: {{row.VehicleStatus}}</p>
                   </div>
                 </div>
               </div>
@@ -132,36 +125,6 @@ Employees {% endblock %} {% block body %}
       </div>
     </div>
   </div>
-  <!-- Modal add Employees -->
-  <div id="addEmployee" class="modal fade" role="dialog">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h4 class="modal-title">Add Employee</h4>
-        </div>
-        <div class="modal-body">
-          <form action="/employees/insert" method="POST">
-            <div class="form-group text-start">
-              {{ form.hidden_tag() }} {{
-              form.FullName.label(class="form-labelmt-3")}} {{
-              form.FullName(class="form-control") }} {{
-              form.Email.label(class="form-label mt-3") }} {{
-              form.Email(class="form-control ")}} {{
-              form.ContactNumber.label(class="form-label mt-3") }} {{
-              form.ContactNumber(class="form-control ")}} {{
-              form.DOB.label(class="form-label mt-3") }} {{
-              form.DOB(class="form-control ")}} {{
-              form.Role.label(class="form-label mt-3") }} {{
-              form.Role(class="form-control ")}} {{
-              form.Password.label(class="form-label mt-3") }} {{
-              form.Password(class="form-control ")}}
-              <br />
-              {{form.submit(class="btn btn-secondary")}}
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
+  <!-- Modal add Vehicle -->
 </div>
 {% endblock %}
