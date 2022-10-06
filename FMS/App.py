@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from torch import equal
-from form import datainsert, SearchForm
+from form import datainsert, SearchFormEmployee
 
 app = Flask(__name__)
 app.secret_key = "abcd"
@@ -53,9 +53,10 @@ def employeeinsert():
         db.session.commit()
         flash("Employee Inserted Sucessfully")
         return redirect("/")
-
-
-
+    else:
+        flash("Employee Inserted Unsucessfully")
+        return redirect("/")
+    
 @app.route("/update", methods=["GET","POST"])
 def update():
     if request.method == "POST":
@@ -70,6 +71,7 @@ def update():
         return redirect(url_for("index"))
 
 
+
 @app.route("/delete/<id>/", methods=["GET", "POST"])
 def delete(id):
     if request.method == "GET":
@@ -81,11 +83,11 @@ def delete(id):
         return redirect(url_for("index"))
 @app.context_processor
 def index():
-    searchform = SearchForm()
+    searchform = SearchFormEmployee()
     return dict(searchform=searchform)
 @app.route("/employeesearch",methods=["POST"])
 def employeesearch():
-    searchform = SearchForm()
+    searchform = SearchFormEmployee()
     posts = Data.query
     if request.method == "POST" and searchform.validate_on_submit():
         postsearched = searchform.searched.data

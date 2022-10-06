@@ -9,6 +9,6 @@ class datainsert(FlaskForm):
     phone = StringField("Phone",[DataRequired(), Length(min=8), Length(max=8)])
     submit = SubmitField("Submit")
 
-class SearchForm(FlaskForm):
+class SearchFormEmployee(FlaskForm):
     searched = StringField("Search:",[DataRequired()], render_kw={"placeholder": "Search"})
     submit = SubmitField("Submit")
