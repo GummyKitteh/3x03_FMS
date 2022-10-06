@@ -13,6 +13,9 @@ from flask_login import (
 )
 from enum import Enum
 
+# from torch import equal
+from form import datainsert, SearchFormEmployee
+
 app = Flask(__name__)
 app.secret_key = "abcd"
 app.config["SECRET_KEY"] = "I really hope fking this work if never idk what to do :("
@@ -150,10 +153,13 @@ def insert():
         db.session.add(my_data)
         db.session.commit()
         flash("Employee Inserted Sucessfully")
-        return redirect("/employees")
+        return redirect("/")
+    else:
+        flash("Employee Inserted Unsucessfully")
+        return redirect("/")
 
 
-@app.route("/employees/update", methods=["GET", "POST"])
+@app.route("/update", methods=["GET", "POST"])
 def update():
     if request.method == "POST":
         my_data = Data.query.get(request.form.get("id"))
@@ -175,7 +181,30 @@ def delete(id):
         db.session.commit()
 
         flash("Employee Delete Sucessfully")
-        return redirect(url_for("employees"))
+        return redirect(url_for("index"))
+
+
+@app.context_processor
+def index():
+    searchform = SearchFormEmployee()
+    return dict(searchform=searchform)
+
+
+@app.route("/employeesearch", methods=["POST"])
+def employeesearch():
+    searchform = SearchFormEmployee()
+    posts = Data.query
+    if request.method == "POST" and searchform.validate_on_submit():
+        postsearched = searchform.searched.data
+        searchform.searched.data = ""
+        posts = posts.filter(Data.name.like("%" + postsearched + "%"))
+        posts = posts.order_by(Data.id).all()
+        if posts != 0:
+            return render_template(
+                "index.html", searchform=searchform, searched=postsearched, posts=posts
+            )
+        else:
+            flash("Cannot find Employee")
 
 
 @app.route("/login")
