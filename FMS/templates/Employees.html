@@ -54,11 +54,33 @@ Employees {% endblock %} {% block body %}
         <table class="table table-hover table-dark">
           <tr>
             <th>ID</th>
-            <th>Name</th>
+            <th>Full Name</th>
             <th>Email</th>
-            <th>Phone</th>
+            <th>Contact Number</th>
             <th></th>
           </tr>
+          {% if posts != 0 %}
+          {% for post in posts %}
+          <tr>
+            <td>{{post.EmployeeId}}</td>
+            <td>{{post.FullName}}</td>
+            <td>{{post.Email}}</td>
+            <td>{{post.ContactNumber}}</td>
+            <td>
+              <a href="/update/{{post.id}}" 
+              class="btn btn-warning btn-xs"
+              data-bs-toggle="modal"
+              data-bs-target="#modaledit{{post.id}}">Edit</a>
+              <a
+                href="/delete/{{post.id}}"
+                class="btn btn-danger btn-xs"
+                onclick="return confirm('Are You Sure To Delete?')"
+                >Delete</a
+              >
+            </td>
+          </tr>
+          {% endfor %}
+          {% endif %}
           {% for row in employees %}
           <tr>
             <td>{{row.EmployeeId}}</td>
@@ -67,14 +89,14 @@ Employees {% endblock %} {% block body %}
             <td>{{row.ContactNumber}}</td>
             <td>
               <a
-                href="/employees/update/{{row.id}}"
+                href="/employees/view/{{row.EmployeeId}}"
                 class="btn btn-warning btn-xs"
                 data-bs-toggle="modal"
-                data-bs-target="#modaledit{{row.id}}"
-                >Edit</a
+                data-bs-target="#modaledit{{row.EmployeeId}}"
+                >View</a
               >
               <a
-                href="/employees/delete/{{row.id}}"
+                href="/employees/delete/{{row.EmployeeId}}"
                 class="btn btn-danger btn-xs"
                 onclick="return confirm('Confirm Delete?')"
                 >Delete</a
@@ -82,43 +104,21 @@ Employees {% endblock %} {% block body %}
             </td>
           </tr>
           <!-- Modal Edit Employees -->
-          <div id="modaledit{{row.id}}" class="modal fade" role="dialog">
+          <div id="modaledit{{row.EmployeeId}}" class="modal fade" role="dialog">
             <div class="modal-dialog">
               <div class="modal-content">
                 <div class="modal-header">
-                  <h4 class="modal-title">Update Information</h4>
+                  <h4 class="modal-title">View Information</h4>
                 </div>
                 <div class="modal-body">
-                  <form action="{{url_for('update')}}" method="POST">
                     <div class="form-group text-start">
-                      <label class="form-label mt-3">Name </label>
-                      <input type="hidden" name="id" value="{{row.id}}" />
-                      <input
-                        type="text"
-                        class="form-control"
-                        name="name"
-                        value="{{row.name}}"
-                      />
-                      <label class="form-label mt-3">Email </label>
-                      <input
-                        type="email"
-                        class="form-control"
-                        name="email"
-                        value="{{row.email}}"
-                      />
-                      <label class="form-label mt-3">Phone </label>
-                      <input
-                        type="number"
-                        class="form-control"
-                        name="phone"
-                        value="{{row.phone}}"
-                      />
-                      <br />
-                      <button class="btn btn-primary" type="submit">
-                        Update Employee
-                      </button>
+                      <p>Employee Id: {{row.EmployeeId}}</p>
+                      <p>Full Name: {{row.FullName}}</p>
+                      <p>Email: {{row.Email}}</p>
+                      <p>Contact Number: {{row.ContactNumber}}</p>
+                      <p>Date of Birth: {{row.DOB}}</p>
+                      <p>Role: {{row.Role.value}}</p>
                     </div>
-                  </form>
                 </div>
               </div>
             </div>

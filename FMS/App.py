@@ -11,6 +11,7 @@ from flask_login import (
     logout_user,
     current_user,
 )
+from form import RoleTypes, employeeInsert
 from enum import Enum
 
 # from torch import equal
@@ -28,12 +29,6 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssq
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
-
-# EMPLOYEE Classes
-class RoleTypes(Enum):
-    admin = "admin"
-    manager = "manager"
-    driver = "driver"
 
 
 class Employee(db.Model):
@@ -56,18 +51,6 @@ class Employee(db.Model):
         self.PasswordSalt = PasswordSalt
 
 
-class employeeInsert(FlaskForm):
-    FullName = StringField("Full Name", [DataRequired(), Length(max=50)])
-    Email = StringField("Email", [DataRequired(), Email(), Length(max=100)])
-    ContactNumber = StringField(
-        "Contact Number", [DataRequired(), Length(min=8), Length(max=8)]
-    )
-    DOB = DateField("DOB", format='%Y-%m-%d')
-    Role = SelectField(
-        "Role", choices=[(choice.name, choice.value) for choice in RoleTypes]
-    )
-    Password = StringField("Password", [DataRequired(), Length(min=8)])
-    submit = SubmitField("Submit", [DataRequired()])
 
 
 @app.route("/")
@@ -143,7 +126,7 @@ def delete(id):
         db.session.commit()
 
         flash("Employee deleted sucessfully.")
-        return redirect(url_for("/employee"))
+        return redirect(url_for("employees"))
 
 
 @app.context_processor
