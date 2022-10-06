@@ -8,30 +8,6 @@ Employees {% endblock %} {% block body %}
   <hr />
   <div class="px-3 py-2 my-3">
     <div class="container d-flex flex-wrap justify-content-center">
-      <!-- <form
-        action="/"
-        method="POST"
-        class="col-12 col-lg-auto mb-2 mb-lg-0 me-lg-auto"
-      >
-        <div class="input-group w-100">
-          <input
-            type="text"
-            class="form-control"
-            id="search"
-            name="search"
-            placeholder="Search"
-            aria-label="Search"
-            aria-describedby="seat"
-          />
-          <button
-            class="btn btn-outline-success"
-            type="button"
-            id="button-addon2"
-          >
-            Search
-          </button>
-        </div>
-      </form> -->
       <!-- Search bar -->
       <form
         action="{{url_for('employeesearch')}}"
@@ -160,10 +136,10 @@ Employees {% endblock %} {% block body %}
           <h4 class="modal-title">Add Employee</h4>
         </div>
         <div class="modal-body">
-          <form action="{{url_for('insert')}}" method="POST">
+          <form action="/employees/insert" method="POST">
             <div class="form-group text-start">
-              {{ form.hidden_tag() }} {{ form.FullName.label(class="form-label
-              mt-3")}} {{ form.FullName(class="form-control") }} {{
+              {{ form.hidden_tag() }} 
+              {{ form.FullName.label(class="form-labelmt-3")}} {{ form.FullName(class="form-control") }} {{
               form.Email.label(class="form-label mt-3") }} {{
               form.Email(class="form-control ")}} {{
               form.ContactNumber.label(class="form-label mt-3") }} {{

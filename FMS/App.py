@@ -22,9 +22,9 @@ app = Flask(__name__)
 app.secret_key = "abcd"
 app.config["SECRET_KEY"] = "I really hope fking this work if never idk what to do :("
 
-# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
 # app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwerty1234@localhost/fmssql"
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:B33pb33p!@178.128.17.35/fmssql"
+# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:B33pb33p!@178.128.17.35/fmssql"
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
@@ -45,21 +45,8 @@ class Employee(db.Model):
     Password = db.Column(db.String(64), nullable=False)
     DOB = db.Column(db.DateTime, nullable=False)
     PasswordSalt = db.Column(db.String(64), nullable=False)
-    LoginCounter = db.Column(db.Integer, nullable=True)
-    LastLogin = db.Column(db.DateTime, nullable=True)
-
-    def __init__(
-        self,
-        FullName,
-        Email,
-        ContactNumber,
-        Role,
-        Password,
-        DOB,
-        PasswordSalt,
-        LoginCounter,
-        LastLogin,
-    ):
+   
+    def __init__(self,FullName, Email, ContactNumber,Role,Password,DOB,PasswordSalt):
         self.FullName = FullName
         self.Email = Email
         self.ContactNumber = ContactNumber
@@ -67,8 +54,6 @@ class Employee(db.Model):
         self.Password = Password
         self.DOB = DOB
         self.PasswordSalt = PasswordSalt
-        self.LoginCounter = LoginCounter
-        self.LastLogin = LastLogin
 
 
 class employeeInsert(FlaskForm):
@@ -77,33 +62,12 @@ class employeeInsert(FlaskForm):
     ContactNumber = StringField(
         "Contact Number", [DataRequired(), Length(min=8), Length(max=8)]
     )
-    # DOB = StringField("DOB", [DataRequired(), Length(max=20)])
-    # DOB = DateTimeField("DOB", [DataRequired()])
-    DOB = DateField("DOB", format="%/dd-%mm-%yy")
+    DOB = DateField("DOB", format='%Y-%m-%d')
     Role = SelectField(
         "Role", choices=[(choice.name, choice.value) for choice in RoleTypes]
     )
     Password = StringField("Password", [DataRequired(), Length(min=8)])
     submit = SubmitField("Submit", [DataRequired()])
-
-
-# class Data(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     name = db.Column(db.String(100))
-#     email = db.Column(db.String(100))
-#     phone = db.Column(db.String(100))
-
-#     def __init__(self, name, email, phone):
-#         self.name = name
-#         self.email = email
-#         self.phone = phone
-
-
-# class datainsert(FlaskForm):
-#     name = StringField("Name", [DataRequired(), Length(max=50)])
-#     email = StringField("Email", [DataRequired(), Email(), Length(max=100)])
-#     phone = StringField("Phone", [DataRequired(), Length(min=8), Length(max=8)])
-#     submit = SubmitField("Submit", [DataRequired()])
 
 
 @app.route("/")
@@ -125,6 +89,7 @@ def employees():
 
 @app.route("/employees/insert", methods=["POST"])
 def insert():
+    print('r3r34')
     form = employeeInsert()
     FullName = None
     Email = None
@@ -132,39 +97,28 @@ def insert():
     DOB = None
     Role = None
     Password = None
-    PasswordSalt = "INSERT-PWD-SALT"
-    LoginCounter = 0
-    # LastLogin = "090902"
     if request.method == "POST" and form.validate_on_submit():
         FullName = form.FullName.data
-        Email = form.Email.data
         ContactNumber = form.ContactNumber.data
+        Email = form.Email.data
         Role = form.Role.data
-        DOB = form.DOB.data
         Password = form.Password.data
-        AccountLocked = 0
-        my_data = Employee(
-            FullName,
-            Email,
-            ContactNumber,
-            Role,
-            AccountLocked,
-            Password,
-            DOB,
-            PasswordSalt,
-            LoginCounter,
-            LastLogin,
-        )
-        # print(my_data, file=sys.stdout)
-        flash(my_data)
-
+        DOB = form.DOB.data
+        PasswordSalt = form.Password.data
+        form.FullName.data = ''
+        form.ContactNumber.data = ''
+        form.Email.data = ''
+        form.DOB.data = ''
+        form.Role.data = ''
+        form.Password.data = ''
+        form.Password.data = ''
+        my_data = Employee(FullName, Email, ContactNumber,Role,Password,DOB,PasswordSalt)
+        print(my_data)
         db.session.add(my_data)
         db.session.commit()
         flash("Employee Inserted Sucessfully")
         return redirect("/employees")
-    else:
-        flash("Employee Inserted Unsucessfully")
-        return redirect("/employees")
+    print("FAILURE")
 
 
 @app.route("/update", methods=["GET", "POST"])
@@ -198,26 +152,23 @@ def index():
     return dict(searchform=searchform)
 
 
-@app.route("/employeesearch", methods=["POST"])
+@app.context_processor
+def index():
+    searchform = SearchFormEmployee()
+    return dict(searchform=searchform)
+@app.route("/employees/employeesearch",methods=["POST"])
 def employeesearch():
     searchform = SearchFormEmployee()
     posts = Employee.query
     if request.method == "POST" and searchform.validate_on_submit():
         postsearched = searchform.searched.data
-        searchform.searched.data = ""
-        posts = posts.filter(Employee.FullName.like("%" + postsearched + "%"))
+        searchform.searched.data = ''
+        posts = posts.filter(Employee.FullName.like('%' + postsearched + '%'))
         posts = posts.order_by(Employee.EmployeeId).all()
         if posts != 0:
-            return render_template(
-                "/employees.html",
-                searchform=searchform,
-                searched=postsearched,
-                posts=posts,
-            )
+            return render_template("Employees.html", searchform=searchform, searched = postsearched, posts = posts)
         else:
             flash("Cannot find Employee")
-
-
 @app.route("/login")
 def login():
     return render_template("login.html")
