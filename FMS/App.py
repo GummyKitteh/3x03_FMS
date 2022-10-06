@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, SelectField
+from wtforms import StringField, SubmitField, SelectField, DateTimeField, DateField
 from wtforms.validators import DataRequired, Length, Email
 from flask_login import (
     UserMixin,
@@ -15,6 +15,8 @@ from enum import Enum
 
 # from torch import equal
 from form import datainsert, SearchFormEmployee
+
+import sys
 
 app = Flask(__name__)
 app.secret_key = "abcd"
@@ -41,10 +43,10 @@ class Employee(db.Model):
     ContactNumber = db.Column(db.Integer, nullable=False)
     Role = db.Column(db.Enum(RoleTypes), nullable=False)
     Password = db.Column(db.String(64), nullable=False)
-    DOB = db.Column(db.Date, nullable=False)
+    DOB = db.Column(db.DateTime, nullable=False)
     PasswordSalt = db.Column(db.String(64), nullable=False)
     LoginCounter = db.Column(db.Integer, nullable=True)
-    LastLogin = db.Column(db.Date, nullable=True)
+    LastLogin = db.Column(db.DateTime, nullable=True)
 
     def __init__(
         self,
@@ -75,8 +77,9 @@ class employeeInsert(FlaskForm):
     ContactNumber = StringField(
         "Contact Number", [DataRequired(), Length(min=8), Length(max=8)]
     )
-    DOB = StringField("DOB", [DataRequired(), Length(max=20)])
-    # Role = StringField("Role", [DataRequired(), Length(max=20)])
+    # DOB = StringField("DOB", [DataRequired(), Length(max=20)])
+    # DOB = DateTimeField("DOB", [DataRequired()])
+    DOB = DateField("DOB", format="%/dd-%mm-%yy")
     Role = SelectField(
         "Role", choices=[(choice.name, choice.value) for choice in RoleTypes]
     )
@@ -131,7 +134,7 @@ def insert():
     Password = None
     PasswordSalt = "INSERT-PWD-SALT"
     LoginCounter = 0
-    LastLogin = "INSERT-LASTLOGIN-SALT"
+    # LastLogin = "090902"
     if request.method == "POST" and form.validate_on_submit():
         FullName = form.FullName.data
         Email = form.Email.data
@@ -139,30 +142,35 @@ def insert():
         Role = form.Role.data
         DOB = form.DOB.data
         Password = form.Password.data
+        AccountLocked = 0
         my_data = Employee(
             FullName,
             Email,
             ContactNumber,
-            DOB,
             Role,
+            AccountLocked,
             Password,
+            DOB,
             PasswordSalt,
             LoginCounter,
             LastLogin,
         )
+        # print(my_data, file=sys.stdout)
+        flash(my_data)
+
         db.session.add(my_data)
         db.session.commit()
         flash("Employee Inserted Sucessfully")
-        return redirect("/")
+        return redirect("/employees")
     else:
         flash("Employee Inserted Unsucessfully")
-        return redirect("/")
+        return redirect("/employees")
 
 
 @app.route("/update", methods=["GET", "POST"])
 def update():
     if request.method == "POST":
-        my_data = Data.query.get(request.form.get("id"))
+        my_data = Employee.query.get(request.form.get("id"))
         my_data.name = request.form["name"]
         my_data.email = request.form["email"]
         my_data.phone = request.form["phone"]
@@ -173,15 +181,15 @@ def update():
         return redirect(url_for("employees"))
 
 
-@app.route("/employees/delete/<id>/", methods=["GET", "POST"])
+@app.route("/employees/delete/<id>", methods=["GET", "POST"])
 def delete(id):
     if request.method == "GET":
-        my_data = Data.query.get(id)
+        my_data = Employee.query.get(id)
         db.session.delete(my_data)
         db.session.commit()
 
-        flash("Employee Delete Sucessfully")
-        return redirect(url_for("index"))
+        flash("Employee deleted sucessfully.")
+        return redirect(url_for("/employee"))
 
 
 @app.context_processor
@@ -193,15 +201,18 @@ def index():
 @app.route("/employeesearch", methods=["POST"])
 def employeesearch():
     searchform = SearchFormEmployee()
-    posts = Data.query
+    posts = Employee.query
     if request.method == "POST" and searchform.validate_on_submit():
         postsearched = searchform.searched.data
         searchform.searched.data = ""
-        posts = posts.filter(Data.name.like("%" + postsearched + "%"))
-        posts = posts.order_by(Data.id).all()
+        posts = posts.filter(Employee.FullName.like("%" + postsearched + "%"))
+        posts = posts.order_by(Employee.EmployeeId).all()
         if posts != 0:
             return render_template(
-                "index.html", searchform=searchform, searched=postsearched, posts=posts
+                "/employees.html",
+                searchform=searchform,
+                searched=postsearched,
+                posts=posts,
             )
         else:
             flash("Cannot find Employee")

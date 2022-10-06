@@ -8,7 +8,7 @@ Employees {% endblock %} {% block body %}
   <hr />
   <div class="px-3 py-2 my-3">
     <div class="container d-flex flex-wrap justify-content-center">
-      <form
+      <!-- <form
         action="/"
         method="POST"
         class="col-12 col-lg-auto mb-2 mb-lg-0 me-lg-auto"
@@ -30,6 +30,18 @@ Employees {% endblock %} {% block body %}
           >
             Search
           </button>
+        </div>
+      </form> -->
+      <!-- Search bar -->
+      <form
+        action="{{url_for('employeesearch')}}"
+        method="POST"
+        class="col-12 col-lg-auto mb-2 mb-lg-0 me-lg-auto"
+      >
+        <div class="input-group w-100">
+          {{searchform.hidden_tag()}} {{
+          searchform.searched(class="form-control") }}
+          {{searchform.submit(class="btn btn-outline-success")}}
         </div>
       </form>
 
@@ -88,7 +100,7 @@ Employees {% endblock %} {% block body %}
               <a
                 href="/employees/delete/{{row.id}}"
                 class="btn btn-danger btn-xs"
-                onclick="return confirm('Are You Sure To Delete?')"
+                onclick="return confirm('Confirm Delete?')"
                 >Delete</a
               >
             </td>
