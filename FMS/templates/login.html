@@ -12,29 +12,36 @@ endblock %} {% block body %}
     <main class="form-signin w-100 m-auto">
       <h1 class="display-5 my-5">Login</h1>
       <form>
+        {{form.hidden_tag()}}
         <div class="input-group mb-3">
-          <span class="input-group-text" id="usernameID">Username</span>
-          <input
-            type="text"
-            class="form-control"
-            placeholder=""
-            aria-label="Username"
-            aria-describedby="usernameID"
-          />
+          <!-- <span class="input-group-text" id="usernameID">Username</span> -->
+          <!-- <input
+          type="text"
+          class="form-control"
+          placeholder=""
+          aria-label="Username"
+          aria-describedby="usernameID"
+        /> -->
+          {{form.email.label(class="input-group-text")}}
+          {{form.email(class="form-control")}}
+
         </div>
         <div class="input-group mb-3">
-          <span class="input-group-text" id="password">Password</span>
+          <!-- <span class="input-group-text" id="password">Password</span>
           <input
             type="text"
             class="form-control"
             placeholder=""
             aria-label="password"
             aria-describedby="passwordID"
-          />
+          /> -->
+          {{form.password.label(class="input-group-text")}}
+          {{form.password(class="form-control")}}
         </div>
-        <button class="w-100 btn btn-md btn-primary" type="submit">
+        <!-- <button class="w-100 btn btn-md btn-primary" type="submit">
           Login
-        </button>
+        </button> -->
+        {{form.submit(class="w-100 btn btn-md btn-primary")}}
         <hr class="my-4" />
         <small class="text-muted"
           >Click here to <a href="./reset">Forget Password</a>.

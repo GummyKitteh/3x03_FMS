@@ -1,3 +1,4 @@
+from distutils.log import Log
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
@@ -11,7 +12,7 @@ from flask_login import (
     logout_user,
     current_user,
 )
-from form import RoleTypes, employeeInsert
+from form import LoginForm, RoleTypes, employeeInsert
 from enum import Enum
 
 # from torch import equal
@@ -51,7 +52,14 @@ class Employee(db.Model):
         self.PasswordSalt = PasswordSalt
 
 
+#Flask_login Stuff
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
 
+@login_manager.user_loader
+def load_user(EmployeeId):
+    return Employee.query.get(int(EmployeeId))
 
 @app.route("/")
 def index():
@@ -59,6 +67,7 @@ def index():
 
 
 @app.route("/employees")
+@login_required
 def employees():
     all_data = Employee.query.all()
     return render_template("employees.html", employees=all_data)
@@ -72,7 +81,6 @@ def employees():
 
 @app.route("/employees/insert", methods=["POST"])
 def insert():
-    print('r3r34')
     form = employeeInsert()
     FullName = None
     Email = None
@@ -154,7 +162,16 @@ def employeesearch():
             flash("Cannot find Employee")
 @app.route("/login")
 def login():
-    return render_template("login.html")
+    form = LoginForm()
+    # if form.validate_on_submit():
+    user = Employee.query.filter_by(Email = form.email.data).first()
+    
+        # if user == form.email.data:
+        #    print(user.Role)
+        #    password = Employee.query.filter_by(Password = form.password.data).first()
+        #    if password:
+        #     return redirect(url_for("employees"))
+    return render_template("login.html", form =form)
 
 
 @app.route("/reset")

@@ -67,18 +67,38 @@ Employees {% endblock %} {% block body %}
             <td>{{post.Email}}</td>
             <td>{{post.ContactNumber}}</td>
             <td>
-              <a href="/update/{{post.id}}" 
+              <a href="/update/{{post.EmployeeId}}" 
               class="btn btn-warning btn-xs"
               data-bs-toggle="modal"
-              data-bs-target="#modaledit{{post.id}}">Edit</a>
+              data-bs-target="#modalview{{post.EmployeeId}}">View</a>
               <a
-                href="/delete/{{post.id}}"
+                href="/delete/{{post.EmployeeId}}"
                 class="btn btn-danger btn-xs"
                 onclick="return confirm('Are You Sure To Delete?')"
                 >Delete</a
               >
             </td>
           </tr>
+          <!-- Modal View Employees -->
+          <div id="modalview{{post.EmployeeId}}" class="modal fade" role="dialog">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h4 class="modal-title">View Information</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group text-start">
+                      <p>Employee Id: {{post.EmployeeId}}</p>
+                      <p>Full Name: {{post.FullName}}</p>
+                      <p>Email: {{post.Email}}</p>
+                      <p>Contact Number: {{post.ContactNumber}}</p>
+                      <p>Date of Birth: {{post.DOB}}</p>
+                      <p>Role: {{post.Role.value}}</p>
+                    </div>
+                </div>
+              </div>
+            </div>
+          </div>
           {% endfor %}
           {% endif %}
           {% for row in employees %}
@@ -92,7 +112,7 @@ Employees {% endblock %} {% block body %}
                 href="/employees/view/{{row.EmployeeId}}"
                 class="btn btn-warning btn-xs"
                 data-bs-toggle="modal"
-                data-bs-target="#modaledit{{row.EmployeeId}}"
+                data-bs-target="#modalview{{row.EmployeeId}}"
                 >View</a
               >
               <a
@@ -103,8 +123,8 @@ Employees {% endblock %} {% block body %}
               >
             </td>
           </tr>
-          <!-- Modal Edit Employees -->
-          <div id="modaledit{{row.EmployeeId}}" class="modal fade" role="dialog">
+          <!-- Modal View Employees -->
+          <div id="modalview{{row.EmployeeId}}" class="modal fade" role="dialog">
             <div class="modal-dialog">
               <div class="modal-content">
                 <div class="modal-header">

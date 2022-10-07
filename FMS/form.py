@@ -1,6 +1,6 @@
 from logging import PlaceHolder
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, DateField,  SelectField
+from wtforms import StringField, SubmitField, DateField,  SelectField, PasswordField
 from wtforms.validators import DataRequired, Length, Email
 from enum import Enum
 
@@ -30,5 +30,9 @@ class employeeInsert(FlaskForm):
     Role = SelectField(
         "Role", choices=[(choice.name, choice.value) for choice in RoleTypes]
     )
-    Password = StringField("Password", [DataRequired(), Length(min=8)])
+    Password = PasswordField("Password", [DataRequired(), Length(min=8)])
     submit = SubmitField("Submit", [DataRequired()])
+class LoginForm(FlaskForm):
+    email = StringField("Email",[DataRequired(),Email(), Length(max=100)])
+    password = PasswordField("Password: ", [DataRequired(), Length(max=50)])
+    submit = SubmitField("Login")
