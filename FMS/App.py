@@ -114,7 +114,7 @@ def fleet():
 
 
 @app.route("/fleet/fleetinsert", methods=["POST"])
-def fleetInsert():
+def addFleet():
     formFleet = fleetInsert()
     if request.method == "POST" and formFleet.validate_on_submit():
         BusNumberPlate = formFleet.BusNumberPlate.data
