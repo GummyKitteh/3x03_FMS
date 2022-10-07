@@ -47,11 +47,7 @@ class employeeInsert(FlaskForm):
 
 
 class fleetInsert(FlaskForm):
-    BusNumberPlate = StringField(
-        "Number Plate", [DataRequired(), Length(min=3), Length(max=8)]
-    )
+    BusNumberPlate = StringField("Number Plate", [DataRequired(), Length(max=8)])
     VehicleCapacity = StringField("Vehicle Capacity", [DataRequired(), Length(max=10)])
-    VehicleStatus = StringField(
-        "Vehicle Status", [DataRequired(), Length(min=3), Length(max=20)]
-    )
+    VehicleStatus = StringField("Vehicle Status", [DataRequired(), Length(max=20)])
     submit = SubmitField("Submit", [DataRequired()])

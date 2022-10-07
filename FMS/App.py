@@ -107,25 +107,25 @@ def fleetsearch():
             flash("Cannot find Vehicle")
 
 
-# @app.route("/fleet/insert", methods=["POST"])
-# def fleetInsert():
-#     form = fleetInsert()
-#     if request.method == "POST" and form.validate_on_submit():
-#         BusNumberPlate = form.BusNumberPlate.data
-#         VehicleCapacity = form.VehicleCapacity.data
-#         VehicleStatus = form.VehicleStatus.data
-#         fleet_data = Fleet(BusNumberPlate, VehicleCapacity, VehicleStatus)
-#         db.session.add(fleet_data)
-#         db.session.commit()
-#         flash("Vehicle inserted sucessfully")
-#         return redirect("/fleet")
-#     print("FAILURE")
-
-
 @app.context_processor
 def fleet():
-    form = fleetInsert()
-    return dict(form=form)
+    formFleet = fleetInsert()
+    return dict(formFleet=formFleet)
+
+
+@app.route("/fleet/fleetinsert", methods=["POST"])
+def fleetInsert():
+    formFleet = fleetInsert()
+    if request.method == "POST" and formFleet.validate_on_submit():
+        BusNumberPlate = formFleet.BusNumberPlate.data
+        VehicleCapacity = formFleet.VehicleCapacity.data
+        VehicleStatus = formFleet.VehicleStatus.data
+        fleet_data = Fleet(BusNumberPlate, VehicleCapacity, VehicleStatus)
+        db.session.add(fleet_data)
+        db.session.commit()
+        flash("Vehicle inserted sucessfully")
+        return redirect("/fleet")
+    print("FAILURE")
 
 
 @app.context_processor

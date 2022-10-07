@@ -126,5 +126,29 @@ endblock %} {% block body %}
     </div>
   </div>
   <!-- Modal add Vehicle -->
+  <div id="addVehicle" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title">Add Employee</h4>
+        </div>
+        <div class="modal-body">
+          <form action="/fleet/fleetinsert" method="POST">
+            <div class="form-group text-start">
+              {{ formFleet.hidden_tag() }} {{
+              formFleet.BusNumberPlate.label(class="form-labelmt-3")}} {{
+              formFleet.BusNumberPlate(class="form-control") }} {{
+              formFleet.VehicleCapacity.label(class="form-label mt-3") }} {{
+              formFleet.VehicleCapacity(class="form-control ")}} {{
+              formFleet.VehicleStatus.label(class="form-label mt-3") }} {{
+              formFleet.VehicleStatus(class="form-control ")}}
+              <br />
+              {{formFleet.submit(class="btn btn-secondary")}}
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}
