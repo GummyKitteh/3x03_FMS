@@ -11,11 +11,12 @@ from flask_login import (
     logout_user,
     current_user,
 )
-from form import RoleTypes, employeeInsert, fleetInsert
+from form import RoleTypes, tripInsert, employeeInsert, fleetInsert, TripStatusTypes
+from form import SearchFormEmployee, SearchFormFleet, SearchFormTrip
+
 from enum import Enum
 
 # from torch import equal
-from form import SearchFormEmployee, SearchFormFleet
 import sys
 
 app = Flask(__name__)
@@ -52,6 +53,17 @@ class Employee(db.Model):
         self.PasswordSalt = PasswordSalt
 
 
+class Driver(db.Model):
+    EmployeeId = db.Column(db.Integer, primary_key=True)
+    Assigned = db.Column(db.Integer, nullable=False)
+    DriverStatus = db.Column(db.String(256), nullable=False)
+
+    def __init__(self, EmployeeId, Assigned, DriverStatus):
+        self.EmployeeId = EmployeeId
+        self.Assigned = Assigned
+        self.DriverStatus = DriverStatus
+
+
 class Fleet(db.Model):
     VehicleId = db.Column(db.Integer, primary_key=True)
     BusNumberPlate = db.Column(db.String(8), nullable=False)
@@ -62,6 +74,37 @@ class Fleet(db.Model):
         self.BusNumberPlate = BusNumberPlate
         self.VehicleCapacity = VehicleCapacity
         self.VehicleStatus = VehicleStatus
+
+
+class Trip(db.Model):
+    TripID = db.Column(db.Integer, primary_key=True)
+    EmployeeID = db.Column(db.Integer, nullable=False)
+    VehicleID = db.Column(db.Integer, nullable=False)
+    Origin = db.Column(db.String(256), nullable=False)
+    Destination = db.Column(db.String(256), nullable=False)
+    StartTime = db.Column(db.DateTime, nullable=False)
+    EndTime = db.Column(db.DateTime, nullable=False)
+    TripStatus = db.Column(db.Enum(TripStatusTypes), nullable=False)
+
+    def __init__(
+        self,
+        # TripID,
+        EmployeeID,
+        VehicleID,
+        Origin,
+        Destination,
+        StartTime,
+        EndTime,
+        TripStatus,
+    ):
+        # self.TripID   = TripID
+        self.EmployeeID = EmployeeID
+        self.VehicleID = VehicleID
+        self.Origin = Origin
+        self.Destination = Destination
+        self.StartTime = StartTime
+        self.EndTime = EndTime
+        self.TripStatus = TripStatus
 
 
 @app.route("/")
@@ -164,6 +207,9 @@ def fleetsearch():
 @app.route("/employees")
 def employees():
     all_data = Employee.query.all()
+    # all_data = Employee.query.filter(Employee.Role == "admin")
+    # all_data = Employee.query.filter(Employee.Role == "manager")
+    # all_data = Employee.query.filter(Employee.Role == "driver")
     return render_template("employees.html", employees=all_data)
 
 
@@ -203,12 +249,20 @@ def addEmployee():
         formEmployee.Role.data = ""
         formEmployee.Password.data = ""
         formEmployee.Password.data = ""
-        my_data = Employee(
+        emp_data = Employee(
             FullName, Email, ContactNumber, Role, Password, DOB, PasswordSalt
         )
-        print(my_data)
-        db.session.add(my_data)
+        db.session.add(emp_data)
         db.session.commit()
+
+        if Role == "driver":
+            obj = (
+                db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
+            )
+            driver_data = Driver(obj.EmployeeId, 0, "Account Created")
+            db.session.add(driver_data)
+            db.session.commit()
+
         flash("Employee inserted sucessfully")
         return redirect("/employees")
     else:
@@ -253,12 +307,76 @@ def employeesearch():
         if posts != 0:
             return render_template(
                 "Employees.html",
-                searchFormEmployee=searchFormEmployee,
+                SearchFormEmployee=searchFormEmployee,
                 searched=postsearched,
                 posts=posts,
             )
         else:
             flash("Cannot find Employee")
+
+
+# EMPLOYEE END--------------------------------------------------------------------------
+# TRIPS --------------------------------------------------------------------------------
+@app.route("/trip")
+def trip():
+    all_data = Trip.query.all()
+    return render_template("trip.html", trip=all_data)
+
+
+@app.context_processor
+def trip():
+    formTrip = tripInsert()
+    return dict(formTrip=formTrip)
+
+
+@app.context_processor
+def trip():
+    searchformTrip = SearchFormTrip()
+    return dict(searchformTrip=searchformTrip)
+
+
+@app.route("/trip/tripinsert", methods=["POST"])
+def addTrip():
+    formTrip = tripInsert()
+    if request.method == "POST" and formTrip.validate_on_submit():
+        EmployeeID = formTrip.EmployeeID.data
+        VehicleID = formTrip.VehicleID.data
+        Origin = formTrip.Origin.data
+        Destination = formTrip.Destination.data
+        StartTime = formTrip.StartTime.data
+        EndTime = formTrip.EndTime.data
+        TripStatus = formTrip.TripStatus.data
+        trip_data = Trip(
+            EmployeeID, VehicleID, Origin, Destination, StartTime, EndTime, TripStatus
+        )
+        db.session.add(trip_data)
+        db.session.commit()
+        flash("Trip inserted sucessfully")
+        return redirect("/trip")
+    print("FAILURE")
+
+
+@app.route("/trip/tripSearch", methods=["POST"])
+def tripSearch():
+    searchformTrip = SearchFormTrip()
+    posts = Trip.query
+    if request.method == "POST" and searchformTrip.validate_on_submit():
+        postsearched = searchformTrip.searched.data
+        searchformTrip.searched.data = ""
+        posts = posts.filter(Trip.TripID.like("%" + postsearched + "%"))
+        posts = posts.order_by(Trip.TripID).all()
+        if posts != 0:
+            return render_template(
+                "trip.html",
+                searchformTrip=searchformTrip,
+                searched=postsearched,
+                posts=posts,
+            )
+        else:
+            flash("Cannot find Trip")
+
+
+# TRIPS END-----------------------------------------------------------------------------
 
 
 if __name__ == "__main__":
