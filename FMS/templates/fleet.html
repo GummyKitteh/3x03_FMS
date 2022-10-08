@@ -92,7 +92,7 @@ endblock %} {% block body %}
                 class="btn btn-warning btn-xs"
                 data-bs-toggle="modal"
                 data-bs-target="#modaledit{{row.VehicleId}}"
-                >View</a
+                >Edit</a
               >
               <a
                 href="/fleet/delete/{{row.VehicleId}}"
@@ -103,7 +103,7 @@ endblock %} {% block body %}
             </td>
           </tr>
           <!-- Modal Edit Fleet -->
-          <div id="modaledit{{row.VehicleId}}" class="modal fade" role="dialog">
+          <!-- <div id="modaledit{{row.VehicleId}}" class="modal fade" role="dialog">
             <div class="modal-dialog">
               <div class="modal-content">
                 <div class="modal-header">
@@ -119,6 +119,52 @@ endblock %} {% block body %}
                 </div>
               </div>
             </div>
+          </div> -->
+          <div id="modaledit{{row.VehicleId}}" class="modal fade" role="dialog">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h4 class="modal-title">Update Information</h4>
+                </div>
+                <div class="modal-body">
+                  <form action="{{url_for('fleetUpdate')}}" method="POST">
+                    <div class="form-group text-start">
+                      <label class="form-label mt-3">Number Plate</label>
+                      <input
+                        type="hidden"
+                        class="form-control"
+                        name="VehicleId"
+                        value="{{row.VehicleId}}"
+                      />
+                      <input
+                        type="text"
+                        class="form-control"
+                        name="BusNumberPlate"
+                        value="{{row.BusNumberPlate}}"
+                      />
+                      <label class="form-label mt-3">Vehicle Capacity</label>
+                      <input
+                        type="number"
+                        class="form-control"
+                        name="VehicleCapacity"
+                        value="{{row.VehicleCapacity}}"
+                      />
+                      <label class="form-label mt-3">Vehicle Status</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        name="VehicleStatus"
+                        value="{{row.VehicleStatus}}"
+                      />
+                      <br />
+                      <button class="btn btn-primary" type="submit">
+                        Update Vehicle
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
           </div>
           {% endfor %}
         </table>
@@ -130,7 +176,7 @@ endblock %} {% block body %}
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h4 class="modal-title">Add Employee</h4>
+          <h4 class="modal-title">Add Vehicle</h4>
         </div>
         <div class="modal-body">
           <form action="/fleet/fleetinsert" method="POST">

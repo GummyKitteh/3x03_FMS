@@ -113,6 +113,20 @@ def addFleet():
     print("FAILURE")
 
 
+@app.route("/fleetUpdate", methods=["GET", "POST"])
+def fleetUpdate():
+    if request.method == "POST":
+        fleet_data = Fleet.query.get(request.form.get("VehicleId"))
+        fleet_data.BusNumberPlate = request.form["BusNumberPlate"]
+        fleet_data.VehicleCapacity = request.form["VehicleCapacity"]
+        fleet_data.VehicleStatus = request.form["VehicleStatus"]
+
+        db.session.commit()
+        flash("Vehicle Updated Successfully")
+
+        return redirect(url_for("fleet"))
+
+
 @app.route("/fleet/delete/<id>", methods=["GET", "POST"])
 def delete(id):
     if request.method == "GET":

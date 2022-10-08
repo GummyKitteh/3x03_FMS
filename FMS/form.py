@@ -1,6 +1,6 @@
 from logging import PlaceHolder
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, DateField, SelectField
+from wtforms import StringField, SubmitField, DateField, SelectField, IntegerField
 from wtforms.validators import DataRequired, Length, Email
 from enum import Enum
 
@@ -41,6 +41,6 @@ class employeeInsert(FlaskForm):
 
 class fleetInsert(FlaskForm):
     BusNumberPlate = StringField("Number Plate", [DataRequired(), Length(max=8)])
-    VehicleCapacity = StringField("Vehicle Capacity", [DataRequired(), Length(max=10)])
+    VehicleCapacity = IntegerField("Vehicle Capacity", [DataRequired()])
     VehicleStatus = StringField("Vehicle Status", [DataRequired(), Length(max=20)])
     submit = SubmitField("Submit", [DataRequired()])
