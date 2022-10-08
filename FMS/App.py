@@ -16,7 +16,6 @@ from enum import Enum
 
 # from torch import equal
 from form import SearchFormEmployee, SearchFormFleet
-
 import sys
 
 app = Flask(__name__)
@@ -31,26 +30,26 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
 
-# class Employee(db.Model):
-#     EmployeeId = db.Column(db.Integer, primary_key=True)
-#     FullName = db.Column(db.String(50), nullable=False)
-#     Email = db.Column(db.String(100), nullable=False)
-#     ContactNumber = db.Column(db.Integer, nullable=False)
-#     Role = db.Column(db.Enum(RoleTypes), nullable=False)
-#     Password = db.Column(db.String(64), nullable=False)
-#     DOB = db.Column(db.DateTime, nullable=False)
-#     PasswordSalt = db.Column(db.String(64), nullable=False)
+class Employee(db.Model):
+    EmployeeId = db.Column(db.Integer, primary_key=True)
+    FullName = db.Column(db.String(50), nullable=False)
+    Email = db.Column(db.String(100), nullable=False)
+    ContactNumber = db.Column(db.Integer, nullable=False)
+    Role = db.Column(db.Enum(RoleTypes), nullable=False)
+    Password = db.Column(db.String(64), nullable=False)
+    DOB = db.Column(db.DateTime, nullable=False)
+    PasswordSalt = db.Column(db.String(64), nullable=False)
 
-#     def __init__(
-#         self, FullName, Email, ContactNumber, Role, Password, DOB, PasswordSalt
-#     ):
-#         self.FullName = FullName
-#         self.Email = Email
-#         self.ContactNumber = ContactNumber
-#         self.Role = Role
-#         self.Password = Password
-#         self.DOB = DOB
-#         self.PasswordSalt = PasswordSalt
+    def __init__(
+        self, FullName, Email, ContactNumber, Role, Password, DOB, PasswordSalt
+    ):
+        self.FullName = FullName
+        self.Email = Email
+        self.ContactNumber = ContactNumber
+        self.Role = Role
+        self.Password = Password
+        self.DOB = DOB
+        self.PasswordSalt = PasswordSalt
 
 
 class Fleet(db.Model):
@@ -87,6 +86,44 @@ def fleet():
     return render_template("fleet.html", fleet=all_data)
 
 
+@app.context_processor
+def fleet():
+    formFleet = fleetInsert()
+    return dict(formFleet=formFleet)
+
+
+@app.context_processor
+def fleet():
+    searchformFleet = SearchFormFleet()
+    return dict(searchformFleet=searchformFleet)
+
+
+@app.route("/fleet/fleetinsert", methods=["POST"])
+def addFleet():
+    formFleet = fleetInsert()
+    if request.method == "POST" and formFleet.validate_on_submit():
+        BusNumberPlate = formFleet.BusNumberPlate.data
+        VehicleCapacity = formFleet.VehicleCapacity.data
+        VehicleStatus = formFleet.VehicleStatus.data
+        fleet_data = Fleet(BusNumberPlate, VehicleCapacity, VehicleStatus)
+        db.session.add(fleet_data)
+        db.session.commit()
+        flash("Vehicle inserted sucessfully")
+        return redirect("/fleet")
+    print("FAILURE")
+
+
+@app.route("/fleet/delete/<id>", methods=["GET", "POST"])
+def delete(id):
+    if request.method == "GET":
+        fleet_data = Fleet.query.get(id)
+        db.session.delete(fleet_data)
+        db.session.commit()
+
+        flash("Vehicle deleted sucessfully.")
+        return redirect(url_for("fleet"))
+
+
 @app.route("/fleet/fleetsearch", methods=["POST"])
 def fleetsearch():
     searchform = SearchFormFleet()
@@ -106,94 +143,67 @@ def fleetsearch():
         else:
             flash("Cannot find Vehicle")
 
-
-@app.context_processor
-def fleet():
-    formFleet = fleetInsert()
-    return dict(formFleet=formFleet)
-
-
-@app.route("/fleet/fleetinsert", methods=["POST"])
-def addFleet():
-    formFleet = fleetInsert()
-    if request.method == "POST" and formFleet.validate_on_submit():
-        BusNumberPlate = formFleet.BusNumberPlate.data
-        VehicleCapacity = formFleet.VehicleCapacity.data
-        VehicleStatus = formFleet.VehicleStatus.data
-        fleet_data = Fleet(BusNumberPlate, VehicleCapacity, VehicleStatus)
-        db.session.add(fleet_data)
-        db.session.commit()
-        flash("Vehicle inserted sucessfully")
-        return redirect("/fleet")
-    print("FAILURE")
-
-
-@app.context_processor
-def fleet():
-    searchform = SearchFormFleet()
-    return dict(searchform=searchform)
-
-
-@app.route("/fleet/delete/<id>", methods=["GET", "POST"])
-def delete(id):
-    if request.method == "GET":
-        fleet_data = Fleet.query.get(id)
-        db.session.delete(fleet_data)
-        db.session.commit()
-
-        flash("Vehicle deleted sucessfully.")
-        return redirect(url_for("fleet"))
-
     # FLEET END-------------------------------------------------------------------------------
     # EMPLOYEE -------------------------------------------------------------------------------
 
-    # @app.route("/employees")
-    # def employees():
-    # return render_template("employees.html")
-    # all_data = Employee.query.all()
-    # return render_template("employees.html", employees=all_data)
 
-    # @app.context_processor
-    # def employees():
-    #     form = employeeInsert()
-    #     return dict(form=form)
+@app.route("/employees")
+def employees():
+    all_data = Employee.query.all()
+    return render_template("employees.html", employees=all_data)
 
-    # @app.route("/employees/insert", methods=["POST"])
-    # def insert():
-    #     form = employeeInsert()
-    #     FullName = None
-    #     Email = None
-    #     ContactNumber = None
-    #     DOB = None
-    #     Role = None
-    #     Password = None
-    #     if request.method == "POST" and form.validate_on_submit():
-    #         FullName = form.FullName.data
-    #         ContactNumber = form.ContactNumber.data
-    #         Email = form.Email.data
-    #         Role = form.Role.data
-    #         Password = form.Password.data
-    #         DOB = form.DOB.data
-    #         PasswordSalt = form.Password.data
-    #         form.FullName.data = ""
-    #         form.ContactNumber.data = ""
-    #         form.Email.data = ""
-    #         form.DOB.data = ""
-    #         form.Role.data = ""
-    #         form.Password.data = ""
-    #         form.Password.data = ""
-    #         my_data = Employee(
-    #             FullName, Email, ContactNumber, Role, Password, DOB, PasswordSalt
-    #         )
-    #         print(my_data)
-    #         db.session.add(my_data)
-    #         db.session.commit()
-    #         flash("Employee Inserted Sucessfully")
-    #         return redirect("/employees")
-    #     print("FAILURE")
 
-    # @app.route("/update", methods=["GET", "POST"])
-    # def update():
+@app.context_processor
+def employees():
+    formEmployee = employeeInsert()
+    return dict(formEmployee=formEmployee)
+
+
+@app.context_processor
+def employees():
+    searchFormEmployee = SearchFormEmployee()
+    return dict(searchFormEmployee=searchFormEmployee)
+
+
+@app.route("/employees/insert", methods=["POST"])
+def addEmployee():
+    formEmployee = employeeInsert()
+    FullName = None
+    Email = None
+    ContactNumber = None
+    DOB = None
+    Role = None
+    Password = None
+    if request.method == "POST" and formEmployee.validate_on_submit():
+        FullName = formEmployee.FullName.data
+        ContactNumber = formEmployee.ContactNumber.data
+        Email = formEmployee.Email.data
+        Role = formEmployee.Role.data
+        Password = formEmployee.Password.data
+        DOB = formEmployee.DOB.data
+        PasswordSalt = formEmployee.Password.data
+        formEmployee.FullName.data = ""
+        formEmployee.ContactNumber.data = ""
+        formEmployee.Email.data = ""
+        formEmployee.DOB.data = ""
+        formEmployee.Role.data = ""
+        formEmployee.Password.data = ""
+        formEmployee.Password.data = ""
+        my_data = Employee(
+            FullName, Email, ContactNumber, Role, Password, DOB, PasswordSalt
+        )
+        print(my_data)
+        db.session.add(my_data)
+        db.session.commit()
+        flash("Employee inserted sucessfully")
+        return redirect("/employees")
+    else:
+        flash("Employee insert failed")
+        return redirect("/employees")
+
+
+@app.route("/update", methods=["GET", "POST"])
+def empployeeUpdate():
     if request.method == "POST":
         my_data = Employee.query.get(request.form.get("id"))
         my_data.name = request.form["name"]
@@ -205,41 +215,36 @@ def delete(id):
 
         return redirect(url_for("employees"))
 
-    # @app.route("/employees/delete/<id>", methods=["GET", "POST"])
-    # def delete(id):
-    # if request.method == "GET":
-    #     my_data = Employee.query.get(id)
-    #     db.session.delete(my_data)
-    #     db.session.commit()
 
-    #     flash("Employee deleted sucessfully.")
-    #     return redirect(url_for("employees"))
+@app.route("/employees/delete/<id>", methods=["GET", "POST"])
+def employeeDelete(id):
+    if request.method == "GET":
+        my_data = Employee.query.get(id)
+        db.session.delete(my_data)
+        db.session.commit()
 
-
-# @app.context_processor
-# def index():
-#     searchform = SearchFormEmployee()
-#     return dict(searchform=searchform)
+        flash("Employee deleted sucessfully.")
+        return redirect(url_for("employees"))
 
 
-# @app.route("/employees/employeesearch", methods=["POST"])
-# def employeesearch():
-#     searchform = SearchFormEmployee()
-#     posts = Employee.query
-#     if request.method == "POST" and searchform.validate_on_submit():
-#         postsearched = searchform.searched.data
-#         searchform.searched.data = ""
-#         posts = posts.filter(Employee.FullName.like("%" + postsearched + "%"))
-#         posts = posts.order_by(Employee.EmployeeId).all()
-#         if posts != 0:
-#             return render_template(
-#                 "Employees.html",
-#                 searchform=searchform,
-#                 searched=postsearched,
-#                 posts=posts,
-#             )
-#         else:
-#             flash("Cannot find Employee")
+@app.route("/employees/employeesearch", methods=["POST"])
+def employeesearch():
+    searchFormEmployee = SearchFormEmployee()
+    posts = Employee.query
+    if request.method == "POST" and searchFormEmployee.validate_on_submit():
+        postsearched = searchFormEmployee.searched.data
+        searchFormEmployee.searched.data = ""
+        posts = posts.filter(Employee.FullName.like("%" + postsearched + "%"))
+        posts = posts.order_by(Employee.EmployeeId).all()
+        if posts != 0:
+            return render_template(
+                "Employees.html",
+                searchFormEmployee=searchFormEmployee,
+                searched=postsearched,
+                posts=posts,
+            )
+        else:
+            flash("Cannot find Employee")
 
 
 if __name__ == "__main__":

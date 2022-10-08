@@ -5,13 +5,6 @@ from wtforms.validators import DataRequired, Length, Email
 from enum import Enum
 
 
-# class datainsert(FlaskForm):
-#     name = StringField("Name", [DataRequired(), Length(max=50)])
-#     email = StringField("Email", [DataRequired(), Email(), Length(max=100)])
-#     phone = StringField("Phone", [DataRequired(), Length(min=8), Length(max=8)])
-#     submit = SubmitField("Submit")
-
-
 class RoleTypes(Enum):
     admin = "admin"
     manager = "manager"
