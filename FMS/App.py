@@ -1,6 +1,8 @@
+from distutils.log import Log
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
+from sqlalchemy import true
 from wtforms import StringField, SubmitField, SelectField, DateTimeField, DateField
 from wtforms.validators import DataRequired, Length, Email
 from flask_login import (
@@ -31,13 +33,13 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
 
-class Employee(db.Model):
+class Employee(db.Model, UserMixin):
     EmployeeId = db.Column(db.Integer, primary_key=True)
     FullName = db.Column(db.String(50), nullable=False)
-    Email = db.Column(db.String(100), nullable=False)
+    Email = db.Column(db.String(100), nullable=False, unique=True)
     ContactNumber = db.Column(db.Integer, nullable=False)
     Role = db.Column(db.Enum(RoleTypes), nullable=False)
-    Password = db.Column(db.String(64), nullable=False)
+    Password = db.Column(db.String(64), nullable=False, unique=True)
     DOB = db.Column(db.DateTime, nullable=False)
     PasswordSalt = db.Column(db.String(64), nullable=False)
 
@@ -51,6 +53,8 @@ class Employee(db.Model):
         self.Password = Password
         self.DOB = DOB
         self.PasswordSalt = PasswordSalt
+    def get_id(self):
+        return (self.EmployeeId)
 
 
 class Driver(db.Model):
@@ -106,6 +110,12 @@ class Trip(db.Model):
         self.EndTime = EndTime
         self.TripStatus = TripStatus
 
+@login_manager.user_loader
+def load_user(EmployeeId):
+    try:
+        return Employee.query.get(int(EmployeeId))
+    except:
+        return None
 
 @app.route("/")
 def index():
@@ -114,9 +124,30 @@ def index():
 
 @app.route("/login")
 def login():
-    return render_template("login.html")
-
-
+    form = LoginForm()
+    account = Employee.query
+    if request.method == "POST" and form.validate_on_submit():
+        user = account.filter_by(Email = form.Email.data).first()
+        
+        if user:
+            if user.Password == form.password.data:
+                login_user(user)
+                for role in RoleTypes:
+                    print("TESTING"+str(role.manager))
+                    print(user.Role)
+                    if user.Role == role.manager:
+                        return redirect(url_for("employees"))
+                    else:
+                        return redirect(url_for("index"))
+        else:
+            return render_template("login.html", form =form)
+    return render_template("login.html", form =form)
+@app.route('/logout',methods=['GET','POST'])
+@login_required
+def logout():
+    logout_user()
+    flash("You have been locked out")
+    return redirect(url_for("index"))
 @app.route("/reset")
 def reset():
     return render_template("reset.html")

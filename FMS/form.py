@@ -7,6 +7,7 @@ from wtforms import (
     SelectField,
     IntegerField,
     TimeField,
+    PasswordField
 )
 from wtforms.validators import DataRequired, Length, Email
 from enum import Enum
@@ -55,7 +56,7 @@ class employeeInsert(FlaskForm):
     Role = SelectField(
         "Role", choices=[(choice.name, choice.value) for choice in RoleTypes]
     )
-    Password = StringField("Password", [DataRequired(), Length(min=8)])
+    Password = PasswordField("Password", [DataRequired(), Length(min=8)])
     submit = SubmitField("Submit", [DataRequired()])
 
 
@@ -77,3 +78,7 @@ class tripInsert(FlaskForm):
         "Status", choices=[(choice.name, choice.value) for choice in TripStatusTypes]
     )
     submit = SubmitField("Submit", [DataRequired()])
+class LoginForm(FlaskForm):
+    Email = StringField("Email",[DataRequired(),Email(), Length(max=100)])
+    password = PasswordField("Password: ", [DataRequired(), Length(max=50)])
+    submit = SubmitField("Login")
