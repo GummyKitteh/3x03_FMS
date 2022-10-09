@@ -13,7 +13,15 @@ from flask_login import (
     logout_user,
     current_user,
 )
-from form import RoleTypes, tripInsert, employeeInsert, fleetInsert, TripStatusTypes, LoginForm
+from form import (
+    RoleTypes,
+    # tripInsert,
+    employeeInsert,
+    fleetInsert,
+    TripStatusTypes,
+    IntegerField,
+    LoginForm,
+)
 from form import SearchFormEmployee, SearchFormFleet, SearchFormTrip
 
 from enum import Enum
@@ -53,8 +61,9 @@ class Employee(db.Model, UserMixin):
         self.Password = Password
         self.DOB = DOB
         self.PasswordSalt = PasswordSalt
+
     def get_id(self):
-        return (self.EmployeeId)
+        return self.EmployeeId
 
 
 class Driver(db.Model):
@@ -110,10 +119,12 @@ class Trip(db.Model):
         self.EndTime = EndTime
         self.TripStatus = TripStatus
 
-#Flask_login Stuff
+
+# Flask_login Stuff
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'login'
+login_manager.login_view = "login"
+
 
 @login_manager.user_loader
 def load_user(EmployeeId):
@@ -122,36 +133,40 @@ def load_user(EmployeeId):
     except:
         return None
 
+
 @app.route("/")
 def index():
     return render_template("index.html")
 
-@app.route("/login", methods=["GET","POST"])
+
+@app.route("/login", methods=["GET", "POST"])
 def login():
     form = LoginForm()
     account = Employee.query
     if request.method == "POST" and form.validate_on_submit():
-        user = account.filter_by(Email = form.Email.data).first()
-        
+        user = account.filter_by(Email=form.Email.data).first()
+
         if user:
             if user.Password == form.password.data:
                 login_user(user)
-                #Check of role
+                # Check of role
                 for role in RoleTypes:
                     if user.Role == role.manager:
-                        #filter of query is
+                        # filter of query is
                         return redirect(url_for("employees"))
                     else:
                         return redirect(url_for("index"))
         else:
-            return render_template("login.html", form =form)
-    return render_template("login.html", form =form)
+            return render_template("login.html", form=form)
+    return render_template("login.html", form=form)
 
-@app.route('/logout',methods=['GET','POST'])
+
+@app.route("/logout", methods=["GET", "POST"])
 @login_required
 def logout():
     logout_user()
     return redirect(url_for("index"))
+
 
 @app.route("/reset")
 def reset():
@@ -372,6 +387,28 @@ def trip():
 def trip():
     searchformTrip = SearchFormTrip()
     return dict(searchformTrip=searchformTrip)
+
+
+class tripInsert(FlaskForm):
+    EmployeeID = SelectField(
+        "Employee",
+        choices=[
+            (row.EmployeeId, row.FullName)
+            for row in Employee.query.filter_by(Role="driver")
+        ],
+    )
+    VehicleID = SelectField(
+        "Vehicle",
+        choices=[(row.VehicleId, row.BusNumberPlate) for row in Fleet.query.all()],
+    )
+    Origin = StringField("Origin", [DataRequired(), Length(max=256)])
+    Destination = StringField("Destination", [DataRequired(), Length(max=256)])
+    StartTime = DateField("Start Time")
+    EndTime = DateField("End Time")
+    TripStatus = SelectField(
+        "Status", choices=[(choice.name, choice.value) for choice in TripStatusTypes]
+    )
+    submit = SubmitField("Submit", [DataRequired()])
 
 
 @app.route("/trip/tripinsert", methods=["POST"])

@@ -7,7 +7,7 @@ from wtforms import (
     SelectField,
     IntegerField,
     TimeField,
-    PasswordField
+    PasswordField,
 )
 from wtforms.validators import DataRequired, Length, Email
 from enum import Enum
@@ -67,18 +67,21 @@ class fleetInsert(FlaskForm):
     submit = SubmitField("Submit", [DataRequired()])
 
 
-class tripInsert(FlaskForm):
-    EmployeeID = IntegerField("Employee ID", [DataRequired()])
-    VehicleID = IntegerField("Vehicle ID", [DataRequired()])
-    Origin = StringField("Origin", [DataRequired(), Length(max=256)])
-    Destination = StringField("Destination", [DataRequired(), Length(max=256)])
-    StartTime = DateField("Start Time")
-    EndTime = DateField("End Time")
-    TripStatus = SelectField(
-        "Status", choices=[(choice.name, choice.value) for choice in TripStatusTypes]
-    )
-    submit = SubmitField("Submit", [DataRequired()])
+# class tripInsert(FlaskForm):
+#     # EmployeeID = IntegerField("Employee ID", [DataRequired()])
+#     EmployeeID = SelectField(query_factory=lambda: Employee.query.all())
+#     VehicleID = IntegerField("Vehicle ID", [DataRequired()])
+#     Origin = StringField("Origin", [DataRequired(), Length(max=256)])
+#     Destination = StringField("Destination", [DataRequired(), Length(max=256)])
+#     StartTime = DateField("Start Time")
+#     EndTime = DateField("End Time")
+#     TripStatus = SelectField(
+#         "Status", choices=[(choice.name, choice.value) for choice in TripStatusTypes]
+#     )
+#     submit = SubmitField("Submit", [DataRequired()])
+
+
 class LoginForm(FlaskForm):
-    Email = StringField("Email",[DataRequired(),Email(), Length(max=100)])
+    Email = StringField("Email", [DataRequired(), Email(), Length(max=100)])
     password = PasswordField("Password: ", [DataRequired(), Length(max=50)])
     submit = SubmitField("Login")
