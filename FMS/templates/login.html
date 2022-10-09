@@ -11,7 +11,7 @@ endblock %} {% block body %}
   <body class="">
     <main class="form-signin w-100 m-auto">
       <h1 class="display-5 my-5">Login</h1>
-      <form>
+      <form action="/login" method="POST">
         {{form.hidden_tag()}}
         <div class="input-group mb-3">
           <!-- <span class="input-group-text" id="usernameID">Username</span> -->
@@ -22,8 +22,8 @@ endblock %} {% block body %}
           aria-label="Username"
           aria-describedby="usernameID"
         /> -->
-          {{form.email.label(class="input-group-text")}}
-          {{form.email(class="form-control")}}
+          {{form.Email.label(class="input-group-text")}}
+          {{form.Email(class="form-control")}}
 
         </div>
         <div class="input-group mb-3">

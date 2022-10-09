@@ -33,6 +33,6 @@ class employeeInsert(FlaskForm):
     Password = PasswordField("Password", [DataRequired(), Length(min=8)])
     submit = SubmitField("Submit", [DataRequired()])
 class LoginForm(FlaskForm):
-    email = StringField("Email",[DataRequired(),Email(), Length(max=100)])
+    Email = StringField("Email",[DataRequired(),Email(), Length(max=100)])
     password = PasswordField("Password: ", [DataRequired(), Length(max=50)])
     submit = SubmitField("Login")
