@@ -38,87 +38,87 @@ Employees {% endblock %} {% block body %}
             Add Employee
           </button>
         </div>
-        {% endfor %} {% endif %} {% endwith %}
-        <table class="table table-hover table-dark">
-          <tr>
-            <th>ID</th>
-            <th>Full Name</th>
-            <th>Email</th>
-            <th>Contact Number</th>
-            <th></th>
-          </tr>
-          {% if posts != 0 %}
-          {% for post in posts %}
-          <tr>
-            <td>{{post.EmployeeId}}</td>
-            <td>{{post.FullName}}</td>
-            <td>{{post.Email}}</td>
-            <td>{{post.ContactNumber}}</td>
-            <td>
-              <a href="/update/{{post.EmployeeId}}" 
-              class="btn btn-warning btn-xs"
-              data-bs-toggle="modal"
-              data-bs-target="#modalview{{post.EmployeeId}}">View</a>
-              <a
-                href="/delete/{{post.EmployeeId}}"
-                class="btn btn-danger btn-xs"
-                onclick="return confirm('Are You Sure To Delete?')"
-                >Delete</a
-              >
-            </td>
-          </tr>
-          <!-- Modal View Employees -->
-          <div id="modalview{{post.EmployeeId}}" class="modal fade" role="dialog">
-            <div class="modal-dialog">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h4 class="modal-title">View Information</h4>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group text-start">
-                      <p>Employee Id: {{post.EmployeeId}}</p>
-                      <p>Full Name: {{post.FullName}}</p>
-                      <p>Email: {{post.Email}}</p>
-                      <p>Contact Number: {{post.ContactNumber}}</p>
-                      <p>Date of Birth: {{post.DOB}}</p>
-                      <p>Role: {{post.Role.value}}</p>
-                    </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          {% endfor %}
-          {% endif %}
-          {% for row in employees %}
-          <tr>
-            <td>{{row.EmployeeId}}</td>
-            <td>{{row.FullName}}</td>
-            <td>{{row.Email}}</td>
-            <td>{{row.ContactNumber}}</td>
-            <td>
-              <a
-                href="/employees/view/{{row.EmployeeId}}"
-                class="btn btn-warning btn-xs"
-                data-bs-toggle="modal"
-                data-bs-target="#modalview{{row.EmployeeId}}"
-                >View</a
-              >
-              <a
-                href="/employees/delete/{{row.EmployeeId}}"
-                class="btn btn-danger btn-xs"
-                onclick="return confirm('Confirm Delete?')"
-                >Delete</a
-              >
-            </td>
-          </tr>
-          <!-- Modal View Employees -->
-          <div id="modalview{{row.EmployeeId}}" class="modal fade" role="dialog">
-            <div class="modal-dialog">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h4 class="modal-title">View Information</h4>
-                </div>
-                <div class="modal-body">
+      </div>
+      {% with messages = get_flashed_messages() %} {% if messages %} {% for
+      message in messages %}
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+        ></button>
+        {{message}}
+      </div>
+      {% endfor %} {% endif %} {% endwith %}
+      <div class="table-responsive">
+        <table class="table table-striped table-sm table-hover table-dark">
+          <thead>
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Full Name</th>
+              <th scope="col">Email</th>
+              <th scope="col">Contact Number</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if posts != 0 %} {% for post in posts %}
+            <tr>
+              <td>{{post.EmployeeId}}</td>
+              <td>{{post.FullName}}</td>
+              <td>{{post.Email}}</td>
+              <td>{{post.ContactNumber}}</td>
+              <td>
+                <a
+                  href="/update/{{post.id}}"
+                  class="btn btn-warning btn-xs"
+                  data-bs-toggle="modal"
+                  data-bs-target="#modaledit{{post.id}}"
+                  >Edit</a
+                >
+                <a
+                  href="/delete/{{post.id}}"
+                  class="btn btn-danger btn-xs"
+                  onclick="return confirm('Are You Sure To Delete?')"
+                  >Delete</a
+                >
+              </td>
+            </tr>
+            {% endfor %} {% endif %} {% for row in employees %}
+            <tr>
+              <td>{{row.EmployeeId}}</td>
+              <td>{{row.FullName}}</td>
+              <td>{{row.Email}}</td>
+              <td>{{row.ContactNumber}}</td>
+              <td>
+                <a
+                  href="/employees/view/{{row.EmployeeId}}"
+                  class="btn btn-warning btn-xs"
+                  data-bs-toggle="modal"
+                  data-bs-target="#modaledit{{row.EmployeeId}}"
+                  >View</a
+                >
+                <a
+                  href="/employees/delete/{{row.EmployeeId}}"
+                  class="btn btn-danger btn-xs"
+                  onclick="return confirm('Confirm Delete?')"
+                  >Delete</a
+                >
+              </td>
+            </tr>
+            <!-- Modal Edit Employees -->
+            <div
+              id="modaledit{{row.EmployeeId}}"
+              class="modal fade"
+              role="dialog"
+            >
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h4 class="modal-title">View Information</h4>
+                  </div>
+                  <div class="modal-body">
                     <div class="form-group text-start">
                       <p>Employee Id: {{row.EmployeeId}}</p>
                       <p>Full Name: {{row.FullName}}</p>

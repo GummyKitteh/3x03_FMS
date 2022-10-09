@@ -13,7 +13,7 @@ from flask_login import (
     logout_user,
     current_user,
 )
-from form import RoleTypes, tripInsert, employeeInsert, fleetInsert, TripStatusTypes
+from form import RoleTypes, tripInsert, employeeInsert, fleetInsert, TripStatusTypes, LoginForm
 from form import SearchFormEmployee, SearchFormFleet, SearchFormTrip
 
 from enum import Enum
@@ -110,6 +110,11 @@ class Trip(db.Model):
         self.EndTime = EndTime
         self.TripStatus = TripStatus
 
+#Flask_login Stuff
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
 @login_manager.user_loader
 def load_user(EmployeeId):
     try:
@@ -121,8 +126,7 @@ def load_user(EmployeeId):
 def index():
     return render_template("index.html")
 
-
-@app.route("/login")
+@app.route("/login", methods=["GET","POST"])
 def login():
     form = LoginForm()
     account = Employee.query
@@ -132,22 +136,23 @@ def login():
         if user:
             if user.Password == form.password.data:
                 login_user(user)
+                #Check of role
                 for role in RoleTypes:
-                    print("TESTING"+str(role.manager))
-                    print(user.Role)
                     if user.Role == role.manager:
+                        #filter of query is
                         return redirect(url_for("employees"))
                     else:
                         return redirect(url_for("index"))
         else:
             return render_template("login.html", form =form)
     return render_template("login.html", form =form)
+
 @app.route('/logout',methods=['GET','POST'])
 @login_required
 def logout():
     logout_user()
-    flash("You have been locked out")
     return redirect(url_for("index"))
+
 @app.route("/reset")
 def reset():
     return render_template("reset.html")
@@ -155,6 +160,7 @@ def reset():
 
 # FLEET-------------------------------------------------------------------------------
 @app.route("/fleet")
+@login_required
 def fleet():
     all_data = Fleet.query.all()
     return render_template("fleet.html", fleet=all_data)
@@ -236,6 +242,7 @@ def fleetsearch():
 
 
 @app.route("/employees")
+@login_required
 def employees():
     all_data = Employee.query.all()
     # all_data = Employee.query.filter(Employee.Role == "admin")
@@ -319,7 +326,7 @@ def addEmployee():
 def employeeDelete(id):
     if request.method == "GET":
         my_data = Employee.query.get(id)
-        db.session.delete(my_data, cascade="all, delete-orphan")
+        db.session.delete(my_data)
         db.session.commit()
 
         flash("Employee deleted sucessfully.")
@@ -349,6 +356,7 @@ def employeesearch():
 # EMPLOYEE END--------------------------------------------------------------------------
 # TRIPS --------------------------------------------------------------------------------
 @app.route("/trip")
+@login_required
 def trip():
     all_data = Trip.query.all()
     return render_template("trip.html", trip=all_data)
