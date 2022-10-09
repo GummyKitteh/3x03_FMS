@@ -270,18 +270,18 @@ def addEmployee():
         return redirect("/employees")
 
 
-@app.route("/update", methods=["GET", "POST"])
-def empployeeUpdate():
-    if request.method == "POST":
-        my_data = Employee.query.get(request.form.get("id"))
-        my_data.name = request.form["name"]
-        my_data.email = request.form["email"]
-        my_data.phone = request.form["phone"]
+# @app.route("/update", methods=["GET", "POST"])
+# def empployeeUpdate():
+#     if request.method == "POST":
+#         my_data = Employee.query.get(request.form.get("id"))
+#         my_data.name = request.form["name"]
+#         my_data.email = request.form["email"]
+#         my_data.phone = request.form["phone"]
 
-        db.session.commit()
-        flash("Employee Updated Successfully")
+#         db.session.commit()
+#         flash("Employee Updated Successfully")
 
-        return redirect(url_for("employees"))
+#         return redirect(url_for("employees"))
 
 
 @app.route("/employees/delete/<id>", methods=["GET", "POST"])
@@ -374,6 +374,35 @@ def tripSearch():
             )
         else:
             flash("Cannot find Trip")
+
+
+@app.route("/trip/tripUpdate", methods=["GET", "POST"])
+def tripUpdate():
+    if request.method == "POST":
+        trip_data = Trip.query.get(request.form.get("TripID"))
+        trip_data.EmployeeID = request.form["EmployeeID"]
+        trip_data.VehicleID = request.form["VehicleID"]
+        trip_data.Origin = request.form["Origin"]
+        trip_data.Destination = request.form["Destination"]
+        trip_data.StartTime = request.form["Start Time"]
+        trip_data.EndTime = request.form["End Time"]
+        trip_data.TripStatus = request.form["TripStatus"]
+
+        db.session.commit()
+        flash("Trip Updated Successfully")
+
+        return redirect(url_for("trip"))
+
+
+@app.route("/trip/delete/<id>", methods=["GET", "POST"])
+def tripDelete(id):
+    if request.method == "GET":
+        trip_data = Trip.query.get(id)
+        db.session.delete(trip_data)
+        db.session.commit()
+
+        flash("Trip deleted sucessfully.")
+        return redirect(url_for("trip"))
 
 
 # TRIPS END-----------------------------------------------------------------------------

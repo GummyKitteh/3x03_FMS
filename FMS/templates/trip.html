@@ -1,4 +1,4 @@
-{% extends 'base.html' %} {% include 'header.html' %} {% block title %} Fleet {%
+{% extends 'base.html' %} {% include 'header.html' %} {% block title %} Trip {%
 endblock %} {% block body %}
 
 <div class="container">
@@ -100,14 +100,14 @@ endblock %} {% block body %}
             <td>{{row.TripStatus.value}}</td>
             <td>
               <a
-                href="/trip/view/{{row.VehicleID}}"
+                href="/trip/update/{{row.TripID}}"
                 class="btn btn-warning btn-xs"
                 data-bs-toggle="modal"
-                data-bs-target="#modaledit{{row.VehicleID}}"
+                data-bs-target="#modaledit{{row.TripID}}"
                 >Edit</a
               >
               <a
-                href="/trip/delete/{{row.VehicleID}}"
+                href="/trip/delete/{{row.TripID}}"
                 class="btn btn-danger btn-xs"
                 onclick="return confirm('Confirm Delete?')"
                 >Delete</a
@@ -115,6 +115,80 @@ endblock %} {% block body %}
             </td>
           </tr>
           <!-- Modal Edit Trip -->
+          <div id="modaledit{{row.TripID}}" class="modal fade" role="dialog">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h4 class="modal-title">Update Information</h4>
+                </div>
+                <div class="modal-body">
+                  <form action="{{url_for('tripUpdate')}}" method="POST">
+                    <div class="form-group text-start">
+                      <label class="form-label mt-3">Employee ID</label>
+                      <input
+                        type="hidden"
+                        class="form-control"
+                        name="TripID"
+                        value="{{row.TripID}}"
+                      />
+                      <input
+                        type="number"
+                        class="form-control"
+                        name="EmployeeID"
+                        value="{{row.EmployeeID}}"
+                      />
+                      <label class="form-label mt-3">Vehicle ID</label>
+                      <input
+                        type="number"
+                        class="form-control"
+                        name="VehicleID"
+                        value="{{row.VehicleID}}"
+                      />
+                      <label class="form-label mt-3">Origin</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        name="Origin"
+                        value="{{row.Origin}}"
+                      />
+                      <label class="form-label mt-3">Destination</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        name="Destination"
+                        value="{{row.Destination}}"
+                      />
+                      <label class="form-label mt-3">Start Time</label>
+                      <input
+                        type="datetime"
+                        class="form-control"
+                        name="Start Time"
+                        value="{{row.StartTime}}"
+                      />
+                      <label class="form-label mt-3">End Time</label>
+                      <input
+                        type="datetime"
+                        class="form-control"
+                        name="End Time"
+                        value="{{row.EndTime}}"
+                      />
+                      <label class="form-label mt-3">Trip Status</label>
+                      <input
+                        type="select"
+                        class="form-control"
+                        name="TripStatus"
+                        value="{{row.TripStatus.value}}"
+                      />
+                      <br />
+                      <button class="btn btn-primary" type="submit">
+                        Update Trip
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
           {% endfor %}
         </table>
       </div>
@@ -125,7 +199,7 @@ endblock %} {% block body %}
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h4 class="modal-title">Add Vehicle</h4>
+          <h4 class="modal-title">Add Trip</h4>
         </div>
         <div class="modal-body">
           <form action="/trip/tripinsert" method="POST">

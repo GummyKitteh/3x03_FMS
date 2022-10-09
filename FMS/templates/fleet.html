@@ -88,7 +88,7 @@ endblock %} {% block body %}
             <td>{{row.VehicleStatus}}</td>
             <td>
               <a
-                href="/fleet/view/{{row.VehicleId}}"
+                href="/fleet/update/{{row.VehicleId}}"
                 class="btn btn-warning btn-xs"
                 data-bs-toggle="modal"
                 data-bs-target="#modaledit{{row.VehicleId}}"
@@ -103,23 +103,6 @@ endblock %} {% block body %}
             </td>
           </tr>
           <!-- Modal Edit Fleet -->
-          <!-- <div id="modaledit{{row.VehicleId}}" class="modal fade" role="dialog">
-            <div class="modal-dialog">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h4 class="modal-title">View Information</h4>
-                </div>
-                <div class="modal-body">
-                  <div class="form-group text-start">
-                    <p>Vehicle Id: {{row.VehicleId}}</p>
-                    <p>Number Plate Number: {{row.BusNumberPlate}}</p>
-                    <p>Vehicle Capacity: {{row.VehicleCapacity}}</p>
-                    <p>Vehicle Status: {{row.VehicleStatus}}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div> -->
           <div id="modaledit{{row.VehicleId}}" class="modal fade" role="dialog">
             <div class="modal-dialog">
               <div class="modal-content">
