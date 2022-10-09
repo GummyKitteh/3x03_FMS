@@ -288,7 +288,7 @@ def addEmployee():
 def employeeDelete(id):
     if request.method == "GET":
         my_data = Employee.query.get(id)
-        db.session.delete(my_data)
+        db.session.delete(my_data, cascade="all, delete-orphan")
         db.session.commit()
 
         flash("Employee deleted sucessfully.")

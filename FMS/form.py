@@ -26,7 +26,7 @@ class TripStatusTypes(Enum):
 
 class SearchFormEmployee(FlaskForm):
     searched = StringField(
-        "Search:", [DataRequired()], render_kw={"placeholder": "Search"}
+        "Search:", [DataRequired()], render_kw={"placeholder": "employee name"}
     )
     submit = SubmitField("Submit")
 
