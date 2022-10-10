@@ -8,7 +8,6 @@ Employees {% endblock %} {% block body %}
         class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-1 pb-2 mt-5 mb-3 border-bottom"
       >
         <h1 class="h2 fw-bold">Employees</h1>
-        <h2>{{current_user.role}}</h2>
         <div class="btn-toolbar mb-2 mb-md-0">
           <form
             action="{{url_for('employeesearch')}}"
