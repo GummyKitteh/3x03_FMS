@@ -1,8 +1,11 @@
 from distutils.log import Log
 from flask import Flask, render_template, request, redirect, url_for, flash
+
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import true, ForeignKey
+from sqlalchemy.orm import declarative_base, relationship, backref
+
 from flask_wtf import FlaskForm
-from sqlalchemy import true
 from wtforms import StringField, SubmitField, SelectField, DateTimeField, DateField
 from wtforms.validators import DataRequired, Length, Email
 from flask_login import (
@@ -26,8 +29,10 @@ from form import SearchFormEmployee, SearchFormFleet, SearchFormTrip
 
 from enum import Enum
 
+Base = declarative_base()
+
 # from torch import equal
-import sys
+# import sys
 
 app = Flask(__name__)
 app.secret_key = "abcd"
@@ -40,8 +45,17 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:B33pb33p!@178.128.17.35/fm
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
+# https://www.youtube.com/watch?v=4gRMV-wZTQs
 
-class Employee(db.Model, UserMixin):
+# Emp_Dri = db.Table(
+#     "emp_dri",
+#     db.Column("employee_id", db.Integer, db.ForeignKey("employee.EmployeeId")),
+#     db.Column("driver_id", db.Integer, db.ForeignKey("driver.EmployeeId")),
+# )
+
+
+class Employee(db.Model, UserMixin, Base):
+    __tablename__ = "employee"
     EmployeeId = db.Column(db.Integer, primary_key=True)
     FullName = db.Column(db.String(50), nullable=False)
     Email = db.Column(db.String(100), nullable=False, unique=True)
@@ -50,6 +64,9 @@ class Employee(db.Model, UserMixin):
     Password = db.Column(db.String(64), nullable=False, unique=True)
     DOB = db.Column(db.DateTime, nullable=False)
     PasswordSalt = db.Column(db.String(64), nullable=False)
+
+    # driverEMP = db.relationship("Driver", backref="employee", passive_deletes=True)
+    driver = db.relationship("Driver", backref="Employee", passive_deletes=True)
 
     def __init__(
         self, FullName, Email, ContactNumber, Role, Password, DOB, PasswordSalt
@@ -66,12 +83,22 @@ class Employee(db.Model, UserMixin):
         return self.EmployeeId
 
 
-class Driver(db.Model):
-    EmployeeId = db.Column(db.Integer, primary_key=True)
+class Driver(db.Model, Base):
+    __tablename__ = "driver"
+    DriverId = db.Column(db.Integer, primary_key=True)
+    EmployeeId = db.Column(
+        db.Integer, db.ForeignKey("employee.EmployeeId", ondelete="CASCADE")
+    )
     Assigned = db.Column(db.Integer, nullable=False)
     DriverStatus = db.Column(db.String(256), nullable=False)
 
+    employee = relationship("Employee", backref=backref("Driver", cascade="all,delete"))
+    # employee = db.relationship(
+    #     "Employee", backref=backref("Driver", passive_deletes=True)
+    # )
+
     def __init__(self, EmployeeId, Assigned, DriverStatus):
+        # self.DriverId = DriverId
         self.EmployeeId = EmployeeId
         self.Assigned = Assigned
         self.DriverStatus = DriverStatus
@@ -83,7 +110,8 @@ class Fleet(db.Model):
     VehicleCapacity = db.Column(db.Integer, nullable=False)
     VehicleStatus = db.Column(db.String(45), nullable=False)
 
-    def __init__(self, BusNumberPlate, VehicleCapacity, VehicleStatus):
+    def __init__(self, VehicleId, BusNumberPlate, VehicleCapacity, VehicleStatus):
+        self.VehicleId = VehicleId
         self.BusNumberPlate = BusNumberPlate
         self.VehicleCapacity = VehicleCapacity
         self.VehicleStatus = VehicleStatus
@@ -91,7 +119,7 @@ class Fleet(db.Model):
 
 class Trip(db.Model):
     TripID = db.Column(db.Integer, primary_key=True)
-    EmployeeID = db.Column(db.Integer, nullable=False)
+    DriverID = db.Column(db.Integer, nullable=False)
     VehicleID = db.Column(db.Integer, nullable=False)
     Origin = db.Column(db.String(256), nullable=False)
     Destination = db.Column(db.String(256), nullable=False)
@@ -101,8 +129,7 @@ class Trip(db.Model):
 
     def __init__(
         self,
-        # TripID,
-        EmployeeID,
+        DriverID,
         VehicleID,
         Origin,
         Destination,
@@ -110,8 +137,7 @@ class Trip(db.Model):
         EndTime,
         TripStatus,
     ):
-        # self.TripID   = TripID
-        self.EmployeeID = EmployeeID
+        self.DriverID = DriverID
         self.VehicleID = VehicleID
         self.Origin = Origin
         self.Destination = Destination
@@ -312,8 +338,8 @@ def addEmployee():
             obj = (
                 db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
             )
-            driver_data = Driver(obj.EmployeeId, 0, "Account Created")
-            db.session.add(driver_data)
+            driver_data = Driver(obj.EmployeeId, 1, "Account Created")
+            emp_data.driver.append(driver_data)
             db.session.commit()
 
         flash("Employee inserted sucessfully")
@@ -391,7 +417,7 @@ def trip():
 
 class tripInsert(FlaskForm):
     EmployeeID = SelectField(
-        "Employee",
+        "Driver",
         choices=[
             (row.EmployeeId, row.FullName)
             for row in Employee.query.filter_by(Role="driver")
@@ -422,8 +448,19 @@ def addTrip():
         StartTime = formTrip.StartTime.data
         EndTime = formTrip.EndTime.data
         TripStatus = formTrip.TripStatus.data
+
+        driverIDForInsert = (
+            Driver.query.filter(Driver.EmployeeId == EmployeeID).first().DriverId
+        )
+
         trip_data = Trip(
-            EmployeeID, VehicleID, Origin, Destination, StartTime, EndTime, TripStatus
+            driverIDForInsert,
+            VehicleID,
+            Origin,
+            Destination,
+            StartTime,
+            EndTime,
+            TripStatus,
         )
         db.session.add(trip_data)
         db.session.commit()
@@ -456,7 +493,7 @@ def tripSearch():
 def tripUpdate():
     if request.method == "POST":
         trip_data = Trip.query.get(request.form.get("TripID"))
-        trip_data.EmployeeID = request.form["EmployeeID"]
+        trip_data.DriverID = request.form["DriverID"]
         trip_data.VehicleID = request.form["VehicleID"]
         trip_data.Origin = request.form["Origin"]
         trip_data.Destination = request.form["Destination"]

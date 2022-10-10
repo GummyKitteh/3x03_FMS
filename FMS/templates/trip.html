@@ -54,7 +54,7 @@ endblock %} {% block body %}
           <thead>
             <tr>
               <th>Trip ID</th>
-              <th>Employee ID</th>
+              <th>Driver ID</th>
               <th>Vehicle ID</th>
               <th>Origin</th>
               <th>Destination</th>
@@ -68,7 +68,7 @@ endblock %} {% block body %}
             {% if posts != 0 %} {% for post in posts %}
             <tr>
               <td>{{post.TripID}}</td>
-              <td>{{post.EmployeeID}}</td>
+              <td>{{post.DriverID}}</td>
               <td>{{post.VehicleID}}</td>
               <td>{{post.Origin}}</td>
               <td>{{post.Destination}}</td>
@@ -94,7 +94,7 @@ endblock %} {% block body %}
             {% endfor %} {% endif %} {% for row in trip %}
             <tr>
               <td>{{row.TripID}}</td>
-              <td>{{row.EmployeeID}}</td>
+              <td>{{row.DriverID}}</td>
               <td>{{row.VehicleID}}</td>
               <td>{{row.Origin}}</td>
               <td>{{row.Destination}}</td>
@@ -127,7 +127,7 @@ endblock %} {% block body %}
                   <div class="modal-body">
                     <form action="{{url_for('tripUpdate')}}" method="POST">
                       <div class="form-group text-start">
-                        <label class="form-label mt-3">Employee ID</label>
+                        <label class="form-label mt-3">Driver ID</label>
                         <input
                           type="hidden"
                           class="form-control"
@@ -137,8 +137,8 @@ endblock %} {% block body %}
                         <input
                           type="number"
                           class="form-control"
-                          name="EmployeeID"
-                          value="{{row.EmployeeID}}"
+                          name="DriverID"
+                          value="{{row.DriverID}}"
                         />
                         <label class="form-label mt-3">Vehicle ID</label>
                         <input
