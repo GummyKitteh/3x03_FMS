@@ -14,6 +14,7 @@ from flask_login import (
 )
 from form import RoleTypes, tripInsert, employeeInsert, fleetInsert, TripStatusTypes, LoginForm
 from form import SearchFormEmployee, SearchFormFleet, SearchFormTrip
+from security_controls import *
 
 from enum import Enum
 
@@ -26,6 +27,7 @@ app.config["SECRET_KEY"] = "I really hope fking this work if never idk what to d
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
 # app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwerty1234@localhost/fmssql"
+# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwert54321@localhost/fmssql"
 # app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:B33pb33p!@178.128.17.35/fmssql"
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -131,9 +133,10 @@ def login():
     account = Employee.query
     if request.method == "POST" and form.validate_on_submit():
         user = account.filter_by(Email = form.Email.data).first()
-        
+
         if user:
-            if user.Password == form.password.data:
+            derived_password = process_password(form.password.data, user.PasswordSalt)
+            if user.Password == derived_password:
                 login_user(user)
                 return redirect(url_for("employees"))
         else:
@@ -277,9 +280,18 @@ def addEmployee():
         ContactNumber = formEmployee.ContactNumber.data
         Email = formEmployee.Email.data
         Role = formEmployee.Role.data
-        Password = formEmployee.Password.data
         DOB = formEmployee.DOB.data
-        PasswordSalt = formEmployee.Password.data
+
+        PasswordSalt = generate_salt()  # 32-byte salt in hexadecimal
+        is_common_password = secure_password(formEmployee.Password.data)
+        
+        # If password chosen is a common password
+        if(is_common_password):
+            flash("Password chosen is a commonly used password. Please choose another.", "error")
+            return redirect("/employees")
+
+        Password = process_password(formEmployee.Password.data, PasswordSalt)
+
         formEmployee.FullName.data = ""
         formEmployee.ContactNumber.data = ""
         formEmployee.Email.data = ""
