@@ -6,7 +6,14 @@ from sqlalchemy import true, ForeignKey
 from sqlalchemy.orm import declarative_base, relationship, backref
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, SelectField, DateTimeField, DateField
+from wtforms import (
+    StringField,
+    SubmitField,
+    SelectField,
+    DateTimeField,
+    DateField,
+    DateTimeLocalField,
+)
 from wtforms.validators import DataRequired, Length, Email
 from flask_login import (
     UserMixin,
@@ -429,8 +436,8 @@ class tripInsert(FlaskForm):
     )
     Origin = StringField("Origin", [DataRequired(), Length(max=256)])
     Destination = StringField("Destination", [DataRequired(), Length(max=256)])
-    StartTime = DateField("Start Time")
-    EndTime = DateField("End Time")
+    StartTime = DateTimeLocalField("Start date & time", format="%Y-%m-%dT%H:%M")
+    EndTime = DateTimeLocalField("End date & time", format="%Y-%m-%dT%H:%M")
     TripStatus = SelectField(
         "Status", choices=[(choice.name, choice.value) for choice in TripStatusTypes]
     )
@@ -440,6 +447,7 @@ class tripInsert(FlaskForm):
 @app.route("/trip/tripinsert", methods=["POST"])
 def addTrip():
     formTrip = tripInsert()
+
     if request.method == "POST" and formTrip.validate_on_submit():
         EmployeeID = formTrip.EmployeeID.data
         VehicleID = formTrip.VehicleID.data
@@ -466,7 +474,9 @@ def addTrip():
         db.session.commit()
         flash("Trip inserted sucessfully")
         return redirect("/trip")
-    print("FAILURE")
+    else:
+        flash("Trip insert failed.")
+        return redirect("/trip")
 
 
 @app.route("/trip/tripSearch", methods=["POST"])
