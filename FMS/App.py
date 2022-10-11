@@ -72,8 +72,7 @@ class Employee(db.Model, UserMixin, Base):
     DOB = db.Column(db.DateTime, nullable=False)
     PasswordSalt = db.Column(db.String(64), nullable=False)
 
-    # driverEMP = db.relationship("Driver", backref="employee", passive_deletes=True)
-    driver = db.relationship("Driver", backref="Employee", passive_deletes=True)
+    driver_child = relationship("Driver", cascade="all, delete", backref="Employee")
 
     def __init__(
         self, FullName, Email, ContactNumber, Role, Password, DOB, PasswordSalt
@@ -99,13 +98,9 @@ class Driver(db.Model, Base):
     Assigned = db.Column(db.Integer, nullable=False)
     DriverStatus = db.Column(db.String(256), nullable=False)
 
-    employee = relationship("Employee", backref=backref("Driver", cascade="all,delete"))
-    # employee = db.relationship(
-    #     "Employee", backref=backref("Driver", passive_deletes=True)
-    # )
+    # dri_trip = db.relationship("Trip", backref="Driver", passive_deletes=True)
 
     def __init__(self, EmployeeId, Assigned, DriverStatus):
-        # self.DriverId = DriverId
         self.EmployeeId = EmployeeId
         self.Assigned = Assigned
         self.DriverStatus = DriverStatus
@@ -346,7 +341,7 @@ def addEmployee():
                 db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
             )
             driver_data = Driver(obj.EmployeeId, 1, "Account Created")
-            emp_data.driver.append(driver_data)
+            emp_data.driver_child.append(driver_data)
             db.session.commit()
 
         flash("Employee inserted sucessfully")
