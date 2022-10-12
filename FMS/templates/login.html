@@ -1,4 +1,4 @@
-{% extends 'base.html' %} {% include 'header.html' %} {% block title %} Home {%
+{% extends 'base.html' %} {% include 'header.html' %} {% block title %} Login {%
 endblock %} {% block body %}
 <!DOCTYPE html>
 <html lang="en">
@@ -9,7 +9,7 @@ endblock %} {% block body %}
     <title>Login</title>
   </head>
   <body class="">
-    <main class="form-signin w-100 m-auto">
+    <main class="form-signin w-75 m-auto">
       <h1 class="display-5 my-5">Login</h1>
       <form action="/login" method="POST">
         {{form.hidden_tag()}}
