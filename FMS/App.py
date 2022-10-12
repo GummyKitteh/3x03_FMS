@@ -527,6 +527,30 @@ def tripDelete(id):
 
 # TRIPS END-----------------------------------------------------------------------------
 
+# PROFILE INFO --------------------------------------------------------------------------
 
+@app.route("/profile",methods=["GET", "POST"])
+@login_required
+def profile():
+    updateFormEmployee = employeeInsert()
+    id = current_user.EmployeeId
+    name_to_update = Employee.query.get_or_404(id)
+    if request.method == "POST" and updateFormEmployee.validate_on_submit:
+        name_to_update.FullName = request.form["FullName"]
+        name_to_update.Email = request.form["Email"]
+        name_to_update.ContactNumber = request.form["ContactNumber"]
+        name_to_update.DOB = request.form["DOB"]
+        if name_to_update.Password == request.form["OldPassword"]:
+            if request.form["ConfirmPassword"] == request.form["NewPassword"]:
+                name_to_update.Password = request.form["NewPassword"]
+                db.session.commit()
+                flash("Profile Have Updated")
+                return render_template("profile.html", updateFormEmployee = updateFormEmployee, name_to_update = name_to_update)
+
+            else:
+                flash("Does not match new password or confirm password")
+        else:
+            flash("Password Incorrect")
+    return render_template("profile.html", updateFormEmployee = updateFormEmployee, name_to_update = name_to_update)
 if __name__ == "__main__":
     app.run(debug=True)

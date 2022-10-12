@@ -56,7 +56,11 @@ class employeeInsert(FlaskForm):
     Role = SelectField(
         "Role", choices=[(choice.name, choice.value) for choice in RoleTypes]
     )
+    
     Password = PasswordField("Password", [DataRequired(), Length(min=8)])
+    OldPassword = PasswordField("Old Password", [DataRequired(), Length(min=8)])
+    NewPassword = PasswordField("New Password", [DataRequired(), Length(min=8)])
+    ConfirmPassword = PasswordField("Confirm Password", [DataRequired(), Length(min=8)])
     submit = SubmitField("Submit", [DataRequired()])
 
 
