@@ -46,7 +46,7 @@ app.config["SECRET_KEY"] = "I really hope fking this work if never idk what to d
 
 # app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
 # app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwerty1234@localhost/fmssql"
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:B33pb33p!@178.128.17.35/fmssql"
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:B33pb33p!@178.128.17.35/fmssql_db"
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
@@ -97,7 +97,7 @@ class Driver(db.Model, Base):
     Assigned = db.Column(db.Integer, nullable=False)
     DriverStatus = db.Column(db.String(256), nullable=False)
 
-    trip_child = relationship("Trip", cascade="all, delete", backref="Driver")
+    trip_childDriver = relationship("Trip", cascade="all, delete", backref="Driver")
 
     def __init__(self, EmployeeId, Assigned, DriverStatus):
         self.EmployeeId = EmployeeId
@@ -111,8 +111,9 @@ class Fleet(db.Model):
     VehicleCapacity = db.Column(db.Integer, nullable=False)
     VehicleStatus = db.Column(db.String(45), nullable=False)
 
-    def __init__(self, VehicleId, BusNumberPlate, VehicleCapacity, VehicleStatus):
-        self.VehicleId = VehicleId
+    trip_childFleet = relationship("Trip", cascade="all, delete", backref="Fleet")
+
+    def __init__(self, BusNumberPlate, VehicleCapacity, VehicleStatus):
         self.BusNumberPlate = BusNumberPlate
         self.VehicleCapacity = VehicleCapacity
         self.VehicleStatus = VehicleStatus
@@ -123,7 +124,9 @@ class Trip(db.Model):
     DriverID = db.Column(
         db.Integer, db.ForeignKey("driver.DriverId", ondelete="CASCADE"), nullable=False
     )
-    VehicleID = db.Column(db.Integer, nullable=False)
+    VehicleID = db.Column(
+        db.Integer, db.ForeignKey("fleet.VehicleId", ondelete="CASCADE"), nullable=False
+    )
     Origin = db.Column(db.String(256), nullable=False)
     Destination = db.Column(db.String(256), nullable=False)
     StartTime = db.Column(db.DateTime, nullable=False)
@@ -403,8 +406,10 @@ def employeesearch():
 @app.route("/trip")
 @login_required
 def trip():
-    all_data = Trip.query.all()
-    return render_template("trip.html", trip=all_data)
+    trip_data = Trip.query.all()
+    fleet_data = Fleet.query.all()
+    # Fleet.
+    return render_template("trip.html", trip=trip_data, fleet=fleet_data)
 
 
 @app.context_processor
@@ -419,6 +424,17 @@ def trip():
     return dict(searchformTrip=searchformTrip)
 
 
+def getFresh_Fleet():
+    fleetList = []
+    # get the Agencies from the database - syntax here would be SQLAlchemy
+    fleet = Fleet.query.all()
+    for a in fleet:
+        # generate a new list of tuples
+        fleetList.append((a.VehicleId, a.BusNumberPlate))
+    print(fleetList)
+    return fleetList
+
+
 class tripInsert(FlaskForm):
     EmployeeID = SelectField(
         "Driver",
@@ -427,10 +443,12 @@ class tripInsert(FlaskForm):
             for row in Employee.query.filter_by(Role="driver")
         ],
     )
-    VehicleID = SelectField(
-        "Vehicle",
-        choices=[(row.VehicleId, row.BusNumberPlate) for row in Fleet.query.all()],
-    )
+    # VehicleID = SelectField(
+    #     "Vehicle",
+    #     choices=[(row.VehicleId, row.BusNumberPlate) for row in Fleet.query.all()],
+    # )
+    vehicleOptions = getFresh_Fleet()
+    VehicleID = SelectField("Vehicle", choices=vehicleOptions)
     Origin = StringField("Origin", [DataRequired(), Length(max=256)])
     Destination = StringField("Destination", [DataRequired(), Length(max=256)])
     StartTime = DateTimeLocalField("Start date & time", format="%Y-%m-%dT%H:%M")
