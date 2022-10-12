@@ -98,7 +98,7 @@ class Driver(db.Model, Base):
     Assigned = db.Column(db.Integer, nullable=False)
     DriverStatus = db.Column(db.String(256), nullable=False)
 
-    # dri_trip = db.relationship("Trip", backref="Driver", passive_deletes=True)
+    trip_child = relationship("Trip", cascade="all, delete", backref="Driver")
 
     def __init__(self, EmployeeId, Assigned, DriverStatus):
         self.EmployeeId = EmployeeId
@@ -121,7 +121,9 @@ class Fleet(db.Model):
 
 class Trip(db.Model):
     TripID = db.Column(db.Integer, primary_key=True)
-    DriverID = db.Column(db.Integer, nullable=False)
+    DriverID = db.Column(
+        db.Integer, db.ForeignKey("driver.DriverId", ondelete="CASCADE"), nullable=False
+    )
     VehicleID = db.Column(db.Integer, nullable=False)
     Origin = db.Column(db.String(256), nullable=False)
     Destination = db.Column(db.String(256), nullable=False)
