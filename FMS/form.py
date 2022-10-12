@@ -83,5 +83,5 @@ class fleetInsert(FlaskForm):
 
 class LoginForm(FlaskForm):
     Email = StringField("Email", [DataRequired(), Email(), Length(max=100)])
-    password = PasswordField("Password: ", [DataRequired(), Length(max=50)])
+    password = PasswordField("Password", [DataRequired(), Length(max=50)])
     submit = SubmitField("Login")

@@ -44,9 +44,9 @@ app = Flask(__name__)
 app.secret_key = "abcd"
 app.config["SECRET_KEY"] = "I really hope fking this work if never idk what to do :("
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
+# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
 # app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwerty1234@localhost/fmssql"
-# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:B33pb33p!@178.128.17.35/fmssql"
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:B33pb33p!@178.128.17.35/fmssql"
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
@@ -294,7 +294,6 @@ def employees():
     elif userrole == RoleTypes.driver:
         # all_data = Employee.query.filter(Employee.Email == current_user.Email)
         return render_template("trip.html")
-    
 
 
 @app.context_processor
