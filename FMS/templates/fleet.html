@@ -27,7 +27,7 @@ endblock %} {% block body %}
           </form>
           <button
             type="button"
-            class="btn btn-primary align-end"
+            class="btn btn-sm btn-secondary m-2"
             data-bs-toggle="modal"
             data-bs-target="#addVehicle"
           >
@@ -48,7 +48,9 @@ endblock %} {% block body %}
       </div>
       {% endfor %} {% endif %} {% endwith %}
       <div class="table-responsive">
-        <table class="table table-striped table-sm table-hover table-dark">
+        <table
+          class="table table-striped table-sm table-hover table-dark text-center"
+        >
           <thead>
             <tr>
               <th>Vehicle ID</th>

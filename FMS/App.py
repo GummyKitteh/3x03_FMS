@@ -1,8 +1,18 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
+
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import true, ForeignKey
+from sqlalchemy.orm import declarative_base, relationship, backref
+
 from flask_wtf import FlaskForm
-from sqlalchemy import true
-from wtforms import StringField, SubmitField, SelectField, DateTimeField, DateField
+from wtforms import (
+    StringField,
+    SubmitField,
+    SelectField,
+    DateTimeField,
+    DateField,
+    DateTimeLocalField,
+)
 from wtforms.validators import DataRequired, Length, Email
 from flask_login import (
     UserMixin,
@@ -12,13 +22,23 @@ from flask_login import (
     logout_user,
     current_user,
 )
-from form import RoleTypes, tripInsert, employeeInsert, fleetInsert, TripStatusTypes, LoginForm
+from form import (
+    RoleTypes,
+    # tripInsert,
+    employeeInsert,
+    fleetInsert,
+    TripStatusTypes,
+    IntegerField,
+    LoginForm,
+)
 from form import SearchFormEmployee, SearchFormFleet, SearchFormTrip
 
 from enum import Enum
 
+Base = declarative_base()
+
 # from torch import equal
-import sys
+# import sys
 
 app = Flask(__name__)
 app.secret_key = "abcd"
@@ -31,8 +51,17 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssq
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
+# https://www.youtube.com/watch?v=4gRMV-wZTQs
 
-class Employee(db.Model, UserMixin):
+# Emp_Dri = db.Table(
+#     "emp_dri",
+#     db.Column("employee_id", db.Integer, db.ForeignKey("employee.EmployeeId")),
+#     db.Column("driver_id", db.Integer, db.ForeignKey("driver.EmployeeId")),
+# )
+
+
+class Employee(db.Model, UserMixin, Base):
+    __tablename__ = "employee"
     EmployeeId = db.Column(db.Integer, primary_key=True)
     FullName = db.Column(db.String(50), nullable=False)
     Email = db.Column(db.String(100), nullable=False, unique=True)
@@ -41,6 +70,8 @@ class Employee(db.Model, UserMixin):
     Password = db.Column(db.String(64), nullable=False, unique=True)
     DOB = db.Column(db.DateTime, nullable=False)
     PasswordSalt = db.Column(db.String(64), nullable=False)
+
+    driver_child = relationship("Driver", cascade="all, delete", backref="Employee")
 
     def __init__(
         self, FullName, Email, ContactNumber, Role, Password, DOB, PasswordSalt
@@ -52,14 +83,21 @@ class Employee(db.Model, UserMixin):
         self.Password = Password
         self.DOB = DOB
         self.PasswordSalt = PasswordSalt
+
     def get_id(self):
-        return (self.EmployeeId)
+        return self.EmployeeId
 
 
-class Driver(db.Model):
-    EmployeeId = db.Column(db.Integer, primary_key=True)
+class Driver(db.Model, Base):
+    __tablename__ = "driver"
+    DriverId = db.Column(db.Integer, primary_key=True)
+    EmployeeId = db.Column(
+        db.Integer, db.ForeignKey("employee.EmployeeId", ondelete="CASCADE")
+    )
     Assigned = db.Column(db.Integer, nullable=False)
     DriverStatus = db.Column(db.String(256), nullable=False)
+
+    trip_child = relationship("Trip", cascade="all, delete", backref="Driver")
 
     def __init__(self, EmployeeId, Assigned, DriverStatus):
         self.EmployeeId = EmployeeId
@@ -73,7 +111,8 @@ class Fleet(db.Model):
     VehicleCapacity = db.Column(db.Integer, nullable=False)
     VehicleStatus = db.Column(db.String(45), nullable=False)
 
-    def __init__(self, BusNumberPlate, VehicleCapacity, VehicleStatus):
+    def __init__(self, VehicleId, BusNumberPlate, VehicleCapacity, VehicleStatus):
+        self.VehicleId = VehicleId
         self.BusNumberPlate = BusNumberPlate
         self.VehicleCapacity = VehicleCapacity
         self.VehicleStatus = VehicleStatus
@@ -81,7 +120,9 @@ class Fleet(db.Model):
 
 class Trip(db.Model):
     TripID = db.Column(db.Integer, primary_key=True)
-    EmployeeID = db.Column(db.Integer, nullable=False)
+    DriverID = db.Column(
+        db.Integer, db.ForeignKey("driver.DriverId", ondelete="CASCADE"), nullable=False
+    )
     VehicleID = db.Column(db.Integer, nullable=False)
     Origin = db.Column(db.String(256), nullable=False)
     Destination = db.Column(db.String(256), nullable=False)
@@ -91,8 +132,7 @@ class Trip(db.Model):
 
     def __init__(
         self,
-        # TripID,
-        EmployeeID,
+        DriverID,
         VehicleID,
         Origin,
         Destination,
@@ -100,8 +140,7 @@ class Trip(db.Model):
         EndTime,
         TripStatus,
     ):
-        # self.TripID   = TripID
-        self.EmployeeID = EmployeeID
+        self.DriverID = DriverID
         self.VehicleID = VehicleID
         self.Origin = Origin
         self.Destination = Destination
@@ -109,10 +148,12 @@ class Trip(db.Model):
         self.EndTime = EndTime
         self.TripStatus = TripStatus
 
-#Flask_login Stuff
+
+# Flask_login Stuff
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'login'
+login_manager.login_view = "login"
+
 
 @login_manager.user_loader
 def load_user(EmployeeId):
@@ -121,30 +162,35 @@ def load_user(EmployeeId):
     except:
         return None
 
+
 @app.route("/")
 def index():
     return render_template("index.html")
 
-@app.route("/login", methods=["GET","POST"])
+
+@app.route("/login", methods=["GET", "POST"])
 def login():
     form = LoginForm()
     account = Employee.query
     if request.method == "POST" and form.validate_on_submit():
-        user = account.filter_by(Email = form.Email.data).first()
-        
+        user = account.filter_by(Email=form.Email.data).first()
+
         if user:
             if user.Password == form.password.data:
                 login_user(user)
+
                 return redirect(url_for("employees"))
         else:
-            return render_template("login.html", form =form)
-    return render_template("login.html", form =form)
+            return render_template("login.html", form=form)
+    return render_template("login.html", form=form)
 
-@app.route('/logout',methods=['GET','POST'])
+
+@app.route("/logout", methods=["GET", "POST"])
 @login_required
 def logout():
     logout_user()
     return redirect(url_for("index"))
+
 
 @app.route("/reset")
 def reset():
@@ -297,8 +343,8 @@ def addEmployee():
             obj = (
                 db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
             )
-            driver_data = Driver(obj.EmployeeId, 0, "Account Created")
-            db.session.add(driver_data)
+            driver_data = Driver(obj.EmployeeId, 1, "Account Created")
+            emp_data.driver_child.append(driver_data)
             db.session.commit()
 
         flash("Employee inserted sucessfully")
@@ -374,9 +420,32 @@ def trip():
     return dict(searchformTrip=searchformTrip)
 
 
+class tripInsert(FlaskForm):
+    EmployeeID = SelectField(
+        "Driver",
+        choices=[
+            (row.EmployeeId, row.FullName)
+            for row in Employee.query.filter_by(Role="driver")
+        ],
+    )
+    VehicleID = SelectField(
+        "Vehicle",
+        choices=[(row.VehicleId, row.BusNumberPlate) for row in Fleet.query.all()],
+    )
+    Origin = StringField("Origin", [DataRequired(), Length(max=256)])
+    Destination = StringField("Destination", [DataRequired(), Length(max=256)])
+    StartTime = DateTimeLocalField("Start date & time", format="%Y-%m-%dT%H:%M")
+    EndTime = DateTimeLocalField("End date & time", format="%Y-%m-%dT%H:%M")
+    TripStatus = SelectField(
+        "Status", choices=[(choice.name, choice.value) for choice in TripStatusTypes]
+    )
+    submit = SubmitField("Submit", [DataRequired()])
+
+
 @app.route("/trip/tripinsert", methods=["POST"])
 def addTrip():
     formTrip = tripInsert()
+
     if request.method == "POST" and formTrip.validate_on_submit():
         EmployeeID = formTrip.EmployeeID.data
         VehicleID = formTrip.VehicleID.data
@@ -385,14 +454,27 @@ def addTrip():
         StartTime = formTrip.StartTime.data
         EndTime = formTrip.EndTime.data
         TripStatus = formTrip.TripStatus.data
+
+        driverIDForInsert = (
+            Driver.query.filter(Driver.EmployeeId == EmployeeID).first().DriverId
+        )
+
         trip_data = Trip(
-            EmployeeID, VehicleID, Origin, Destination, StartTime, EndTime, TripStatus
+            driverIDForInsert,
+            VehicleID,
+            Origin,
+            Destination,
+            StartTime,
+            EndTime,
+            TripStatus,
         )
         db.session.add(trip_data)
         db.session.commit()
         flash("Trip inserted sucessfully")
         return redirect("/trip")
-    print("FAILURE")
+    else:
+        flash("Trip insert failed.")
+        return redirect("/trip")
 
 
 @app.route("/trip/tripSearch", methods=["POST"])
@@ -419,7 +501,7 @@ def tripSearch():
 def tripUpdate():
     if request.method == "POST":
         trip_data = Trip.query.get(request.form.get("TripID"))
-        trip_data.EmployeeID = request.form["EmployeeID"]
+        trip_data.DriverID = request.form["DriverID"]
         trip_data.VehicleID = request.form["VehicleID"]
         trip_data.Origin = request.form["Origin"]
         trip_data.Destination = request.form["Destination"]
