@@ -14,6 +14,7 @@ from wtforms import (
     DateTimeLocalField,
 )
 from wtforms.validators import DataRequired, Length, Email
+
 from flask_login import (
     UserMixin,
     login_user,
@@ -22,23 +23,12 @@ from flask_login import (
     logout_user,
     current_user,
 )
-from form import (
-    RoleTypes,
-    # tripInsert,
-    employeeInsert,
-    fleetInsert,
-    TripStatusTypes,
-    IntegerField,
-    LoginForm,
-)
+
+from form import employeeInsert, fleetInsert, LoginForm
+from form import RoleTypes, TripStatusTypes
 from form import SearchFormEmployee, SearchFormFleet, SearchFormTrip
 
-from enum import Enum
-
 Base = declarative_base()
-
-# from torch import equal
-# import sys
 
 app = Flask(__name__)
 app.secret_key = "abcd"
@@ -58,6 +48,8 @@ db = SQLAlchemy(app)
 #     db.Column("employee_id", db.Integer, db.ForeignKey("employee.EmployeeId")),
 #     db.Column("driver_id", db.Integer, db.ForeignKey("driver.EmployeeId")),
 # )
+
+# ----- CLASSES -----------------------------------------------------------------------
 
 
 class Employee(db.Model, UserMixin, Base):
@@ -152,6 +144,10 @@ class Trip(db.Model):
         self.TripStatus = TripStatus
 
 
+# ----- END CLASSES -------------------------------------------------------------------
+# ----- LOGIN STUFF -------------------------------------------------------------------
+
+
 # Flask_login Stuff
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -164,11 +160,6 @@ def load_user(EmployeeId):
         return Employee.query.get(int(EmployeeId))
     except:
         return None
-
-
-@app.route("/")
-def index():
-    return render_template("index.html")
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -195,12 +186,24 @@ def logout():
     return redirect(url_for("index"))
 
 
+# ----- END LOGIN STUFF --------------------------------------------------------------
+# ----- ROUTES -----------------------------------------------------------------------
+
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+
 @app.route("/reset")
 def reset():
     return render_template("reset.html")
 
 
-# FLEET-------------------------------------------------------------------------------
+# ----- END ROUTES -------------------------------------------------------------------
+# ----- FLEET-------------------------------------------------------------------------
+
+
 @app.route("/fleet")
 @login_required
 def fleet():
@@ -279,8 +282,9 @@ def fleetsearch():
         else:
             flash("Cannot find Vehicle")
 
-    # FLEET END-------------------------------------------------------------------------------
-    # EMPLOYEE -------------------------------------------------------------------------------
+
+# ----- FLEET END-------------------------------------------------------------------------
+# ----- EMPLOYEE -------------------------------------------------------------------------
 
 
 @app.route("/employees")
@@ -356,20 +360,6 @@ def addEmployee():
         return redirect("/employees")
 
 
-# @app.route("/update", methods=["GET", "POST"])
-# def empployeeUpdate():
-#     if request.method == "POST":
-#         my_data = Employee.query.get(request.form.get("id"))
-#         my_data.name = request.form["name"]
-#         my_data.email = request.form["email"]
-#         my_data.phone = request.form["phone"]
-
-#         db.session.commit()
-#         flash("Employee Updated Successfully")
-
-#         return redirect(url_for("employees"))
-
-
 @app.route("/employees/delete/<id>", methods=["GET", "POST"])
 def employeeDelete(id):
     if request.method == "GET":
@@ -401,8 +391,10 @@ def employeesearch():
             flash("Cannot find Employee")
 
 
-# EMPLOYEE END--------------------------------------------------------------------------
-# TRIPS --------------------------------------------------------------------------------
+# ----- EMPLOYEE END -------------------------------------------------------------------
+# ----- TRIPS --------------------------------------------------------------------------
+
+
 @app.route("/trip")
 @login_required
 def trip():
@@ -443,10 +435,6 @@ class tripInsert(FlaskForm):
             for row in Employee.query.filter_by(Role="driver")
         ],
     )
-    # VehicleID = SelectField(
-    #     "Vehicle",
-    #     choices=[(row.VehicleId, row.BusNumberPlate) for row in Fleet.query.all()],
-    # )
     vehicleOptions = getFresh_Fleet()
     VehicleID = SelectField("Vehicle", choices=vehicleOptions)
     Origin = StringField("Origin", [DataRequired(), Length(max=256)])
@@ -543,11 +531,11 @@ def tripDelete(id):
         return redirect(url_for("trip"))
 
 
-# TRIPS END-----------------------------------------------------------------------------
+# ----- TRIPS END -----------------------------------------------------------------------
+# ----- PROFILE INFO --------------------------------------------------------------------
 
-# PROFILE INFO --------------------------------------------------------------------------
 
-@app.route("/profile",methods=["GET", "POST"])
+@app.route("/profile", methods=["GET", "POST"])
 @login_required
 def profile():
     updateFormEmployee = employeeInsert()
@@ -563,12 +551,24 @@ def profile():
                 name_to_update.Password = request.form["NewPassword"]
                 db.session.commit()
                 flash("Profile Have Updated")
-                return render_template("profile.html", updateFormEmployee = updateFormEmployee, name_to_update = name_to_update)
+                return render_template(
+                    "profile.html",
+                    updateFormEmployee=updateFormEmployee,
+                    name_to_update=name_to_update,
+                )
 
             else:
                 flash("Does not match new password or confirm password")
         else:
             flash("Password Incorrect")
-    return render_template("profile.html", updateFormEmployee = updateFormEmployee, name_to_update = name_to_update)
+    return render_template(
+        "profile.html",
+        updateFormEmployee=updateFormEmployee,
+        name_to_update=name_to_update,
+    )
+
+
+# ----- END PROFILE INFO ---------------------------------------------------------------
+
 if __name__ == "__main__":
     app.run(debug=True)
