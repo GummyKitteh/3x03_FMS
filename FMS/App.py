@@ -1,4 +1,3 @@
-from distutils.log import Log
 from flask import Flask, render_template, request, redirect, url_for, flash
 
 from flask_sqlalchemy import SQLAlchemy
@@ -45,9 +44,9 @@ app = Flask(__name__)
 app.secret_key = "abcd"
 app.config["SECRET_KEY"] = "I really hope fking this work if never idk what to do :("
 
-# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
 # app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwerty1234@localhost/fmssql"
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:B33pb33p!@178.128.17.35/fmssql"
+# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:B33pb33p!@178.128.17.35/fmssql"
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
@@ -179,13 +178,8 @@ def login():
         if user:
             if user.Password == form.password.data:
                 login_user(user)
-                # Check of role
-                for role in RoleTypes:
-                    if user.Role == role.manager:
-                        # filter of query is
-                        return redirect(url_for("employees"))
-                    else:
-                        return redirect(url_for("index"))
+
+                return redirect(url_for("employees"))
         else:
             return render_template("login.html", form=form)
     return render_template("login.html", form=form)
@@ -289,11 +283,18 @@ def fleetsearch():
 @app.route("/employees")
 @login_required
 def employees():
-    all_data = Employee.query.all()
-    # all_data = Employee.query.filter(Employee.Role == "admin")
-    # all_data = Employee.query.filter(Employee.Role == "manager")
-    # all_data = Employee.query.filter(Employee.Role == "driver")
-    return render_template("employees.html", employees=all_data)
+    userrole = current_user.Role
+    if userrole == RoleTypes.admin:
+        all_data = Employee.query.all()
+        return render_template("employees.html", employees=all_data)
+
+    elif userrole == RoleTypes.manager:
+        all_data = Employee.query.filter(Employee.Role == "driver")
+        return render_template("employees.html", employees=all_data)
+    elif userrole == RoleTypes.driver:
+        # all_data = Employee.query.filter(Employee.Email == current_user.Email)
+        return render_template("trip.html")
+    
 
 
 @app.context_processor
