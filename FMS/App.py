@@ -237,10 +237,14 @@ def addFleet():
         return redirect("/fleet")
     print("FAILURE")
 
-
+@app.context_processor
+def fleet():
+    fleetupdate = fleetInsert()
+    return dict(fleetupdate=fleetupdate)
 @app.route("/fleetUpdate", methods=["GET", "POST"])
 def fleetUpdate():
-    if request.method == "POST":
+    fleetupdate = fleetInsert()
+    if request.method == "POST" and fleetupdate.validate_on_submit:
         fleet_data = Fleet.query.get(request.form.get("VehicleId"))
         fleet_data.BusNumberPlate = request.form["BusNumberPlate"]
         fleet_data.VehicleCapacity = request.form["VehicleCapacity"]
@@ -249,7 +253,7 @@ def fleetUpdate():
         db.session.commit()
         flash("Vehicle Updated Successfully")
 
-        return redirect(url_for("fleet"))
+        return redirect(url_for("fleet",fleetupdate=fleetupdate))
 
 
 @app.route("/fleet/delete/<id>", methods=["GET", "POST"])
