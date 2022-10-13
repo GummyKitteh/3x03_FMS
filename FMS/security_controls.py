@@ -1,5 +1,5 @@
 import secrets, binascii, os
-from backports.pbkdf2 import pbkdf2_hmac
+from hashlib import pbkdf2_hmac
 
 """
 Generate CSPRNG 32-byte salt in hexadecimal based on PEP 506

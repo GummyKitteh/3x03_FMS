@@ -172,14 +172,33 @@ def login():
     if request.method == "POST" and form.validate_on_submit():
         user = account.filter_by(Email = form.Email.data).first()
 
+        # If the user exists in db
         if user:
+            # If Login_Count = 5:
+            ## Lock Account
+            ### flask("Your account has been locked. Please contact administrator.")
+            ### return redirect
+
+            # Else If Login_Count = 3 or 4
+            ## Validate CAPTCHA
+            ## While wrong CAPTCHA, re-try CAPTCHA
+
+            # Check password
             derived_password = process_password(form.password.data, user.PasswordSalt)
             if user.Password == derived_password:
+                # Reset Login_Count to 0
+
+                # Authorise login
                 login_user(user)
 
                 return redirect(url_for("employees"))
-        else:
-            return render_template("login.html", form=form)
+            #else:
+                # Increment Login_Count
+
+        # Else if the user does not exist in db
+        ## Don't need to Else I think??
+        #else:
+        #    return render_template("login.html", form=form)
     return render_template("login.html", form=form)
 
 
