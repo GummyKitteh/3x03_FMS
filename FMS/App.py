@@ -37,8 +37,8 @@ app.config["SECRET_KEY"] = "I really hope fking this work if never idk what to d
 
 # app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
 # app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwerty1234@localhost/fmssql"
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:B33pb33p!@178.128.17.35/fmssql_db"
-# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwert54321@localhost/fmssql"
+# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:B33pb33p!@178.128.17.35/fmssql_db"
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwert54321@localhost/fmssql"
 # app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:B33pb33p!@178.128.17.35/fmssql"
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -340,7 +340,7 @@ def addEmployee():
         DOB = formEmployee.DOB.data
 
         PasswordSalt = generate_salt()  # 32-byte salt in hexadecimal
-        is_common_password = secure_password(formEmployee.Password.data)
+        is_common_password = check_common_password(formEmployee.Password.data)
         
         # If password chosen is a common password
         if(is_common_password):
@@ -567,16 +567,28 @@ def profile():
         name_to_update.Email = request.form["Email"]
         name_to_update.ContactNumber = request.form["ContactNumber"]
         name_to_update.DOB = request.form["DOB"]
-        if name_to_update.Password == request.form["OldPassword"]:
+        
+        derived_password = process_password(request.form["OldPassword"], name_to_update.PasswordSalt)
+        if name_to_update.Password == derived_password:
             if request.form["ConfirmPassword"] == request.form["NewPassword"]:
-                name_to_update.Password = request.form["NewPassword"]
-                db.session.commit()
-                flash("Profile Have Updated")
-                return render_template(
-                    "profile.html",
-                    updateFormEmployee=updateFormEmployee,
-                    name_to_update=name_to_update,
-                )
+                PasswordSalt = generate_salt()  # 32-byte salt in hexadecimal
+                is_common_password = check_common_password(request.form["NewPassword"])
+
+                # If password chosen is a common password
+                if(is_common_password):
+                    flash("Password chosen is a commonly used password. Please choose another.", "error")
+
+                else:
+                    NewPassword = process_password(request.form["NewPassword"], PasswordSalt)
+                    name_to_update.Password = NewPassword
+                    name_to_update.PasswordSalt = PasswordSalt
+                    db.session.commit()
+                    flash("Profile Have Updated")
+                    return render_template(
+                        "profile.html",
+                        updateFormEmployee=updateFormEmployee,
+                        name_to_update=name_to_update,
+                    )
 
             else:
                 flash("Does not match new password or confirm password")

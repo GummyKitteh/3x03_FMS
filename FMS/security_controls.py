@@ -16,8 +16,7 @@ def generate_salt():
 Passwords set shall be validated against a security list (SecList) of common passwords
 SecList: https://raw.githubusercontent.com/danielmiessler/SecLists/master/Passwords/Common-Credentials/10-million-password-list-top-100000.txt
 """
-def secure_password(password):
-	print("secure_password", password)
+def check_common_password(password):
 	filepath = os.getcwd() + "\\10-million-password-list-top-1000000.txt"
 	with open(filepath, "r") as file:
 		if password in file.read():
@@ -29,12 +28,12 @@ def secure_password(password):
 Passwords must be uniquely salted for each user with 256 bits, hashed with SHA-256 and iterated 64,000 times with PBKDF2.
 https://cryptobook.nakov.com/mac-and-key-derivation/pbkdf2
 """
-def process_password(password, salt):
+def process_password(password, hex_salt):
 	# Encode password to bytes in utf-8
 	password = password.encode("utf-8", "strict")
 
 	# Convert salt to bytes
-	salt = binascii.unhexlify(salt)
+	salt = binascii.unhexlify(hex_salt)
 
 	# Run through pbkdf2_hmac function
 	output = pbkdf2_hmac("sha256", password, salt, 64000, 32)
