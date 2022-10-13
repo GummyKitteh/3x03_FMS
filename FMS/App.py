@@ -505,23 +505,27 @@ def tripSearch():
         else:
             flash("Cannot find Trip")
 
-
+@app.context_processor
+def trip():
+    tripupdate = tripInsert()
+    return dict(tripupdate=tripupdate)
 @app.route("/trip/tripUpdate", methods=["GET", "POST"])
 def tripUpdate():
-    if request.method == "POST":
+    tripupdate = tripInsert()
+    if request.method == "POST" and tripupdate.validate_on_submit:
         trip_data = Trip.query.get(request.form.get("TripID"))
         trip_data.DriverID = request.form["DriverID"]
         trip_data.VehicleID = request.form["VehicleID"]
         trip_data.Origin = request.form["Origin"]
         trip_data.Destination = request.form["Destination"]
-        trip_data.StartTime = request.form["Start Time"]
-        trip_data.EndTime = request.form["End Time"]
+        trip_data.StartTime = request.form["StartTime"]
+        trip_data.EndTime = request.form["EndTime"]
         trip_data.TripStatus = request.form["TripStatus"]
 
         db.session.commit()
         flash("Trip Updated Successfully")
 
-        return redirect(url_for("trip"))
+        return redirect(url_for("trip",tripupdate=tripupdate))
 
 
 @app.route("/trip/delete/<id>", methods=["GET", "POST"])

@@ -127,7 +127,38 @@ endblock %} {% block body %}
                   <div class="modal-body">
                     <form action="{{url_for('tripUpdate')}}" method="POST">
                       <div class="form-group text-start">
-                        <label class="form-label mt-3">Driver ID</label>
+                          <input
+                            type="hidden"
+                            class="form-control"
+                            name="TripID"
+                            value="{{row.TripID}}"
+                          />
+                          <input
+                          type="hidden"
+                          class="form-control"
+                          name="DriverID"
+                          value="{{row.DriverID}}"
+                          />
+                          <input
+                          type="hidden"
+                          class="form-control"
+                          name="VehicleID"
+                          value="{{row.VehicleID}}"
+                        />
+                        {{tripupdate.hidden_tag()}}
+                        {{tripupdate.Origin.label(class="form-label mt-3")}}
+                        {{tripupdate.Origin(class="form-control", value=row.Origin)}}
+                        {{tripupdate.Destination.label(class="form-label mt-3")}}
+                        {{tripupdate.Destination(class="form-control", value=row.Destination)}}
+                        {{tripupdate.StartTime.label(class="form-label mt-3")}}
+                        {{tripupdate.StartTime(class="form-control", value=row.StartTime)}}
+                        {{tripupdate.EndTime.label(class="form-label mt-3")}}
+                        {{tripupdate.EndTime(class="form-control", value=row.EndTime)}}
+                        {{tripupdate.TripStatus.label(class="form-label mt-3")}}
+                        {{tripupdate.TripStatus(class="form-control", value=row.TripStatus)}}
+                        <br/>
+                        {{tripupdate.submit(class="btn btn-primary")}}
+                        <!-- <label class="form-label mt-3">Driver ID</label>
                         <input
                           type="hidden"
                           class="form-control"
@@ -185,7 +216,7 @@ endblock %} {% block body %}
                         <br />
                         <button class="btn btn-primary" type="submit">
                           Update Trip
-                        </button>
+                        </button> -->
                       </div>
                     </form>
                   </div>
