@@ -65,6 +65,8 @@ class Employee(db.Model, UserMixin, Base):
     Password = db.Column(db.String(64), nullable=False, unique=True)
     DOB = db.Column(db.DateTime, nullable=False)
     PasswordSalt = db.Column(db.String(64), nullable=False)
+    AccountLocked = db.Column(db.Integer, nullable=False)
+    LoginCounter = db.Column(db.Integer, nullable=False)
 
     driver_child = relationship("Driver", cascade="all, delete", backref="Employee")
 
@@ -78,6 +80,8 @@ class Employee(db.Model, UserMixin, Base):
         self.Password = Password
         self.DOB = DOB
         self.PasswordSalt = PasswordSalt
+        self.AccountLocked = AccountLocked
+        self.LoginCounter = LoginCounter
 
     def get_id(self):
         return self.EmployeeId
@@ -174,31 +178,37 @@ def login():
 
         # If the user exists in db
         if user:
-            # If Login_Count = 5:
-            ## Lock Account
-            ### flask("Your account has been locked. Please contact administrator.")
-            ### return redirect
+            if user.AccountLocked:
+                flash("Your account has been locked. Please contact administrator.", "error")
+                return render_template("login.html", form=form)
 
-            # Else If Login_Count = 3 or 4
-            ## Validate CAPTCHA
-            ## While wrong CAPTCHA, re-try CAPTCHA
+            #elif user.LoginCounter==3 or user.LoginCounter==4:
+                ## TODO: Validate CAPTCHA here
+                ## While wrong CAPTCHA, re-try CAPTCHA
 
             # Check password
             derived_password = process_password(form.password.data, user.PasswordSalt)
             if user.Password == derived_password:
-                # Reset Login_Count to 0
+                user.LoginCounter = 0
+                # How to commit to db?
+
+                # TODO: OTP here
 
                 # Authorise login
                 login_user(user)
 
                 return redirect(url_for("employees"))
-            #else:
-                # Increment Login_Count
+            else:
+                user.AccountLocked = 0
+                user.LoginCounter += 1
+                if user.LoginCounter == 5:
+                    user.AccountLocked = 1
+                # How to commit to db?
 
         # Else if the user does not exist in db
-        ## Don't need to Else I think??
-        #else:
-        #    return render_template("login.html", form=form)
+        else:
+            #flash("Please check your credentials.", "error")
+            return render_template("login.html", form=form)
     return render_template("login.html", form=form)
 
 
