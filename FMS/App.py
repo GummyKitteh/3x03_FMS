@@ -23,6 +23,7 @@ from flask_login import (
     logout_user,
     current_user,
 )
+import logging
 
 from form import employeeInsert, fleetInsert, LoginForm
 from form import RoleTypes, TripStatusTypes
@@ -37,9 +38,8 @@ app.config["SECRET_KEY"] = "I really hope fking this work if never idk what to d
 
 # app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
 # app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwerty1234@localhost/fmssql"
-# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:B33pb33p!@178.128.17.35/fmssql_db"
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwert54321@localhost/fmssql"
-# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:B33pb33p!@178.128.17.35/fmssql"
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:B33pb33p!@178.128.17.35/fmssql_db"
+# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwert54321@localhost/fmssql"
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
@@ -52,6 +52,45 @@ db = SQLAlchemy(app)
 #     db.Column("driver_id", db.Integer, db.ForeignKey("driver.EmployeeId")),
 # )
 
+
+# ----- LOGGGING ----------------------------------------------------------------------
+
+logging.basicConfig(
+    filename="./FMS/logs/generallog.log",
+    encoding="utf-8",
+    filemode="w",
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s",
+)
+
+# Create Logger
+# logger = logging.getLogger(__name__)
+logger_Login = logging.getLogger("LOGIN")
+
+# Create FileHandler
+# handler = logging.FileHandler("filelog.log")
+handler_Login = logging.FileHandler("./FMS/logs/loginlog.log")
+
+# Set Formatter for Logger
+# formatter = logging.Formatter("%(asctime)s | %(name)s | %(levelname)s | %(message)s")
+formatter_login = logging.Formatter(
+    "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
+)
+
+# Set Formatter to Handler
+# handler.setFormatter(formatter)
+handler_Login.setFormatter(formatter_login)
+
+# Attach Handler to Logger
+# logger.addHandler(handler)
+logger_Login.addHandler(handler_Login)
+
+# logging.debug("This message should go to the log file")
+# logging.info("So should this")
+# logging.warning("And this, too")
+# logging.error("And non-ASCII stuff, too, like Øresund and Malmö")
+
+# ----- END LOGGGING ------------------------------------------------------------------
 # ----- CLASSES -----------------------------------------------------------------------
 
 
@@ -174,17 +213,20 @@ def login():
     form = LoginForm()
     account = Employee.query
     if request.method == "POST" and form.validate_on_submit():
-        user = account.filter_by(Email = form.Email.data).first()
+        user = account.filter_by(Email=form.Email.data).first()
 
         # If the user exists in db
         if user:
             if user.AccountLocked:
-                flash("Your account has been locked. Please contact administrator.", "error")
+                flash(
+                    "Your account has been locked. Please contact administrator.",
+                    "error",
+                )
                 return render_template("login.html", form=form)
 
-            #elif user.LoginCounter==3 or user.LoginCounter==4:
-                ## TODO: Validate CAPTCHA here
-                ## While wrong CAPTCHA, re-try CAPTCHA
+            # elif user.LoginCounter==3 or user.LoginCounter==4:
+            ## TODO: Validate CAPTCHA here
+            ## While wrong CAPTCHA, re-try CAPTCHA
 
             # Check password
             derived_password = process_password(form.password.data, user.PasswordSalt)
@@ -196,18 +238,23 @@ def login():
 
                 # Authorise login
                 login_user(user)
-
+                logger_Login.info(
+                    f"{user.FullName} (ID: {user.EmployeeId}) has logged IN."
+                )
                 return redirect(url_for("employees"))
             else:
                 user.AccountLocked = 0
                 user.LoginCounter += 1
+                logger_Login.warning(
+                    f"{user.FullName} (ID: {user.EmployeeId}) attempted to log in: {user.LoginCounter} time(s)."
+                )
                 if user.LoginCounter == 5:
                     user.AccountLocked = 1
                 # How to commit to db?
 
         # Else if the user does not exist in db
         else:
-            #flash("Please check your credentials.", "error")
+            # flash("Please check your credentials.", "error")
             return render_template("login.html", form=form)
     return render_template("login.html", form=form)
 
@@ -216,6 +263,7 @@ def login():
 @login_required
 def logout():
     logout_user()
+    logger_Login.info("This fella has logged OUT.")
     return redirect(url_for("index"))
 
 
@@ -225,6 +273,11 @@ def logout():
 
 @app.route("/")
 def index():
+    # app.logger.debug("debug")
+    # app.logger.info("info")
+    # app.logger.warning("warning")
+    # app.logger.error("error")
+    # app.logger.critical("critical")
     return render_template("index.html")
 
 
@@ -270,10 +323,13 @@ def addFleet():
         return redirect("/fleet")
     print("FAILURE")
 
+
 @app.context_processor
 def fleet():
     fleetupdate = fleetInsert()
     return dict(fleetupdate=fleetupdate)
+
+
 @app.route("/fleetUpdate", methods=["GET", "POST"])
 def fleetUpdate():
     fleetupdate = fleetInsert()
@@ -286,7 +342,7 @@ def fleetUpdate():
         db.session.commit()
         flash("Vehicle Updated Successfully")
 
-        return redirect(url_for("fleet",fleetupdate=fleetupdate))
+        return redirect(url_for("fleet", fleetupdate=fleetupdate))
 
 
 @app.route("/fleet/delete/<id>", methods=["GET", "POST"])
@@ -370,10 +426,13 @@ def addEmployee():
 
         PasswordSalt = generate_salt()  # 32-byte salt in hexadecimal
         is_common_password = check_common_password(formEmployee.Password.data)
-        
+
         # If password chosen is a common password
-        if(is_common_password):
-            flash("Password chosen is a commonly used password. Please choose another.", "error")
+        if is_common_password:
+            flash(
+                "Password chosen is a commonly used password. Please choose another.",
+                "error",
+            )
             return redirect("/employees")
 
         Password = process_password(formEmployee.Password.data, PasswordSalt)
@@ -547,10 +606,13 @@ def tripSearch():
         else:
             flash("Cannot find Trip")
 
+
 @app.context_processor
 def trip():
     tripupdate = tripInsert()
     return dict(tripupdate=tripupdate)
+
+
 @app.route("/trip/tripUpdate", methods=["GET", "POST"])
 def tripUpdate():
     tripupdate = tripInsert()
@@ -567,7 +629,7 @@ def tripUpdate():
         db.session.commit()
         flash("Trip Updated Successfully")
 
-        return redirect(url_for("trip",tripupdate=tripupdate))
+        return redirect(url_for("trip", tripupdate=tripupdate))
 
 
 @app.route("/trip/delete/<id>", methods=["GET", "POST"])
@@ -596,19 +658,26 @@ def profile():
         name_to_update.Email = request.form["Email"]
         name_to_update.ContactNumber = request.form["ContactNumber"]
         name_to_update.DOB = request.form["DOB"]
-        
-        derived_password = process_password(request.form["OldPassword"], name_to_update.PasswordSalt)
+
+        derived_password = process_password(
+            request.form["OldPassword"], name_to_update.PasswordSalt
+        )
         if name_to_update.Password == derived_password:
             if request.form["ConfirmPassword"] == request.form["NewPassword"]:
                 PasswordSalt = generate_salt()  # 32-byte salt in hexadecimal
                 is_common_password = check_common_password(request.form["NewPassword"])
 
                 # If password chosen is a common password
-                if(is_common_password):
-                    flash("Password chosen is a commonly used password. Please choose another.", "error")
+                if is_common_password:
+                    flash(
+                        "Password chosen is a commonly used password. Please choose another.",
+                        "error",
+                    )
 
                 else:
-                    NewPassword = process_password(request.form["NewPassword"], PasswordSalt)
+                    NewPassword = process_password(
+                        request.form["NewPassword"], PasswordSalt
+                    )
                     name_to_update.Password = NewPassword
                     name_to_update.PasswordSalt = PasswordSalt
                     db.session.commit()
