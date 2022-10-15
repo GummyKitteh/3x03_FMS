@@ -39,18 +39,12 @@ app.config["SECRET_KEY"] = "I really hope fking this work if never idk what to d
 # app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwerty1234@localhost/fmssql"
 app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:B33pb33p!@178.128.17.35/fmssql_db"
 # app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwert54321@localhost/fmssql"
-# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:B33pb33p!@178.128.17.35/fmssql"
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
 # https://www.youtube.com/watch?v=4gRMV-wZTQs
-
-# Emp_Dri = db.Table(
-#     "emp_dri",
-#     db.Column("employee_id", db.Integer, db.ForeignKey("employee.EmployeeId")),
-#     db.Column("driver_id", db.Integer, db.ForeignKey("driver.EmployeeId")),
-# )
+# http://127.0.0.1:5000
 
 # ----- CLASSES -----------------------------------------------------------------------
 
@@ -106,7 +100,11 @@ class Fleet(db.Model):
     VehicleCapacity = db.Column(db.Integer, nullable=False)
     VehicleStatus = db.Column(db.String(45), nullable=False)
 
-    trip_childFleet = relationship("Trip", cascade="all, delete", backref="Fleet")
+    trip_childFleet = relationship(
+        "Trip",
+        cascade="all, delete",
+        backref="Fleet",
+    )
 
     def __init__(self, BusNumberPlate, VehicleCapacity, VehicleStatus):
         self.BusNumberPlate = BusNumberPlate
@@ -170,7 +168,7 @@ def login():
     form = LoginForm()
     account = Employee.query
     if request.method == "POST" and form.validate_on_submit():
-        user = account.filter_by(Email = form.Email.data).first()
+        user = account.filter_by(Email=form.Email.data).first()
 
         # If the user exists in db
         if user:
@@ -192,12 +190,12 @@ def login():
                 login_user(user)
 
                 return redirect(url_for("employees"))
-            #else:
-                # Increment Login_Count
+            # else:
+            # Increment Login_Count
 
         # Else if the user does not exist in db
         ## Don't need to Else I think??
-        #else:
+        # else:
         #    return render_template("login.html", form=form)
     return render_template("login.html", form=form)
 
@@ -260,10 +258,13 @@ def addFleet():
         return redirect("/fleet")
     print("FAILURE")
 
+
 @app.context_processor
 def fleet():
     fleetupdate = fleetInsert()
     return dict(fleetupdate=fleetupdate)
+
+
 @app.route("/fleetUpdate", methods=["GET", "POST"])
 def fleetUpdate():
     fleetupdate = fleetInsert()
@@ -276,7 +277,7 @@ def fleetUpdate():
         db.session.commit()
         flash("Vehicle Updated Successfully")
 
-        return redirect(url_for("fleet",fleetupdate=fleetupdate))
+        return redirect(url_for("fleet", fleetupdate=fleetupdate))
 
 
 @app.route("/fleet/delete/<id>", methods=["GET", "POST"])
@@ -360,12 +361,15 @@ def addEmployee():
         PasswordSalt = generate_salt()  # 32-byte salt in hexadecimal
         is_common_password = check_common_password(formEmployee.Password.data)
         # If password chosen is a common password
-        if(is_common_password):
-            flash("Password chosen is a commonly used password. Please choose another.", "error")
+        if is_common_password:
+            flash(
+                "Password chosen is a commonly used password. Please choose another.",
+                "error",
+            )
             return redirect("/employees")
         else:
             Password = process_password(formEmployee.Password.data, PasswordSalt)
-            print("ABCDE "+ str(formEmployee.Password.data) + " "+str(PasswordSalt))
+            print("ABCDE " + str(formEmployee.Password.data) + " " + str(PasswordSalt))
 
             formEmployee.FullName.data = ""
             formEmployee.ContactNumber.data = ""
@@ -381,7 +385,9 @@ def addEmployee():
 
             if Role == "driver":
                 obj = (
-                    db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
+                    db.session.query(Employee)
+                    .order_by(Employee.EmployeeId.desc())
+                    .first()
                 )
                 driver_data = Driver(obj.EmployeeId, 1, "Account Created")
                 emp_data.driver_child.append(driver_data)
@@ -537,10 +543,13 @@ def tripSearch():
         else:
             flash("Cannot find Trip")
 
+
 @app.context_processor
 def trip():
     tripupdate = tripInsert()
     return dict(tripupdate=tripupdate)
+
+
 @app.route("/trip/tripUpdate", methods=["GET", "POST"])
 def tripUpdate():
     tripupdate = tripInsert()
@@ -557,7 +566,7 @@ def tripUpdate():
         db.session.commit()
         flash("Trip Updated Successfully")
 
-        return redirect(url_for("trip",tripupdate=tripupdate))
+        return redirect(url_for("trip", tripupdate=tripupdate))
 
 
 @app.route("/trip/delete/<id>", methods=["GET", "POST"])
@@ -586,19 +595,26 @@ def profile():
         name_to_update.Email = request.form["Email"]
         name_to_update.ContactNumber = request.form["ContactNumber"]
         name_to_update.DOB = request.form["DOB"]
-        
-        derived_password = process_password(request.form["OldPassword"], name_to_update.PasswordSalt)
+
+        derived_password = process_password(
+            request.form["OldPassword"], name_to_update.PasswordSalt
+        )
         if name_to_update.Password == derived_password:
             if request.form["ConfirmPassword"] == request.form["NewPassword"]:
                 PasswordSalt = generate_salt()  # 32-byte salt in hexadecimal
                 is_common_password = check_common_password(request.form["NewPassword"])
 
                 # If password chosen is a common password
-                if(is_common_password):
-                    flash("Password chosen is a commonly used password. Please choose another.", "error")
+                if is_common_password:
+                    flash(
+                        "Password chosen is a commonly used password. Please choose another.",
+                        "error",
+                    )
 
                 else:
-                    NewPassword = process_password(request.form["NewPassword"], PasswordSalt)
+                    NewPassword = process_password(
+                        request.form["NewPassword"], PasswordSalt
+                    )
                     name_to_update.Password = NewPassword
                     name_to_update.PasswordSalt = PasswordSalt
                     db.session.commit()

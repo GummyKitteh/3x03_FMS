@@ -100,7 +100,7 @@ endblock %} {% block body %}
                 <a
                   href="/fleet/delete/{{row.VehicleId}}"
                   class="btn btn-danger btn-xs"
-                  onclick="return confirm('Confirm Delete?')"
+                  onclick="return confirm('Warning!\nDeleting a Vehicle will delete its corresponding trips.\n\nConfirm Delete?')"
                   >Delete</a
                 >
               </td>
@@ -127,12 +127,15 @@ endblock %} {% block body %}
                         />
                         {{fleetupdate.hidden_tag()}}
                         {{fleetupdate.BusNumberPlate.label(class="form-labelmt-3")}}
-                        {{fleetupdate.BusNumberPlate(class="form-control", value=row.BusNumberPlate)}}
+                        {{fleetupdate.BusNumberPlate(class="form-control",
+                        value=row.BusNumberPlate)}}
                         {{fleetupdate.VehicleCapacity.label(class="form-labelmt-3")}}
-                        {{fleetupdate.VehicleCapacity(class="form-control", value=row.VehicleCapacity)}}
+                        {{fleetupdate.VehicleCapacity(class="form-control",
+                        value=row.VehicleCapacity)}}
                         {{fleetupdate.VehicleStatus.label(class="form-labelmt-3")}}
-                        {{fleetupdate.VehicleStatus(class="form-control", value=row.VehicleStatus)}}
-                        <br/>
+                        {{fleetupdate.VehicleStatus(class="form-control",
+                        value=row.VehicleStatus)}}
+                        <br />
                         {{fleetupdate.submit(class="btn btn-primary")}}
                       </div>
                     </form>
