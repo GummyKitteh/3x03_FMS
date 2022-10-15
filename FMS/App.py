@@ -23,6 +23,8 @@ from flask_login import (
     logout_user,
     current_user,
 )
+import logging
+from time import strftime
 
 from form import employeeInsert, employeeUpdate, fleetInsert, LoginForm
 from form import RoleTypes, TripStatusTypes
@@ -46,6 +48,48 @@ db = SQLAlchemy(app)
 # https://www.youtube.com/watch?v=4gRMV-wZTQs
 # http://127.0.0.1:5000
 
+
+# ----- LOGGGING ----------------------------------------------------------------------
+
+logging.basicConfig(
+    filename="./FMS/logs/generallog.log",
+    encoding="utf-8",
+    filemode="a",
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s",
+)
+
+# Create Logger
+# logger = logging.getLogger(__name__)
+logger_auth = logging.getLogger("AUTH")
+logger_crud = logging.getLogger("CRUD")
+
+# Create FileHandler
+handler_auth = logging.FileHandler(strftime(f"./FMS/logs/authlog_%d%m%y.log"))
+handler_crud = logging.FileHandler(strftime(f"./FMS/logs/crudlog_%d%m%y.log"))
+
+# Set Formatter for Logger
+formatter_auth = logging.Formatter(
+    "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
+)
+formatter_crud = logging.Formatter(
+    "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
+)
+
+# Set Formatter to Handler
+handler_auth.setFormatter(formatter_auth)
+handler_crud.setFormatter(formatter_crud)
+
+# Attach Handler to Logger
+logger_auth.addHandler(handler_auth)
+logger_crud.addHandler(handler_crud)
+
+# logging.debug("This message should go to the log file")
+# logging.info("So should this")
+# logging.warning("And this, too")
+# logging.error("And non-ASCII stuff, too, like Øresund and Malmö")
+
+# ----- END LOGGGING ------------------------------------------------------------------
 # ----- CLASSES -----------------------------------------------------------------------
 
 
@@ -188,15 +232,24 @@ def login():
 
                 # Authorise login
                 login_user(user)
-
+                logger_auth.info(
+                    f"{user.FullName} (ID: {user.EmployeeId}) has logged IN."
+                )
                 return redirect(url_for("employees"))
-            # else:
-            # Increment Login_Count
+            else:
+                user.AccountLocked = 0
+                user.LoginCounter += 1
+                logger_auth.warning(
+                    f"{user.FullName} (ID: {user.EmployeeId}) attempted to log in: {user.LoginCounter} time(s)."
+                )
+                if user.LoginCounter == 5:
+                    user.AccountLocked = 1
+                # How to commit to db?
 
         # Else if the user does not exist in db
-        ## Don't need to Else I think??
-        # else:
-        #    return render_template("login.html", form=form)
+        else:
+            # flash("Please check your credentials.", "error")
+            return render_template("login.html", form=form)
     return render_template("login.html", form=form)
 
 
@@ -204,6 +257,7 @@ def login():
 @login_required
 def logout():
     logout_user()
+    logger_auth.info("This fella has logged OUT.")
     return redirect(url_for("index"))
 
 
@@ -213,6 +267,11 @@ def logout():
 
 @app.route("/")
 def index():
+    # app.logger.debug("debug")
+    # app.logger.info("info")
+    # app.logger.warning("warning")
+    # app.logger.error("error")
+    # app.logger.critical("critical")
     return render_template("index.html")
 
 
@@ -255,8 +314,13 @@ def addFleet():
         db.session.add(fleet_data)
         db.session.commit()
         flash("Vehicle inserted sucessfully")
+        obj = db.session.query(Fleet).order_by(Fleet.VehicleId.desc()).first()
+        logger_crud.info(f"Vechicle (ID: {obj.VehicleId}) inserted to Fleet.")
         return redirect("/fleet")
-    print("FAILURE")
+    else:
+        flash("Vehicle insert failed.")
+        logger_crud.error(f"Vehicle insert failed.")
+        return redirect("/fleet")
 
 
 @app.context_processor
@@ -367,6 +431,27 @@ def addEmployee():
                 "error",
             )
             return redirect("/employees")
+
+        Password = process_password(formEmployee.Password.data, PasswordSalt)
+
+        formEmployee.FullName.data = ""
+        formEmployee.ContactNumber.data = ""
+        formEmployee.Email.data = ""
+        formEmployee.DOB.data = ""
+        formEmployee.Role.data = ""
+        formEmployee.Password.data = ""
+        formEmployee.Password.data = ""
+        emp_data = Employee(
+            FullName, Email, ContactNumber, Role, Password, DOB, PasswordSalt
+        )
+        db.session.add(emp_data)
+        db.session.commit()
+
+        if Role == "driver":
+            obj = (
+                db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
+            )
+            return redirect("/employees")
         else:
             Password = process_password(formEmployee.Password.data, PasswordSalt)
             print("ABCDE " + str(formEmployee.Password.data) + " " + str(PasswordSalt))
@@ -399,6 +484,7 @@ def addEmployee():
         # print("ABCDE "+ str(formEmployee.Password.data) + " "+str(PasswordSalt))
         # print("GIGI "+ str(PasswordSalt))
         flash("Employee insert failed")
+        logger_crud.error(f"Employee insert failed.")
         return redirect("/employees")
 
 

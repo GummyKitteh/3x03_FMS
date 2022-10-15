@@ -1,4 +1,6 @@
-
+FMS/__pycache__/
+__pycache__/
+*/__pycache__/*.pyc
 *.pyc
-*.pyc
-*.pyc
+FMS/__pycache__/form.cpython-310.pyc
+FMS/__pycache__/form.cpython-310.pyc
