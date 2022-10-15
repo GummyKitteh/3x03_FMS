@@ -45,8 +45,21 @@ class SearchFormTrip(FlaskForm):
     )
     submit = SubmitField("Submit")
 
-
 class employeeInsert(FlaskForm):
+    FullName = StringField("Full Name", [DataRequired(), Length(max=50)])
+    Email = StringField("Email", [DataRequired(), Email(), Length(max=100)])
+    ContactNumber = StringField(
+        "Contact Number", [DataRequired(), Length(min=8), Length(max=8)]
+    )
+    DOB = DateField("DOB", format="%Y-%m-%d")
+    Role = SelectField(
+        "Role", choices=[(choice.name, choice.value) for choice in RoleTypes]
+    )
+    
+    Password = PasswordField("Password", [DataRequired(), Length(min=8)])
+    submit = SubmitField("Submit", [DataRequired()])
+
+class employeeUpdate(FlaskForm):
     FullName = StringField("Full Name", [DataRequired(), Length(max=50)])
     Email = StringField("Email", [DataRequired(), Email(), Length(max=100)])
     ContactNumber = StringField(
