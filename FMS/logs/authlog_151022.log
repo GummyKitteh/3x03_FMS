@@ -1,1 +1,8 @@
 2022-10-15 11:31:58,835 | AUTH | INFO | This fella has logged OUT.
+2022-10-15 16:42:04,311 | AUTH | INFO | This fella has logged OUT.
+2022-10-15 16:45:25,141 | AUTH | WARNING | admin (ID: 1) attempted to log in: x time(s).
+2022-10-15 16:45:29,255 | AUTH | INFO | admin (ID: 1) has logged IN.
+2022-10-15 16:45:41,308 | AUTH | INFO | This fella has logged OUT.
+2022-10-15 16:45:47,507 | AUTH | WARNING | admin (ID: 1) attempted to log in: x time(s).
+2022-10-15 16:45:50,041 | AUTH | INFO | admin (ID: 1) has logged IN.
+2022-10-15 16:47:19,632 | AUTH | INFO | This fella has logged OUT.

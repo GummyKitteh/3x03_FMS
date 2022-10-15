@@ -103,11 +103,21 @@ class Employee(db.Model, UserMixin, Base):
     Password = db.Column(db.String(64), nullable=False, unique=True)
     DOB = db.Column(db.DateTime, nullable=False)
     PasswordSalt = db.Column(db.String(64), nullable=False)
+    # AccountLocked = db.Column(db.Integer, nullable=False)
+    # LoginCounter = db.Column(db.Integer, nullable=False)
 
     driver_child = relationship("Driver", cascade="all, delete", backref="Employee")
 
     def __init__(
-        self, FullName, Email, ContactNumber, Role, Password, DOB, PasswordSalt
+        self,
+        FullName,
+        Email,
+        ContactNumber,
+        Role,
+        Password,
+        DOB,
+        PasswordSalt,
+        # AccountLocked, LoginCounter
     ):
         self.FullName = FullName
         self.Email = Email
@@ -116,6 +126,8 @@ class Employee(db.Model, UserMixin, Base):
         self.Password = Password
         self.DOB = DOB
         self.PasswordSalt = PasswordSalt
+        # self.AccountLocked = AccountLocked
+        # self.LoginCounter = LoginCounter
 
     def get_id(self):
         return self.EmployeeId
@@ -237,13 +249,13 @@ def login():
                 )
                 return redirect(url_for("employees"))
             else:
-                user.AccountLocked = 0
-                user.LoginCounter += 1
+                # user.AccountLocked = 0
+                # user.LoginCounter += 1
                 logger_auth.warning(
-                    f"{user.FullName} (ID: {user.EmployeeId}) attempted to log in: {user.LoginCounter} time(s)."
+                    f"{user.FullName} (ID: {user.EmployeeId}) attempted to log in: x time(s)."
                 )
-                if user.LoginCounter == 5:
-                    user.AccountLocked = 1
+                # if user.LoginCounter == 5:
+                #     user.AccountLocked = 1
                 # How to commit to db?
 
         # Else if the user does not exist in db
@@ -704,7 +716,7 @@ def profile():
                     name_to_update.Password = NewPassword
                     name_to_update.PasswordSalt = PasswordSalt
                     db.session.commit()
-                    flash("Profile Have Updated")
+                    flash("Profile has been updated")
                     return render_template(
                         "profile.html",
                         updateFormEmployee=updateFormEmployee,

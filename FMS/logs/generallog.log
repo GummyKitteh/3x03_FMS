@@ -4,3 +4,183 @@
 2022-10-15 11:33:13,482 | INFO |  * Restarting with stat
 2022-10-15 11:33:14,646 | WARNING |  * Debugger is active!
 2022-10-15 11:33:14,662 | INFO |  * Debugger PIN: 310-589-789
+2022-10-15 16:41:54,587 | INFO | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2022-10-15 16:41:54,587 | INFO | [33mPress CTRL+C to quit[0m
+2022-10-15 16:41:54,588 | INFO |  * Restarting with stat
+2022-10-15 16:41:55,455 | WARNING |  * Debugger is active!
+2022-10-15 16:41:55,455 | INFO |  * Debugger PIN: 310-589-789
+2022-10-15 16:42:04,311 | INFO | This fella has logged OUT.
+2022-10-15 16:42:04,323 | INFO | 127.0.0.1 - - [15/Oct/2022 16:42:04] "[32mGET /logout HTTP/1.1[0m" 302 -
+2022-10-15 16:42:04,338 | INFO | 127.0.0.1 - - [15/Oct/2022 16:42:04] "GET / HTTP/1.1" 200 -
+2022-10-15 16:42:04,368 | INFO | 127.0.0.1 - - [15/Oct/2022 16:42:04] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:42:04,497 | INFO | 127.0.0.1 - - [15/Oct/2022 16:42:04] "[36mGET /static/js/bootstrap.min.js HTTP/1.1[0m" 304 -
+2022-10-15 16:42:04,498 | INFO | 127.0.0.1 - - [15/Oct/2022 16:42:04] "[36mGET /static/css/bootstrap.min.css HTTP/1.1[0m" 304 -
+2022-10-15 16:42:04,500 | INFO | 127.0.0.1 - - [15/Oct/2022 16:42:04] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
+2022-10-15 16:42:04,509 | INFO | 127.0.0.1 - - [15/Oct/2022 16:42:04] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:42:12,137 | INFO | 127.0.0.1 - - [15/Oct/2022 16:42:12] "GET /login HTTP/1.1" 200 -
+2022-10-15 16:42:12,170 | INFO | 127.0.0.1 - - [15/Oct/2022 16:42:12] "[36mGET /static/css/bootstrap.min.css HTTP/1.1[0m" 304 -
+2022-10-15 16:42:12,170 | INFO | 127.0.0.1 - - [15/Oct/2022 16:42:12] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:42:12,170 | INFO | 127.0.0.1 - - [15/Oct/2022 16:42:12] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
+2022-10-15 16:42:12,185 | INFO | 127.0.0.1 - - [15/Oct/2022 16:42:12] "[36mGET /static/js/bootstrap.min.js HTTP/1.1[0m" 304 -
+2022-10-15 16:42:12,233 | INFO | 127.0.0.1 - - [15/Oct/2022 16:42:12] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:42:14,692 | INFO | 127.0.0.1 - - [15/Oct/2022 16:42:14] "[35m[1mPOST /login HTTP/1.1[0m" 500 -
+2022-10-15 16:42:14,740 | INFO | 127.0.0.1 - - [15/Oct/2022 16:42:14] "[36mGET /login?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2022-10-15 16:42:14,748 | INFO | 127.0.0.1 - - [15/Oct/2022 16:42:14] "[36mGET /login?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2022-10-15 16:42:14,789 | INFO | 127.0.0.1 - - [15/Oct/2022 16:42:14] "[36mGET /login?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2022-10-15 16:42:14,821 | INFO | 127.0.0.1 - - [15/Oct/2022 16:42:14] "[36mGET /login?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2022-10-15 16:43:15,187 | INFO |  * Detected change in 'c:\\Users\\jaspz\\Documents\\GitHub\\3x03_FMS\\FMS\\App.py', reloading
+2022-10-15 16:43:15,295 | INFO |  * Restarting with stat
+2022-10-15 16:43:16,185 | WARNING |  * Debugger is active!
+2022-10-15 16:43:16,191 | INFO |  * Debugger PIN: 310-589-789
+2022-10-15 16:44:12,754 | INFO |  * Detected change in 'c:\\Users\\jaspz\\Documents\\GitHub\\3x03_FMS\\FMS\\App.py', reloading
+2022-10-15 16:44:12,805 | INFO |  * Restarting with stat
+2022-10-15 16:44:13,654 | WARNING |  * Debugger is active!
+2022-10-15 16:44:13,657 | INFO |  * Debugger PIN: 310-589-789
+2022-10-15 16:45:12,193 | INFO |  * Detected change in 'c:\\Users\\jaspz\\Documents\\GitHub\\3x03_FMS\\FMS\\App.py', reloading
+2022-10-15 16:45:12,249 | INFO |  * Restarting with stat
+2022-10-15 16:45:13,094 | WARNING |  * Debugger is active!
+2022-10-15 16:45:13,097 | INFO |  * Debugger PIN: 310-589-789
+2022-10-15 16:45:17,149 | INFO |  * Detected change in 'c:\\Users\\jaspz\\Documents\\GitHub\\3x03_FMS\\FMS\\App.py', reloading
+2022-10-15 16:45:17,262 | INFO |  * Restarting with stat
+2022-10-15 16:45:18,245 | WARNING |  * Debugger is active!
+2022-10-15 16:45:18,248 | INFO |  * Debugger PIN: 310-589-789
+2022-10-15 16:45:19,976 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:19] "GET /login HTTP/1.1" 200 -
+2022-10-15 16:45:20,017 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:20] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:45:20,120 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:20] "[36mGET /static/css/bootstrap.min.css HTTP/1.1[0m" 304 -
+2022-10-15 16:45:20,121 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:20] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
+2022-10-15 16:45:20,125 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:20] "[36mGET /static/js/bootstrap.min.js HTTP/1.1[0m" 304 -
+2022-10-15 16:45:20,149 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:20] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:45:25,141 | WARNING | admin (ID: 1) attempted to log in: x time(s).
+2022-10-15 16:45:25,165 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:25] "POST /login HTTP/1.1" 200 -
+2022-10-15 16:45:25,205 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:25] "[36mGET /static/css/bootstrap.min.css HTTP/1.1[0m" 304 -
+2022-10-15 16:45:25,207 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:25] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:45:25,209 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:25] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
+2022-10-15 16:45:25,211 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:25] "[36mGET /static/js/bootstrap.min.js HTTP/1.1[0m" 304 -
+2022-10-15 16:45:25,253 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:25] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:45:29,255 | INFO | admin (ID: 1) has logged IN.
+2022-10-15 16:45:29,273 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:29] "[32mPOST /login HTTP/1.1[0m" 302 -
+2022-10-15 16:45:29,360 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:29] "GET /employees HTTP/1.1" 200 -
+2022-10-15 16:45:29,401 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:29] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:45:29,401 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:29] "[36mGET /static/css/bootstrap.min.css HTTP/1.1[0m" 304 -
+2022-10-15 16:45:29,403 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:29] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
+2022-10-15 16:45:29,406 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:29] "[36mGET /static/js/bootstrap.min.js HTTP/1.1[0m" 304 -
+2022-10-15 16:45:29,430 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:29] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:45:41,308 | INFO | This fella has logged OUT.
+2022-10-15 16:45:41,323 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:41] "[32mGET /logout HTTP/1.1[0m" 302 -
+2022-10-15 16:45:41,323 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:41] "GET / HTTP/1.1" 200 -
+2022-10-15 16:45:41,370 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:41] "[36mGET /static/css/bootstrap.min.css HTTP/1.1[0m" 304 -
+2022-10-15 16:45:41,370 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:41] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
+2022-10-15 16:45:41,370 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:41] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:45:41,378 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:41] "[36mGET /static/js/bootstrap.min.js HTTP/1.1[0m" 304 -
+2022-10-15 16:45:41,399 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:41] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:45:42,455 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:42] "GET /login HTTP/1.1" 200 -
+2022-10-15 16:45:42,512 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:42] "[36mGET /static/css/bootstrap.min.css HTTP/1.1[0m" 304 -
+2022-10-15 16:45:42,512 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:42] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
+2022-10-15 16:45:42,512 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:42] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:45:42,528 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:42] "[36mGET /static/js/bootstrap.min.js HTTP/1.1[0m" 304 -
+2022-10-15 16:45:42,555 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:42] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:45:47,507 | WARNING | admin (ID: 1) attempted to log in: x time(s).
+2022-10-15 16:45:47,521 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:47] "POST /login HTTP/1.1" 200 -
+2022-10-15 16:45:47,563 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:47] "[36mGET /static/css/bootstrap.min.css HTTP/1.1[0m" 304 -
+2022-10-15 16:45:47,565 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:47] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:45:47,565 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:47] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
+2022-10-15 16:45:47,568 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:47] "[36mGET /static/js/bootstrap.min.js HTTP/1.1[0m" 304 -
+2022-10-15 16:45:47,592 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:47] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:45:50,041 | INFO | admin (ID: 1) has logged IN.
+2022-10-15 16:45:50,054 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:50] "[32mPOST /login HTTP/1.1[0m" 302 -
+2022-10-15 16:45:50,088 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:50] "GET /employees HTTP/1.1" 200 -
+2022-10-15 16:45:50,127 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:50] "[36mGET /static/css/bootstrap.min.css HTTP/1.1[0m" 304 -
+2022-10-15 16:45:50,129 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:50] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:45:50,131 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:50] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
+2022-10-15 16:45:50,133 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:50] "[36mGET /static/js/bootstrap.min.js HTTP/1.1[0m" 304 -
+2022-10-15 16:45:50,172 | INFO | 127.0.0.1 - - [15/Oct/2022 16:45:50] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:46:10,538 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:10] "[32mPOST /employees/insert HTTP/1.1[0m" 302 -
+2022-10-15 16:46:10,571 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:10] "GET /employees HTTP/1.1" 200 -
+2022-10-15 16:46:10,612 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:10] "[36mGET /static/css/bootstrap.min.css HTTP/1.1[0m" 304 -
+2022-10-15 16:46:10,614 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:10] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:46:10,615 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:10] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
+2022-10-15 16:46:10,617 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:10] "[36mGET /static/js/bootstrap.min.js HTTP/1.1[0m" 304 -
+2022-10-15 16:46:10,658 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:10] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:46:12,724 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:12] "GET /fleet HTTP/1.1" 200 -
+2022-10-15 16:46:12,764 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:12] "[36mGET /static/css/bootstrap.min.css HTTP/1.1[0m" 304 -
+2022-10-15 16:46:12,767 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:12] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:46:12,769 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:12] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
+2022-10-15 16:46:12,771 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:12] "[36mGET /static/js/bootstrap.min.js HTTP/1.1[0m" 304 -
+2022-10-15 16:46:12,808 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:12] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:46:20,580 | INFO | Vechicle (ID: 5) inserted to Fleet.
+2022-10-15 16:46:20,593 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:20] "[32mPOST /fleet/fleetinsert HTTP/1.1[0m" 302 -
+2022-10-15 16:46:20,628 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:20] "GET /fleet HTTP/1.1" 200 -
+2022-10-15 16:46:20,669 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:20] "[36mGET /static/css/bootstrap.min.css HTTP/1.1[0m" 304 -
+2022-10-15 16:46:20,670 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:20] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:46:20,671 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:20] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
+2022-10-15 16:46:20,674 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:20] "[36mGET /static/js/bootstrap.min.js HTTP/1.1[0m" 304 -
+2022-10-15 16:46:20,704 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:20] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:46:22,247 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:22] "GET /trip HTTP/1.1" 200 -
+2022-10-15 16:46:22,285 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:22] "[36mGET /static/css/bootstrap.min.css HTTP/1.1[0m" 304 -
+2022-10-15 16:46:22,287 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:22] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:46:22,289 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:22] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
+2022-10-15 16:46:22,291 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:22] "[36mGET /static/js/bootstrap.min.js HTTP/1.1[0m" 304 -
+2022-10-15 16:46:22,312 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:22] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:46:32,313 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:32] "[32mPOST /trip/tripinsert HTTP/1.1[0m" 302 -
+2022-10-15 16:46:32,355 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:32] "GET /trip HTTP/1.1" 200 -
+2022-10-15 16:46:32,398 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:32] "[36mGET /static/css/bootstrap.min.css HTTP/1.1[0m" 304 -
+2022-10-15 16:46:32,399 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:32] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:46:32,401 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:32] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
+2022-10-15 16:46:32,403 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:32] "[36mGET /static/js/bootstrap.min.js HTTP/1.1[0m" 304 -
+2022-10-15 16:46:32,434 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:32] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:46:33,933 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:33] "GET /fleet HTTP/1.1" 200 -
+2022-10-15 16:46:33,969 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:33] "[36mGET /static/css/bootstrap.min.css HTTP/1.1[0m" 304 -
+2022-10-15 16:46:33,970 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:33] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:46:33,971 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:33] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
+2022-10-15 16:46:33,975 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:33] "[36mGET /static/js/bootstrap.min.js HTTP/1.1[0m" 304 -
+2022-10-15 16:46:34,010 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:34] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:46:37,894 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:37] "[32mGET /fleet/delete/5 HTTP/1.1[0m" 302 -
+2022-10-15 16:46:37,930 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:37] "GET /fleet HTTP/1.1" 200 -
+2022-10-15 16:46:37,980 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:37] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:46:37,980 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:37] "[36mGET /static/css/bootstrap.min.css HTTP/1.1[0m" 304 -
+2022-10-15 16:46:37,984 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:37] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
+2022-10-15 16:46:37,985 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:37] "[36mGET /static/js/bootstrap.min.js HTTP/1.1[0m" 304 -
+2022-10-15 16:46:38,017 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:38] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:46:38,651 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:38] "GET /trip HTTP/1.1" 200 -
+2022-10-15 16:46:38,689 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:38] "[36mGET /static/css/bootstrap.min.css HTTP/1.1[0m" 304 -
+2022-10-15 16:46:38,690 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:38] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
+2022-10-15 16:46:38,691 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:38] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:46:38,695 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:38] "[36mGET /static/js/bootstrap.min.js HTTP/1.1[0m" 304 -
+2022-10-15 16:46:38,730 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:38] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:46:39,197 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:39] "GET /employees HTTP/1.1" 200 -
+2022-10-15 16:46:39,236 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:39] "[36mGET /static/css/bootstrap.min.css HTTP/1.1[0m" 304 -
+2022-10-15 16:46:39,239 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:39] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:46:39,240 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:39] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
+2022-10-15 16:46:39,243 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:39] "[36mGET /static/js/bootstrap.min.js HTTP/1.1[0m" 304 -
+2022-10-15 16:46:39,283 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:39] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:46:40,209 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:40] "GET /profile HTTP/1.1" 200 -
+2022-10-15 16:46:40,254 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:40] "[36mGET /static/css/bootstrap.min.css HTTP/1.1[0m" 304 -
+2022-10-15 16:46:40,257 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:40] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
+2022-10-15 16:46:40,258 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:40] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:46:40,262 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:40] "[36mGET /static/js/bootstrap.min.js HTTP/1.1[0m" 304 -
+2022-10-15 16:46:40,299 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:40] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:46:53,664 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:53] "POST /profile HTTP/1.1" 200 -
+2022-10-15 16:46:53,710 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:53] "[36mGET /static/css/bootstrap.min.css HTTP/1.1[0m" 304 -
+2022-10-15 16:46:53,712 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:53] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
+2022-10-15 16:46:53,718 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:53] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:46:53,721 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:53] "[36mGET /static/js/bootstrap.min.js HTTP/1.1[0m" 304 -
+2022-10-15 16:46:53,755 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:53] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:46:55,337 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:55] "GET /employees HTTP/1.1" 200 -
+2022-10-15 16:46:55,371 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:55] "[36mGET /static/css/bootstrap.min.css HTTP/1.1[0m" 304 -
+2022-10-15 16:46:55,375 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:55] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:46:55,375 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:55] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
+2022-10-15 16:46:55,378 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:55] "[36mGET /static/js/bootstrap.min.js HTTP/1.1[0m" 304 -
+2022-10-15 16:46:55,406 | INFO | 127.0.0.1 - - [15/Oct/2022 16:46:55] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:47:13,382 | INFO |  * Detected change in 'c:\\Users\\jaspz\\Documents\\GitHub\\3x03_FMS\\FMS\\App.py', reloading
+2022-10-15 16:47:13,444 | INFO |  * Restarting with stat
+2022-10-15 16:47:14,224 | WARNING |  * Debugger is active!
+2022-10-15 16:47:14,226 | INFO |  * Debugger PIN: 310-589-789
+2022-10-15 16:47:19,632 | INFO | This fella has logged OUT.
+2022-10-15 16:47:19,646 | INFO | 127.0.0.1 - - [15/Oct/2022 16:47:19] "[32mGET /logout HTTP/1.1[0m" 302 -
+2022-10-15 16:47:19,662 | INFO | 127.0.0.1 - - [15/Oct/2022 16:47:19] "GET / HTTP/1.1" 200 -
+2022-10-15 16:47:19,703 | INFO | 127.0.0.1 - - [15/Oct/2022 16:47:19] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
+2022-10-15 16:47:19,792 | INFO | 127.0.0.1 - - [15/Oct/2022 16:47:19] "[36mGET /static/css/bootstrap.min.css HTTP/1.1[0m" 304 -
+2022-10-15 16:47:19,808 | INFO | 127.0.0.1 - - [15/Oct/2022 16:47:19] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
+2022-10-15 16:47:19,808 | INFO | 127.0.0.1 - - [15/Oct/2022 16:47:19] "[36mGET /static/js/bootstrap.min.js HTTP/1.1[0m" 304 -
+2022-10-15 16:47:19,830 | INFO | 127.0.0.1 - - [15/Oct/2022 16:47:19] "[33mGET /static/js/jquery-3.6.1.min.js HTTP/1.1[0m" 404 -
