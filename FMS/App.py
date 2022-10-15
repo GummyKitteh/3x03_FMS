@@ -26,7 +26,7 @@ from flask_login import (
 import logging
 from time import strftime
 
-from form import employeeInsert, fleetInsert, LoginForm
+from form import employeeInsert, employeeUpdate, fleetInsert, LoginForm
 from form import RoleTypes, TripStatusTypes
 from form import SearchFormEmployee, SearchFormFleet, SearchFormTrip
 from security_controls import *
@@ -46,12 +46,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
 # https://www.youtube.com/watch?v=4gRMV-wZTQs
-
-# Emp_Dri = db.Table(
-#     "emp_dri",
-#     db.Column("employee_id", db.Integer, db.ForeignKey("employee.EmployeeId")),
-#     db.Column("driver_id", db.Integer, db.ForeignKey("driver.EmployeeId")),
-# )
+# http://127.0.0.1:5000
 
 
 # ----- LOGGGING ----------------------------------------------------------------------
@@ -108,8 +103,6 @@ class Employee(db.Model, UserMixin, Base):
     Password = db.Column(db.String(64), nullable=False, unique=True)
     DOB = db.Column(db.DateTime, nullable=False)
     PasswordSalt = db.Column(db.String(64), nullable=False)
-    AccountLocked = db.Column(db.Integer, nullable=False)
-    LoginCounter = db.Column(db.Integer, nullable=False)
 
     driver_child = relationship("Driver", cascade="all, delete", backref="Employee")
 
@@ -123,8 +116,6 @@ class Employee(db.Model, UserMixin, Base):
         self.Password = Password
         self.DOB = DOB
         self.PasswordSalt = PasswordSalt
-        self.AccountLocked = AccountLocked
-        self.LoginCounter = LoginCounter
 
     def get_id(self):
         return self.EmployeeId
@@ -153,7 +144,11 @@ class Fleet(db.Model):
     VehicleCapacity = db.Column(db.Integer, nullable=False)
     VehicleStatus = db.Column(db.String(45), nullable=False)
 
-    trip_childFleet = relationship("Trip", cascade="all, delete", backref="Fleet")
+    trip_childFleet = relationship(
+        "Trip",
+        cascade="all, delete",
+        backref="Fleet",
+    )
 
     def __init__(self, BusNumberPlate, VehicleCapacity, VehicleStatus):
         self.BusNumberPlate = BusNumberPlate
@@ -221,24 +216,19 @@ def login():
 
         # If the user exists in db
         if user:
-            if user.AccountLocked:
-                flash(
-                    "Your account has been locked. Please contact administrator.",
-                    "error",
-                )
-                return render_template("login.html", form=form)
+            # If Login_Count = 5:
+            ## Lock Account
+            ### flask("Your account has been locked. Please contact administrator.")
+            ### return redirect
 
-            # elif user.LoginCounter==3 or user.LoginCounter==4:
-            ## TODO: Validate CAPTCHA here
+            # Else If Login_Count = 3 or 4
+            ## Validate CAPTCHA
             ## While wrong CAPTCHA, re-try CAPTCHA
 
             # Check password
             derived_password = process_password(form.password.data, user.PasswordSalt)
             if user.Password == derived_password:
-                user.LoginCounter = 0
-                # How to commit to db?
-
-                # TODO: OTP here
+                # Reset Login_Count to 0
 
                 # Authorise login
                 login_user(user)
@@ -426,16 +416,14 @@ def addEmployee():
     DOB = None
     Role = None
     Password = None
-    if request.method == "POST" and formEmployee.validate_on_submit():
+    if request.method == "POST":
         FullName = formEmployee.FullName.data
         ContactNumber = formEmployee.ContactNumber.data
         Email = formEmployee.Email.data
         Role = formEmployee.Role.data
         DOB = formEmployee.DOB.data
-
         PasswordSalt = generate_salt()  # 32-byte salt in hexadecimal
         is_common_password = check_common_password(formEmployee.Password.data)
-
         # If password chosen is a common password
         if is_common_password:
             flash(
@@ -463,13 +451,38 @@ def addEmployee():
             obj = (
                 db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
             )
-            driver_data = Driver(obj.EmployeeId, 1, "Account Created")
-            emp_data.driver_child.append(driver_data)
+            return redirect("/employees")
+        else:
+            Password = process_password(formEmployee.Password.data, PasswordSalt)
+            print("ABCDE " + str(formEmployee.Password.data) + " " + str(PasswordSalt))
+
+            formEmployee.FullName.data = ""
+            formEmployee.ContactNumber.data = ""
+            formEmployee.Email.data = ""
+            formEmployee.DOB.data = ""
+            formEmployee.Role.data = ""
+            formEmployee.Password.data = ""
+            emp_data = Employee(
+                FullName, Email, ContactNumber, Role, Password, DOB, PasswordSalt
+            )
+            db.session.add(emp_data)
             db.session.commit()
 
-        flash("Employee inserted sucessfully")
-        return redirect("/employees")
+            if Role == "driver":
+                obj = (
+                    db.session.query(Employee)
+                    .order_by(Employee.EmployeeId.desc())
+                    .first()
+                )
+                driver_data = Driver(obj.EmployeeId, 1, "Account Created")
+                emp_data.driver_child.append(driver_data)
+                db.session.commit()
+
+            flash("Employee inserted sucessfully")
+            return redirect("/employees")
     else:
+        # print("ABCDE "+ str(formEmployee.Password.data) + " "+str(PasswordSalt))
+        # print("GIGI "+ str(PasswordSalt))
         flash("Employee insert failed")
         logger_crud.error(f"Employee insert failed.")
         return redirect("/employees")
@@ -660,7 +673,7 @@ def tripDelete(id):
 @app.route("/profile", methods=["GET", "POST"])
 @login_required
 def profile():
-    updateFormEmployee = employeeInsert()
+    updateFormEmployee = employeeUpdate()
     id = current_user.EmployeeId
     name_to_update = Employee.query.get_or_404(id)
     if request.method == "POST" and updateFormEmployee.validate_on_submit:
