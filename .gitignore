@@ -1,2 +1,6 @@
-# Ignore ALL files in /venv
-venv/
+FMS/__pycache__/
+__pycache__/
+*/__pycache__/*.pyc
+*.pyc
+FMS/__pycache__/form.cpython-310.pyc
+FMS/__pycache__/form.cpython-310.pyc

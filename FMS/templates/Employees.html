@@ -1,0 +1,178 @@
+{% extends 'base.html' %} {% include 'header.html' %} {% block title %}
+Employees {% endblock %} {% block body %}
+
+<div class="container">
+  <div class="row">
+    <main class="col-md-12 ms-sm-auto col-lg-12 px-md-4">
+      <div
+        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-1 pb-2 mt-5 mb-3 border-bottom"
+      >
+        <h1 class="h2 fw-bold">Employees</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+          <form
+            action="{{url_for('employeesearch')}}"
+            method="POST"
+            class="m-2"
+          >
+            <div class="input-group w-100">
+              <a
+                href="/employees"
+                class="btn btn-outline-secondary"
+                data-bs-toggle="tooltip"
+                data-bs-placement="top"
+                title="Clear Search"
+              >
+                X
+              </a>
+              {{searchFormEmployee.hidden_tag()}} {{
+              searchFormEmployee.searched(class="form-control btn-sm") }}
+              {{searchFormEmployee.submit(class="btn btn-sm btn-success")}}
+            </div>
+          </form>
+          
+          <button
+            type="button"
+            class="btn btn-sm btn-secondary m-2"
+            data-bs-toggle="modal"
+            data-bs-target="#addEmployee"
+          >
+            Add Employee
+          </button>
+        </div>
+      </div>
+      {% with messages = get_flashed_messages() %} {% if messages %} {% for
+      message in messages %}
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+        ></button>
+        {{message}}
+      </div>
+      {% endfor %} {% endif %} {% endwith %}
+      <div class="table-responsive">
+        <table
+          class="table table-striped table-sm table-hover table-dark text-center"
+        >
+          <thead>
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Full Name</th>
+              <th scope="col">Email</th>
+              <th scope="col">Contact Number</th>
+              <th scope="col">Role</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if posts != 0 %} {% for post in posts %}
+            <tr>
+              <td>{{post.EmployeeId}}</td>
+              <td>{{post.FullName}}</td>
+              <td>{{post.Email}}</td>
+              <td>{{post.ContactNumber}}</td>
+              <td>{{post.Role.value}}</td>
+              <td>
+                <a
+                  href="/update/{{post.id}}"
+                  class="btn btn-warning btn-xs"
+                  data-bs-toggle="modal"
+                  data-bs-target="#modaledit{{post.id}}"
+                  >Edit</a
+                >
+                <a
+                  href="/delete/{{post.id}}"
+                  class="btn btn-danger btn-xs"
+                  onclick="return confirm('Are You Sure To Delete?')"
+                  >Delete</a
+                >
+              </td>
+            </tr>
+            {% endfor %} {% endif %} {% for row in employees %}
+            <tr>
+              <td>{{row.EmployeeId}}</td>
+              <td>{{row.FullName}}</td>
+              <td>{{row.Email}}</td>
+              <td>{{row.ContactNumber}}</td>
+              <td>{{row.Role.value}}</td>
+              <td>
+                <a
+                  href="/employees/view/{{row.EmployeeId}}"
+                  class="btn btn-warning btn-xs"
+                  data-bs-toggle="modal"
+                  data-bs-target="#modaledit{{row.EmployeeId}}"
+                  >View</a
+                >
+                <a
+                  href="/employees/delete/{{row.EmployeeId}}"
+                  class="btn btn-danger btn-xs"
+                  onclick="return confirm('Confirm Delete?')"
+                  >Delete</a
+                >
+              </td>
+            </tr>
+            <!-- Modal Edit Employees -->
+            <div
+              id="modaledit{{row.EmployeeId}}"
+              class="modal fade"
+              role="dialog"
+            >
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h4 class="modal-title">View Information</h4>
+                  </div>
+                  <div class="modal-body">
+                    <div class="form-group text-start">
+                      <p>Employee Id: {{row.EmployeeId}}</p>
+                      <p>Full Name: {{row.FullName}}</p>
+                      <p>Email: {{row.Email}}</p>
+                      <p>Contact Number: {{row.ContactNumber}}</p>
+                      <p>Date of Birth: {{row.DOB}}</p>
+                      <p>Role: {{row.Role.value}}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+  <!-- Modal add Employees -->
+  <div id="addEmployee" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title">Add Employee</h4>
+        </div>
+        <div class="modal-body">
+          <form action="/employees/insert" method="POST">
+            <div class="form-group text-start">
+              {{ formEmployee.hidden_tag() }} {{
+              formEmployee.FullName.label(class="form-labelmt-3")}} {{
+              formEmployee.FullName(class="form-control") }} {{
+              formEmployee.Email.label(class="form-label mt-3") }} {{
+              formEmployee.Email(class="form-control ")}} {{
+              formEmployee.ContactNumber.label(class="form-label mt-3") }} {{
+              formEmployee.ContactNumber(class="form-control ")}} {{
+              formEmployee.DOB.label(class="form-label mt-3") }} {{
+              formEmployee.DOB(class="form-control ")}} {{
+              formEmployee.Role.label(class="form-label mt-3") }} {{
+              formEmployee.Role(class="form-control ")}} {{
+              formEmployee.Password.label(class="form-label mt-3") }} {{
+              formEmployee.Password(class="form-control ")}}
+              <br />
+              {{formEmployee.submit(class="btn btn-secondary")}}
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

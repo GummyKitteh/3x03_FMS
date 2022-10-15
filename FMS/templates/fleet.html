@@ -1,0 +1,178 @@
+{% extends 'base.html' %} {% include 'header.html' %} {% block title %} Fleet {%
+endblock %} {% block body %}
+
+<div class="container">
+  <div class="row">
+    <main class="col-md-12 ms-sm-auto col-lg-12 px-md-4">
+      <div
+        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-1 pb-2 mt-5 mb-3 border-bottom"
+      >
+        <h1 class="h2 fw-bold">Fleet</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+          <form action="{{url_for('fleetsearch')}}" method="POST" class="m-2">
+            <div class="input-group w-100">
+              <a
+                href="/fleet"
+                class="btn btn-outline-secondary"
+                data-bs-toggle="tooltip"
+                data-bs-placement="top"
+                title="Clear Search"
+              >
+                X
+              </a>
+              {{searchformFleet.hidden_tag()}} {{
+              searchformFleet.searched(class="form-control") }}
+              {{searchformFleet.submit(class="btn btn-outline-success")}}
+            </div>
+          </form>
+          <button
+            type="button"
+            class="btn btn-sm btn-secondary m-2"
+            data-bs-toggle="modal"
+            data-bs-target="#addVehicle"
+          >
+            Add New Vehicle
+          </button>
+        </div>
+      </div>
+      {% with messages = get_flashed_messages() %} {% if messages %} {% for
+      message in messages %}
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+        ></button>
+        {{message}}
+      </div>
+      {% endfor %} {% endif %} {% endwith %}
+      <div class="table-responsive">
+        <table
+          class="table table-striped table-sm table-hover table-dark text-center"
+        >
+          <thead>
+            <tr>
+              <th>Vehicle ID</th>
+              <th>Number Plate</th>
+              <th>Capacity</th>
+              <th>Vehicle Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if posts != 0 %} {% for post in posts %}
+            <tr>
+              <td>{{post.VehicleId}}</td>
+              <td>{{post.BusNumberPlate}}</td>
+              <td>{{post.VehicleCapacity}}</td>
+              <td>{{post.VehicleStatus}}</td>
+              <td>
+                <a
+                  href="/update/{{post.id}}"
+                  class="btn btn-warning btn-xs"
+                  data-bs-toggle="modal"
+                  data-bs-target="#modaledit{{post.id}}"
+                  >Edit</a
+                >
+                <a
+                  href="/delete/{{post.id}}"
+                  class="btn btn-danger btn-xs"
+                  onclick="return confirm('Are You Sure To Delete?')"
+                  >Delete</a
+                >
+              </td>
+            </tr>
+            {% endfor %} {% endif %} {% for row in fleet %}
+            <tr>
+              <td>{{row.VehicleId}}</td>
+              <td>{{row.BusNumberPlate}}</td>
+              <td>{{row.VehicleCapacity}}</td>
+              <td>{{row.VehicleStatus}}</td>
+              <td>
+                <a
+                  href="/fleet/update/{{row.VehicleId}}"
+                  class="btn btn-warning btn-xs"
+                  data-bs-toggle="modal"
+                  data-bs-target="#modaledit{{row.VehicleId}}"
+                  >Edit</a
+                >
+                <a
+                  href="/fleet/delete/{{row.VehicleId}}"
+                  class="btn btn-danger btn-xs"
+                  onclick="return confirm('Warning!\nDeleting a Vehicle will delete its corresponding trips.\n\nConfirm Delete?')"
+                  >Delete</a
+                >
+              </td>
+            </tr>
+            <!-- Modal Edit Fleet -->
+            <div
+              id="modaledit{{row.VehicleId}}"
+              class="modal fade"
+              role="dialog"
+            >
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h4 class="modal-title">Update Information</h4>
+                  </div>
+                  <div class="modal-body">
+                    <form action="{{url_for('fleetUpdate')}}" method="POST">
+                      <div class="form-group text-start">
+                        <input
+                          type="hidden"
+                          class="form-control"
+                          name="VehicleId"
+                          value="{{row.VehicleId}}"
+                        />
+                        {{fleetupdate.hidden_tag()}}
+                        {{fleetupdate.BusNumberPlate.label(class="form-labelmt-3")}}
+                        {{fleetupdate.BusNumberPlate(class="form-control",
+                        value=row.BusNumberPlate)}}
+                        {{fleetupdate.VehicleCapacity.label(class="form-labelmt-3")}}
+                        {{fleetupdate.VehicleCapacity(class="form-control",
+                        value=row.VehicleCapacity)}}
+                        {{fleetupdate.VehicleStatus.label(class="form-labelmt-3")}}
+                        {{fleetupdate.VehicleStatus(class="form-control",
+                        value=row.VehicleStatus)}}
+                        <br />
+                        {{fleetupdate.submit(class="btn btn-primary")}}
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+  <!-- Modal add Vehicle -->
+  <div id="addVehicle" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title">Add Vehicle</h4>
+        </div>
+        <div class="modal-body">
+          <form action="/fleet/fleetinsert" method="POST">
+            <div class="form-group text-start">
+              {{ formFleet.hidden_tag() }} {{
+              formFleet.BusNumberPlate.label(class="form-labelmt-3")}} {{
+              formFleet.BusNumberPlate(class="form-control") }} {{
+              formFleet.VehicleCapacity.label(class="form-label mt-3") }} {{
+              formFleet.VehicleCapacity(class="form-control ")}} {{
+              formFleet.VehicleStatus.label(class="form-label mt-3") }} {{
+              formFleet.VehicleStatus(class="form-control ")}}
+              <br />
+              {{formFleet.submit(class="btn btn-secondary")}}
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends 'base.html' %} {% include 'header.html' %} {% block title %} Reset {%
+endblock %} {% block body %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Forget Password</title>
+  </head>
+  <body class="">
+    <main class="form-signin w-100 m-auto">
+      <h1 class="display-5 my-5">Reset Password</h1>
+      <form>
+        <div class="input-group mb-3">
+          <span class="input-group-text" id="usernameID">Username</span>
+          <input
+            type="text"
+            class="form-control"
+            placeholder=""
+            aria-label="Username"
+            aria-describedby="usernameID"
+          />
+        </div>
+        <div class="input-group mb-3">
+          <span class="input-group-text" id="password">Password</span>
+          <input
+            type="text"
+            class="form-control"
+            placeholder=""
+            aria-label="password"
+            aria-describedby="passwordID"
+          />
+        </div>
+        <button class="w-100 btn btn-md btn-primary" type="submit">
+          Reset
+        </button>
+        <hr class="my-4" />
+        <small class="text-muted">
+          <a
+            class="btn btn-outline-secondary btn-sm"
+            href="./login"
+            class="stretched-link"
+            >Back to Login</a
+          >
+        </small>
+      </form>
+    </main>
+  </body>
+</html>
+{% endblock %}

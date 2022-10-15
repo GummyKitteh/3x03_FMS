@@ -1,0 +1,51 @@
+{% extends 'base.html' %} {% include 'header.html' %} {% block title %} Profile {%endblock %} {% block body %}
+<div class="container">
+    <div class="row">
+      <main class="col-md-12 ms-sm-auto col-lg-12 px-md-4">
+        <div
+          class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-1 pb-2 mt-5 mb-3 border-bottom"
+        >
+          <h1 class="h2 fw-bold">Profile</h1>
+            </button>
+          </div>
+        {% with messages = get_flashed_messages() %} {% if messages %} {% for
+        message in messages %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="alert"
+            aria-label="Close"
+          ></button>
+          {{message}}
+        </div>
+        {% endfor %} {% endif %} {% endwith %}
+        <div class="profile-info">
+            <form action="/profile" method="POST">
+              <div class="form-group text-start">
+                {{ updateFormEmployee.hidden_tag() }} {{
+                updateFormEmployee.FullName.label(class="form-labelmt-3")}} {{
+                updateFormEmployee.FullName(class="form-control", value=name_to_update.FullName) }} {{
+                updateFormEmployee.Email.label(class="form-label mt-3") }} {{
+                updateFormEmployee.Email(class="form-control", value=name_to_update.Email) }} {{
+                updateFormEmployee.ContactNumber.label(class="form-label mt-3") }} {{
+                updateFormEmployee.ContactNumber(class="form-control", value=name_to_update.ContactNumber) }} {{
+                updateFormEmployee.DOB.label(class="form-label mt-3") }} {{
+                updateFormEmployee.DOB(class="form-control", value=name_to_update.DOB) }} {{
+                updateFormEmployee.OldPassword.label(class="form-label mt-3") }} {{
+                updateFormEmployee.OldPassword(class="form-control") }}  {{
+                updateFormEmployee.NewPassword.label(class="form-label mt-3") }} {{
+                updateFormEmployee.NewPassword(class="form-control") }}  {{
+                updateFormEmployee.ConfirmPassword.label(class="form-label mt-3") }} {{
+                updateFormEmployee.ConfirmPassword(class="form-control") }}
+                  <br />
+                {{updateFormEmployee.submit(class="btn btn-secondary")}}
+              </div>
+            </form>
+      </div>
+      </main>
+    </div>
+    </div>
+  </div>
+  {% endblock %}
+  

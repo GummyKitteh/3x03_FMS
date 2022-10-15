@@ -1,0 +1,32 @@
+{% extends 'base.html' %} {% include 'header.html' %} {% block title %} Home {%
+endblock %} {% block body %}
+<div class="container">
+  <div class="row mt-5">
+    <div class="px-4 py-5 my-5 text-center">
+      <h1 class="display-5 fw-bold">Welcome to FMS.</h1>
+      <div class="col-lg-6 mx-auto">
+        <p class="lead mb-4">
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam
+          scelerisque erat ac dui aliquam facilisis. Praesent non ornare purus.
+          Nulla eget ipsum pellentesque, pellentesque nisl at, vestibulum
+          sapien. Sed elementum porta eleifend. Cras nec sem sit amet lectus
+          placerat lobortis.
+        </p>
+        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+          <div class="text-end">
+            <a
+              class="btn btn-primary btn-lg px-4 gap-3 btn-outline-light me-2"
+              href="./login"
+              class=""
+              >Login</a
+            >
+          </div>
+          <!-- <button type="button" class="btn btn-outline-secondary btn-lg px-4">
+            Secondary
+          </button> -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
