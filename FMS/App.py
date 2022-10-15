@@ -24,6 +24,7 @@ from flask_login import (
     current_user,
 )
 import logging
+from time import strftime
 
 from form import employeeInsert, fleetInsert, LoginForm
 from form import RoleTypes, TripStatusTypes
@@ -58,32 +59,35 @@ db = SQLAlchemy(app)
 logging.basicConfig(
     filename="./FMS/logs/generallog.log",
     encoding="utf-8",
-    filemode="w",
+    filemode="a",
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(message)s",
 )
 
 # Create Logger
 # logger = logging.getLogger(__name__)
-logger_Login = logging.getLogger("LOGIN")
+logger_auth = logging.getLogger("AUTH")
+logger_crud = logging.getLogger("CRUD")
 
 # Create FileHandler
-# handler = logging.FileHandler("filelog.log")
-handler_Login = logging.FileHandler("./FMS/logs/loginlog.log")
+handler_auth = logging.FileHandler(strftime(f"./FMS/logs/authlog_%d%m%y.log"))
+handler_crud = logging.FileHandler(strftime(f"./FMS/logs/crudlog_%d%m%y.log"))
 
 # Set Formatter for Logger
-# formatter = logging.Formatter("%(asctime)s | %(name)s | %(levelname)s | %(message)s")
-formatter_login = logging.Formatter(
+formatter_auth = logging.Formatter(
+    "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
+)
+formatter_crud = logging.Formatter(
     "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
 )
 
 # Set Formatter to Handler
-# handler.setFormatter(formatter)
-handler_Login.setFormatter(formatter_login)
+handler_auth.setFormatter(formatter_auth)
+handler_crud.setFormatter(formatter_crud)
 
 # Attach Handler to Logger
-# logger.addHandler(handler)
-logger_Login.addHandler(handler_Login)
+logger_auth.addHandler(handler_auth)
+logger_crud.addHandler(handler_crud)
 
 # logging.debug("This message should go to the log file")
 # logging.info("So should this")
@@ -238,14 +242,14 @@ def login():
 
                 # Authorise login
                 login_user(user)
-                logger_Login.info(
+                logger_auth.info(
                     f"{user.FullName} (ID: {user.EmployeeId}) has logged IN."
                 )
                 return redirect(url_for("employees"))
             else:
                 user.AccountLocked = 0
                 user.LoginCounter += 1
-                logger_Login.warning(
+                logger_auth.warning(
                     f"{user.FullName} (ID: {user.EmployeeId}) attempted to log in: {user.LoginCounter} time(s)."
                 )
                 if user.LoginCounter == 5:
@@ -263,7 +267,7 @@ def login():
 @login_required
 def logout():
     logout_user()
-    logger_Login.info("This fella has logged OUT.")
+    logger_auth.info("This fella has logged OUT.")
     return redirect(url_for("index"))
 
 
@@ -320,8 +324,13 @@ def addFleet():
         db.session.add(fleet_data)
         db.session.commit()
         flash("Vehicle inserted sucessfully")
+        obj = db.session.query(Fleet).order_by(Fleet.VehicleId.desc()).first()
+        logger_crud.info(f"Vechicle (ID: {obj.VehicleId}) inserted to Fleet.")
         return redirect("/fleet")
-    print("FAILURE")
+    else:
+        flash("Vehicle insert failed.")
+        logger_crud.error(f"Vehicle insert failed.")
+        return redirect("/fleet")
 
 
 @app.context_processor
@@ -462,6 +471,7 @@ def addEmployee():
         return redirect("/employees")
     else:
         flash("Employee insert failed")
+        logger_crud.error(f"Employee insert failed.")
         return redirect("/employees")
 
 
