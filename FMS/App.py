@@ -463,21 +463,6 @@ def addEmployee():
             flash("Employee inserted sucessfully")
             return redirect("/employees")
         else:
-            # Password = process_password(formEmployee.Password.data, PasswordSalt)
-            # print("ABCDE " + str(formEmployee.Password.data) + " " + str(PasswordSalt))
-
-            # formEmployee.FullName.data = ""
-            # formEmployee.ContactNumber.data = ""
-            # formEmployee.Email.data = ""
-            # formEmployee.DOB.data = ""
-            # formEmployee.Role.data = ""
-            # formEmployee.Password.data = ""
-            # emp_data = Employee(
-            #     FullName, Email, ContactNumber, Role, Password, DOB, PasswordSalt
-            # )
-            # db.session.add(emp_data)
-            # db.session.commit()
-
             obj = (
                 db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
             )
@@ -488,8 +473,6 @@ def addEmployee():
             flash("Driver inserted sucessfully")
             return redirect("/employees")
     else:
-        # print("ABCDE "+ str(formEmployee.Password.data) + " "+str(PasswordSalt))
-        # print("GIGI "+ str(PasswordSalt))
         flash("Employee insert failed")
         logger_crud.error(f"Employee insert failed.")
         return redirect("/employees")
