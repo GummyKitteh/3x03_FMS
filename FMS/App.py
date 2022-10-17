@@ -39,7 +39,7 @@ app.config["SECRET_KEY"] = "I really hope fking this work if never idk what to d
 
 # app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
 # app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwerty1234@localhost/fmssql"
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:B33pb33p!@178.128.17.35/fmssql_db"
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:B33pb33p!@178.128.17.35/fmssql"
 # app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwert54321@localhost/fmssql"
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -459,38 +459,33 @@ def addEmployee():
         db.session.add(emp_data)
         db.session.commit()
 
-        if Role == "driver":
+        if Role != "driver":
+            flash("Employee inserted sucessfully")
+            return redirect("/employees")
+        else:
+            # Password = process_password(formEmployee.Password.data, PasswordSalt)
+            # print("ABCDE " + str(formEmployee.Password.data) + " " + str(PasswordSalt))
+
+            # formEmployee.FullName.data = ""
+            # formEmployee.ContactNumber.data = ""
+            # formEmployee.Email.data = ""
+            # formEmployee.DOB.data = ""
+            # formEmployee.Role.data = ""
+            # formEmployee.Password.data = ""
+            # emp_data = Employee(
+            #     FullName, Email, ContactNumber, Role, Password, DOB, PasswordSalt
+            # )
+            # db.session.add(emp_data)
+            # db.session.commit()
+
             obj = (
                 db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
             )
-            return redirect("/employees")
-        else:
-            Password = process_password(formEmployee.Password.data, PasswordSalt)
-            print("ABCDE " + str(formEmployee.Password.data) + " " + str(PasswordSalt))
-
-            formEmployee.FullName.data = ""
-            formEmployee.ContactNumber.data = ""
-            formEmployee.Email.data = ""
-            formEmployee.DOB.data = ""
-            formEmployee.Role.data = ""
-            formEmployee.Password.data = ""
-            emp_data = Employee(
-                FullName, Email, ContactNumber, Role, Password, DOB, PasswordSalt
-            )
-            db.session.add(emp_data)
+            driver_data = Driver(obj.EmployeeId, 1, "Account Created")
+            emp_data.driver_child.append(driver_data)
             db.session.commit()
 
-            if Role == "driver":
-                obj = (
-                    db.session.query(Employee)
-                    .order_by(Employee.EmployeeId.desc())
-                    .first()
-                )
-                driver_data = Driver(obj.EmployeeId, 1, "Account Created")
-                emp_data.driver_child.append(driver_data)
-                db.session.commit()
-
-            flash("Employee inserted sucessfully")
+            flash("Driver inserted sucessfully")
             return redirect("/employees")
     else:
         # print("ABCDE "+ str(formEmployee.Password.data) + " "+str(PasswordSalt))
@@ -563,7 +558,7 @@ def getFresh_Fleet():
     for a in fleet:
         # generate a new list of tuples
         fleetList.append((a.VehicleId, a.BusNumberPlate))
-    print(fleetList)
+    # print(fleetList)
     return fleetList
 
 
