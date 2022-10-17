@@ -261,6 +261,7 @@ def login():
         # Else if the user does not exist in db
         else:
             # flash("Please check your credentials.", "error")
+            logger_auth.warning(f"Anonymous login attempted.")
             return render_template("login.html", form=form)
     return render_template("login.html", form=form)
 
@@ -351,6 +352,7 @@ def fleetUpdate():
         fleet_data.VehicleStatus = request.form["VehicleStatus"]
 
         db.session.commit()
+        # logger_crud.info(f"Vechicle (ID: {obj.VehicleId}) inserted to Fleet.")
         flash("Vehicle Updated Successfully")
 
         return redirect(url_for("fleet", fleetupdate=fleetupdate))
@@ -362,7 +364,7 @@ def delete(id):
         fleet_data = Fleet.query.get(id)
         db.session.delete(fleet_data)
         db.session.commit()
-
+        logger_crud.info(f"Vechicle (ID: {id}) Deleted from fleet.")
         flash("Vehicle deleted sucessfully.")
         return redirect(url_for("fleet"))
 
@@ -377,6 +379,7 @@ def fleetsearch():
         posts = posts.filter(Fleet.BusNumberPlate.like("%" + postsearched + "%"))
         posts = posts.order_by(Fleet.VehicleId).all()
         if posts != 0:
+            logger_crud.info(f"{posts} searched.")
             return render_template(
                 "fleet.html",
                 searchform=searchform,
@@ -384,6 +387,7 @@ def fleetsearch():
                 posts=posts,
             )
         else:
+            logger_crud.info(f"{posts} search not found.")
             flash("Cannot find Vehicle")
 
 
@@ -458,7 +462,8 @@ def addEmployee():
         )
         db.session.add(emp_data)
         db.session.commit()
-
+        obj = db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
+        logger_crud.info(f"Employee (ID: {obj.EmployeeId}) inserted to Employee.")
         if Role != "driver":
             flash("Employee inserted sucessfully")
             return redirect("/employees")
@@ -469,6 +474,8 @@ def addEmployee():
             driver_data = Driver(obj.EmployeeId, 1, "Account Created")
             emp_data.driver_child.append(driver_data)
             db.session.commit()
+            obj = db.session.query(Driver).order_by(Driver.DriverId.desc()).first()
+            logger_crud.info(f"Driver (ID: {obj.DriverId}) inserted to Driver.")
 
             flash("Driver inserted sucessfully")
             return redirect("/employees")
@@ -484,6 +491,7 @@ def employeeDelete(id):
         my_data = Employee.query.get(id)
         db.session.delete(my_data)
         db.session.commit()
+        logger_crud.info(f"Driver (ID: {id}) Deleted from Driver.")
 
         flash("Employee deleted sucessfully.")
         return redirect(url_for("employees"))
@@ -499,6 +507,7 @@ def employeesearch():
         posts = posts.filter(Employee.FullName.like("%" + postsearched + "%"))
         posts = posts.order_by(Employee.EmployeeId).all()
         if posts != 0:
+            logger_crud.info(f"{posts} searched.")
             return render_template(
                 "Employees.html",
                 SearchFormEmployee=searchFormEmployee,
@@ -506,6 +515,7 @@ def employeesearch():
                 posts=posts,
             )
         else:
+            logger_crud.info(f"{posts} search not found.")
             flash("Cannot find Employee")
 
 
@@ -593,9 +603,12 @@ def addTrip():
         )
         db.session.add(trip_data)
         db.session.commit()
+        obj = db.session.query(Trip).order_by(Trip.TripId.desc()).first()
+        logger_crud.info(f"Trip (ID: {obj.TripId}) inserted to Trip.")
         flash("Trip inserted sucessfully")
         return redirect("/trip")
     else:
+        logger_crud.warning(f"Trip insert failed.")
         flash("Trip insert failed.")
         return redirect("/trip")
 
@@ -610,6 +623,7 @@ def tripSearch():
         posts = posts.filter(Trip.TripID.like("%" + postsearched + "%"))
         posts = posts.order_by(Trip.TripID).all()
         if posts != 0:
+            logger_crud.info(f"{posts} searched.")
             return render_template(
                 "trip.html",
                 searchformTrip=searchformTrip,
@@ -617,6 +631,7 @@ def tripSearch():
                 posts=posts,
             )
         else:
+            logger_crud.info(f"{posts} search not found.")
             flash("Cannot find Trip")
 
 
@@ -651,6 +666,7 @@ def tripDelete(id):
         trip_data = Trip.query.get(id)
         db.session.delete(trip_data)
         db.session.commit()
+        logger_crud.info(f"Trip (ID: {id}) Deleted from Trip.")
 
         flash("Trip deleted sucessfully.")
         return redirect(url_for("trip"))
