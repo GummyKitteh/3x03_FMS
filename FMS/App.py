@@ -346,13 +346,14 @@ def fleet():
 def fleetUpdate():
     fleetupdate = fleetInsert()
     if request.method == "POST" and fleetupdate.validate_on_submit:
+        vID = request.form.get("VehicleId")
         fleet_data = Fleet.query.get(request.form.get("VehicleId"))
         fleet_data.BusNumberPlate = request.form["BusNumberPlate"]
         fleet_data.VehicleCapacity = request.form["VehicleCapacity"]
         fleet_data.VehicleStatus = request.form["VehicleStatus"]
 
         db.session.commit()
-        # logger_crud.info(f"Vechicle (ID: {obj.VehicleId}) inserted to Fleet.")
+        logger_crud.info(f"Vechicle (ID: {vID}) was updated in Fleet.")
         flash("Vehicle Updated Successfully")
 
         return redirect(url_for("fleet", fleetupdate=fleetupdate))
@@ -378,8 +379,9 @@ def fleetsearch():
         searchform.searched.data = ""
         posts = posts.filter(Fleet.BusNumberPlate.like("%" + postsearched + "%"))
         posts = posts.order_by(Fleet.VehicleId).all()
+        logger_crud.info(f"[{postsearched}] searched.")
+
         if posts != 0:
-            logger_crud.info(f"{posts} searched.")
             return render_template(
                 "fleet.html",
                 searchform=searchform,
@@ -387,7 +389,6 @@ def fleetsearch():
                 posts=posts,
             )
         else:
-            logger_crud.info(f"{posts} search not found.")
             flash("Cannot find Vehicle")
 
 
@@ -506,8 +507,9 @@ def employeesearch():
         searchFormEmployee.searched.data = ""
         posts = posts.filter(Employee.FullName.like("%" + postsearched + "%"))
         posts = posts.order_by(Employee.EmployeeId).all()
+        logger_crud.info(f"[{postsearched}] searched.")
+
         if posts != 0:
-            logger_crud.info(f"{posts} searched.")
             return render_template(
                 "Employees.html",
                 SearchFormEmployee=searchFormEmployee,
@@ -515,7 +517,6 @@ def employeesearch():
                 posts=posts,
             )
         else:
-            logger_crud.info(f"{posts} search not found.")
             flash("Cannot find Employee")
 
 
@@ -622,8 +623,9 @@ def tripSearch():
         searchformTrip.searched.data = ""
         posts = posts.filter(Trip.TripID.like("%" + postsearched + "%"))
         posts = posts.order_by(Trip.TripID).all()
+        logger_crud.info(f"[{postsearched}] searched.")
+
         if posts != 0:
-            logger_crud.info(f"{posts} searched.")
             return render_template(
                 "trip.html",
                 searchformTrip=searchformTrip,
@@ -631,7 +633,6 @@ def tripSearch():
                 posts=posts,
             )
         else:
-            logger_crud.info(f"{posts} search not found.")
             flash("Cannot find Trip")
 
 
@@ -645,6 +646,7 @@ def trip():
 def tripUpdate():
     tripupdate = tripInsert()
     if request.method == "POST" and tripupdate.validate_on_submit:
+        tID = request.form.get("TripID")
         trip_data = Trip.query.get(request.form.get("TripID"))
         trip_data.DriverID = request.form["DriverID"]
         trip_data.VehicleID = request.form["VehicleID"]
@@ -656,6 +658,7 @@ def tripUpdate():
 
         db.session.commit()
         flash("Trip Updated Successfully")
+        logger_crud.info(f"Trip (ID: {tID}) was updated in Trip.")
 
         return redirect(url_for("trip", tripupdate=tripupdate))
 
@@ -702,7 +705,9 @@ def profile():
                         "Password chosen is a commonly used password. Please choose another.",
                         "error",
                     )
-
+                    logger_auth.info(
+                        f"Common Password attempted when updating profile by (ID: {id})."
+                    )
                 else:
                     NewPassword = process_password(
                         request.form["NewPassword"], PasswordSalt
@@ -711,6 +716,9 @@ def profile():
                     name_to_update.PasswordSalt = PasswordSalt
                     db.session.commit()
                     flash("Profile has been updated")
+                    logger_auth.info(f"Employee (ID: {id}) was updated in Employee.")
+                    logger_crud.info(f"Employee (ID: {id}) was updated in Employee.")
+
                     return render_template(
                         "profile.html",
                         updateFormEmployee=updateFormEmployee,
@@ -718,8 +726,14 @@ def profile():
                     )
 
             else:
+                logger_auth.info(
+                    f"Password re-used when updating profile by (ID: {id})."
+                )
                 flash("Does not match new password or confirm password")
         else:
+            logger_auth.info(
+                f"Password is incorrect when updating profile by (ID: {id})."
+            )
             flash("Password Incorrect")
     return render_template(
         "profile.html",
