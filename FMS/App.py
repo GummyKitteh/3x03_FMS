@@ -239,7 +239,7 @@ def login():
 
                 # If user account is locked (after 5 invalid attempts)
                 if user.AccountLocked == 1:
-                    message = "Your account has been locked. Please contact your manager/administrator."
+                    message = ["Your account has been locked.", "Please contact your manager/administrator."]
                     return render_template("login.html", form=form, message=message)
 
                 # Security Control
@@ -276,12 +276,12 @@ def login():
 
                     # If user account is locked
                     if user.AccountLocked == 1:
-                        message = "Your account has been locked. Please contact your manager/administrator."
+                        message = ["Your account has been locked.", "Please contact your manager/administrator."]
                         return render_template("login.html", form=form, message=message)
 
             # Else user does not exist in db
             else:
-                message = "You have entered an invalid Email and/or Password. Please try again.<br>Check the ReCaptcha too!"
+                message = ["You have entered an invalid Email and/or Password. Please try again.", "Check the ReCaptcha too!"]
                 return render_template("login.html", form=form, message=message)
 
         # Else Form is invalidated
