@@ -41,9 +41,11 @@ app.config["SECRET_KEY"] = "I really hope fking this work if never idk what to d
 # app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwerty1234@localhost/fmssql"
 app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:B33pb33p!@178.128.17.35/fmssql"
 # app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwert54321@localhost/fmssql"
-
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
+
+#app.config["RECAPTCHA_PUBLIC_KEY"] = "<contact JM>"
+#app.config["RECAPTCHA_PRIVATE_KEY"] = "<contact JM>"
 
 # https://www.youtube.com/watch?v=4gRMV-wZTQs
 # http://127.0.0.1:5000
@@ -103,8 +105,8 @@ class Employee(db.Model, UserMixin, Base):
     Password = db.Column(db.String(64), nullable=False, unique=True)
     DOB = db.Column(db.DateTime, nullable=False)
     PasswordSalt = db.Column(db.String(64), nullable=False)
-    # AccountLocked = db.Column(db.Integer, nullable=False)
-    # LoginCounter = db.Column(db.Integer, nullable=False)
+    AccountLocked = db.Column(db.Integer, nullable=False)
+    LoginCounter = db.Column(db.Integer, nullable=False)
 
     driver_child = relationship("Driver", cascade="all, delete", backref="Employee")
 
@@ -117,7 +119,8 @@ class Employee(db.Model, UserMixin, Base):
         Password,
         DOB,
         PasswordSalt,
-        # AccountLocked, LoginCounter
+        AccountLocked,
+        LoginCounter
     ):
         self.FullName = FullName
         self.Email = Email
@@ -126,8 +129,8 @@ class Employee(db.Model, UserMixin, Base):
         self.Password = Password
         self.DOB = DOB
         self.PasswordSalt = PasswordSalt
-        # self.AccountLocked = AccountLocked
-        # self.LoginCounter = LoginCounter
+        self.AccountLocked = AccountLocked
+        self.LoginCounter = LoginCounter
 
     def get_id(self):
         return self.EmployeeId
@@ -221,47 +224,71 @@ def load_user(EmployeeId):
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    form = LoginForm()
-    account = Employee.query
-    if request.method == "POST" and form.validate_on_submit():
-        user = account.filter_by(Email=form.Email.data).first()
+    form = LoginForm(request.form)
 
-        # If the user exists in db
-        if user:
-            # If Login_Count = 5:
-            ## Lock Account
-            ### flask("Your account has been locked. Please contact administrator.")
-            ### return redirect
+    # If POST request
+    if request.method == "POST":
 
-            # Else If Login_Count = 3 or 4
-            ## Validate CAPTCHA
-            ## While wrong CAPTCHA, re-try CAPTCHA
+        # If Form is validated
+        if form.validate_on_submit():
+            account = Employee.query
+            user = account.filter_by(Email=form.Email.data).first()
 
-            # Check password
-            derived_password = process_password(form.password.data, user.PasswordSalt)
-            if user.Password == derived_password:
-                # Reset Login_Count to 0
+            # If user exists in db
+            if user:
 
-                # Authorise login
-                login_user(user)
-                logger_auth.info(
-                    f"{user.FullName} (ID: {user.EmployeeId}) has logged IN."
-                )
-                return redirect(url_for("employees"))
+                # If user account is locked (after 5 invalid attempts)
+                if user.AccountLocked == 1:
+                    message = "Your account has been locked. Please contact your manager/administrator."
+                    return render_template("login.html", form=form, message=message)
+
+                # Security Control
+                derived_password = process_password(form.password.data, user.PasswordSalt)
+
+                # If authenticated credentials
+                if user.Password == derived_password:
+
+                    # Reset LoginCounter
+                    user.LoginCounter = 0
+                    db.session.commit()
+
+                    # Authorise login
+                    login_user(user)
+                    logger_auth.info(
+                        f"{user.FullName} (ID: {user.EmployeeId}) has logged IN."
+                    )
+                    return redirect(url_for("employees"))
+
+                # Else unauthenticated credentials
+                else:
+                    user.LoginCounter += 1
+                    logger_auth.warning(
+                        f"{user.FullName} (ID: {user.EmployeeId}) attempted to log in: {user.LoginCounter} time(s)."
+                    )
+
+                    # If accumulated 5 invalid attempts, lock user account
+                    if user.LoginCounter == 5:
+                        user.AccountLocked = 1
+                        logger_auth.warning(
+                            f"{user.FullName} (ID: {user.EmployeeId}) account has been locked after 5 incorrect login attempts."
+                        )
+                    db.session.commit()
+
+                    # If user account is locked
+                    if user.AccountLocked == 1:
+                        message = "Your account has been locked. Please contact your manager/administrator."
+                        return render_template("login.html", form=form, message=message)
+
+            # Else user does not exist in db
             else:
-                # user.AccountLocked = 0
-                # user.LoginCounter += 1
-                logger_auth.warning(
-                    f"{user.FullName} (ID: {user.EmployeeId}) attempted to log in: x time(s)."
-                )
-                # if user.LoginCounter == 5:
-                #     user.AccountLocked = 1
-                # How to commit to db?
+                message = "You have entered an invalid Email and/or Password. Please try again.<br>Check the ReCaptcha too!"
+                return render_template("login.html", form=form, message=message)
 
-        # Else if the user does not exist in db
-        else:
-            # flash("Please check your credentials.", "error")
-            return render_template("login.html", form=form)
+        # Else Form is invalidated
+        message = ["You have entered an invalid Email and/or Password. Please try again.", "Check the ReCaptcha too!"]
+        return render_template("login.html", form=form, message=message)
+
+    # Else GET request
     return render_template("login.html", form=form)
 
 

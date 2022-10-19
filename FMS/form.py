@@ -1,5 +1,5 @@
 from logging import PlaceHolder
-from flask_wtf import FlaskForm
+from flask_wtf import FlaskForm, RecaptchaField
 from wtforms import (
     StringField,
     SubmitField,
@@ -87,4 +87,5 @@ class fleetInsert(FlaskForm):
 class LoginForm(FlaskForm):
     Email = StringField("Email", [DataRequired(), Email(), Length(max=100)])
     password = PasswordField("Password", [DataRequired(), Length(max=50)])
+    #recaptcha = RecaptchaField()
     submit = SubmitField("Login")
