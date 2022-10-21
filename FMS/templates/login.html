@@ -19,16 +19,22 @@ endblock %} {% block body %}
         <div class="mb-3">
           {{form.Email.label(class="form-label")}}
           {{form.Email(class="form-control")}}
+          {% for error in form.Email.errors %}
+          {{error}}
+          {%endfor%}
         </div>
         <div class="mb-3">
           {{form.password.label(class="form-label")}}
           {{form.password(class="form-control")}}
+          {% for error in form.password.errors %}
+          {{error}}
+          {%endfor%}
         </div>
         <!-- {{form.recaptcha}} -->
         {{form.submit(class="w-100 btn btn-md btn-primary")}}
         <hr class="my-4" />
         <small class="text-muted">
-          Click here to <a href="./reset">Forget Password</a>.
+          Click here to <a href="./reset">Reset Password</a>.
         </small>
       </form>
     </main>

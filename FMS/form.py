@@ -89,3 +89,17 @@ class LoginForm(FlaskForm):
     password = PasswordField("Password", [DataRequired(), Length(max=50)])
     #recaptcha = RecaptchaField()
     submit = SubmitField("Login")
+
+
+class ResetPasswordForm(FlaskForm):
+    Phone = StringField("Contact Number", [DataRequired(), Length(min=8), Length(max=8)])
+    Email = StringField("Email", [DataRequired(), Email(), Length(max=100)])
+    #recaptcha = RecaptchaField()
+    submit = SubmitField("Reset", [DataRequired()])
+
+
+class NewPasswordForm(FlaskForm):
+    NewPassword = PasswordField("New Password", [DataRequired(), Length(min=8)])
+    ConfirmPassword = PasswordField("Confirm Password", [DataRequired(), Length(min=8)])
+    #recaptcha = RecaptchaField()
+    submit = SubmitField("Reset", [DataRequired()])

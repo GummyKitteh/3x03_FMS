@@ -6,37 +6,52 @@ endblock %} {% block body %}
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Forget Password</title>
+    <title>Reset Password</title>
   </head>
   <body class="">
     <main class="form-signin w-100 m-auto">
+      {%for msg in message%}
+        {{msg}}<br />
+      {%endfor%}
       <h1 class="display-5 my-5">Reset Password</h1>
-      <form>
+      <form action="/reset" method="POST">
+        {{form.hidden_tag()}}
         <div class="input-group mb-3">
-          <span class="input-group-text" id="usernameID">Username</span>
-          <input
+          <span class="input-group-text" id="phoneNumber">Phone</span>
+          <!--<input
             type="text"
             class="form-control"
             placeholder=""
-            aria-label="Username"
-            aria-describedby="usernameID"
-          />
+            aria-label="Phone Number"
+            aria-describedby="phoneNumber"
+          />-->
+          {{form.Phone(class="form-control")}}
+          {% for error in form.Phone.errors %}
+          {{error}}
+          {%endfor%}
         </div>
         <div class="input-group mb-3">
-          <span class="input-group-text" id="password">Password</span>
-          <input
+          <span class="input-group-text" id="email">Email</span>
+          <!--<input
             type="text"
             class="form-control"
             placeholder=""
-            aria-label="password"
-            aria-describedby="passwordID"
-          />
+            aria-label="Email"
+            aria-describedby="email"
+          />-->
+          {{form.Email(class="form-control")}}
+          {% for error in form.Email.errors %}
+          {{error}}
+          {%endfor%}
         </div>
-        <button class="w-100 btn btn-md btn-primary" type="submit">
+        <!-- {{form.recaptcha}} -->
+        {{form.submit(class="w-100 btn btn-md btn-primary")}}
+        <!--<button class="w-100 btn btn-md btn-primary" type="submit">
           Reset
-        </button>
+        </button>-->
         <hr class="my-4" />
         <small class="text-muted">
+          Remembered your password?<br />
           <a
             class="btn btn-outline-secondary btn-sm"
             href="./login"
