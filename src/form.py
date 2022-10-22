@@ -9,7 +9,7 @@ from wtforms import (
     TimeField,
     PasswordField,
 )
-from wtforms.validators import DataRequired, Length, Email
+from wtforms.validators import DataRequired, Length, Email, EqualTo, Regexp
 from enum import Enum
 
 
@@ -49,7 +49,7 @@ class employeeInsert(FlaskForm):
     FullName = StringField("Full Name", [DataRequired(), Length(max=50)])
     Email = StringField("Email", [DataRequired(), Email(), Length(max=100)])
     ContactNumber = StringField(
-        "Contact Number", [DataRequired(), Length(min=8), Length(max=8)]
+        "Contact Number", [DataRequired(), Length(min=8, max=8)]
     )
     DOB = DateField("DOB", format="%Y-%m-%d")
     Role = SelectField(
@@ -63,7 +63,7 @@ class employeeUpdate(FlaskForm):
     FullName = StringField("Full Name", [DataRequired(), Length(max=50)])
     Email = StringField("Email", [DataRequired(), Email(), Length(max=100)])
     ContactNumber = StringField(
-        "Contact Number", [DataRequired(), Length(min=8), Length(max=8)]
+        "Contact Number", [DataRequired(), Length(min=8, max=8)]
     )
     DOB = DateField("DOB", format="%Y-%m-%d")
     Role = SelectField(
@@ -92,7 +92,7 @@ class LoginForm(FlaskForm):
 
 
 class ResetPasswordForm(FlaskForm):
-    Phone = StringField("Contact Number", [DataRequired(), Length(min=8), Length(max=8)])
+    Phone = StringField("Contact Number", [DataRequired(), Length(min=8, max=8), Regexp(regex="^[0-9]+$")])
     Email = StringField("Email", [DataRequired(), Email(), Length(max=100)])
     #recaptcha = RecaptchaField()
     submit = SubmitField("Reset", [DataRequired()])
@@ -100,6 +100,7 @@ class ResetPasswordForm(FlaskForm):
 
 class NewPasswordForm(FlaskForm):
     NewPassword = PasswordField("New Password", [DataRequired(), Length(min=8)])
-    ConfirmPassword = PasswordField("Confirm Password", [DataRequired(), Length(min=8)])
+    ConfirmPassword = PasswordField("Confirm Password", [DataRequired(), Length(min=8), EqualTo("NewPassword")])
+    EmailToken = StringField([DataRequired()])
     #recaptcha = RecaptchaField()
     submit = SubmitField("Reset", [DataRequired()])

@@ -13,24 +13,22 @@ endblock %} {% block body %}
       {%for msg in message%}
         {{msg}}<br />
       {%endfor%}
+      {% if form.Email.errors or form.password.errors %}
+        You have entered an invalid Email and/or Password. Please try again.<br />
+      {%endif%}
+      <!-- print recaptcha error -->
       <h1 class="display-5 my-5">Login</h1>
       <form action="/login" method="POST">
         {{form.hidden_tag()}}
         <div class="mb-3">
           {{form.Email.label(class="form-label")}}
           {{form.Email(class="form-control")}}
-          {% for error in form.Email.errors %}
-          {{error}}
-          {%endfor%}
         </div>
         <div class="mb-3">
           {{form.password.label(class="form-label")}}
           {{form.password(class="form-control")}}
-          {% for error in form.password.errors %}
-          {{error}}
-          {%endfor%}
         </div>
-        <!-- {{form.recaptcha}} -->
+        <!-- {{form.recaptcha}}<br /> -->
         {{form.submit(class="w-100 btn btn-md btn-primary")}}
         <hr class="my-4" />
         <small class="text-muted">
