@@ -13,51 +13,26 @@ endblock %} {% block body %}
       {%for msg in message%}
         {{msg}}<br />
       {%endfor%}
+      {% if form.Phone.errors or form.Email.errors %}
+        The format of your Phone and/or Email is wrong. Please try again.<br />
+      {%endif%}
+      <!-- print recaptcha error -->
       <h1 class="display-5 my-5">Reset Password</h1>
       <form action="/reset" method="POST">
         {{form.hidden_tag()}}
         <div class="input-group mb-3">
           <span class="input-group-text" id="phoneNumber">Phone</span>
-          <!--<input
-            type="text"
-            class="form-control"
-            placeholder=""
-            aria-label="Phone Number"
-            aria-describedby="phoneNumber"
-          />-->
           {{form.Phone(class="form-control")}}
-          {% for error in form.Phone.errors %}
-          {{error}}
-          {%endfor%}
         </div>
         <div class="input-group mb-3">
           <span class="input-group-text" id="email">Email</span>
-          <!--<input
-            type="text"
-            class="form-control"
-            placeholder=""
-            aria-label="Email"
-            aria-describedby="email"
-          />-->
           {{form.Email(class="form-control")}}
-          {% for error in form.Email.errors %}
-          {{error}}
-          {%endfor%}
         </div>
-        <!-- {{form.recaptcha}} -->
+        <!-- {{form.recaptcha}}<br /> -->
         {{form.submit(class="w-100 btn btn-md btn-primary")}}
-        <!--<button class="w-100 btn btn-md btn-primary" type="submit">
-          Reset
-        </button>-->
         <hr class="my-4" />
         <small class="text-muted">
-          Remembered your password?<br />
-          <a
-            class="btn btn-outline-secondary btn-sm"
-            href="./login"
-            class="stretched-link"
-            >Back to Login</a
-          >
+          Remembered your password? Return to <a href="./login">Login</a>.
         </small>
       </form>
     </main>

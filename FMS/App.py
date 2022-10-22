@@ -25,9 +25,9 @@ from flask_login import (
     logout_user,
     current_user,
 )
-import logging
+import logging, jwt
 from time import strftime
-import datetime
+from datetime import datetime
 
 from form import LoginForm, ResetPasswordForm, NewPasswordForm
 from form import employeeInsert, employeeUpdate, fleetInsert
@@ -267,11 +267,6 @@ def login():
             # If user exists in db
             if user:
 
-                # Check If user account is locked (after 5 invalid attempts)
-                if user.AccountLocked == 1:
-                    message = ["Your account has been locked.", "Please contact your manager/administrator."]
-                    return render_template("login.html", form=form, message=message)
-
                 # Security Control
                 derived_password = process_password(form.password.data, user.PasswordSalt)
 
@@ -280,7 +275,7 @@ def login():
 
                     # Reset LoginCounter
                     user.LoginCounter = 0
-                    user.LastLogin = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    user.LastLogin = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     db.session.commit()
 
                     # Authorise login
@@ -314,18 +309,13 @@ def login():
                         #email.recipients = [form.Email.data]
                         email.recipients = ["b33p33p@gmail.com"]
                         email.body = "Dear {},\n\nWe note that you have attempted to log in to your Bus FMS account multiple times without success.\nUnfortunately, your account has been locked after too many invalid login attempts.\n\nPlease contact your Manager or IT Administrator for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(user.FullName)
-                        Thread(target=send_email, args=(app, email)).start()
+                        #Thread(target=send_email, args=(app, email)).start()
+                        print("Mimic: Email sent")
 
-                        message = ["Your account has been locked.", "Please contact your manager/administrator."]
-                        return render_template("login.html", form=form, message=message)
+                        return render_template("login-locked.html")
 
-            # Else user does not exist in db
-            else:
-                message = ["You have entered an invalid Email and/or Password. Please try again.", "Check the ReCaptcha too!"]
-                return render_template("login.html", form=form, message=message)
-
-        # Else Form is invalidated
-        message = ["You have entered an invalid Email and/or Password. Please try again.", "Check the ReCaptcha too!"]
+        # Else Form is invalidated OR User does not exist in db
+        message = ["You have entered an invalid Email and/or Password.", "Please try again."]
         return render_template("login.html", form=form, message=message)
 
     # Else GET request
@@ -356,10 +346,11 @@ def reset():
             account = Employee.query
             user = account.filter_by(ContactNumber=form.Phone.data, Email=form.Email.data).first()
 
-            # Can only uncomment/test if ResetToken and ResetDateTime columns have been created in db
-            """
             # If user exists in db
             if user:
+
+                # TODO: If user has sent a link in the last 1 hour
+
 
                 # Craft email object
                 email = Message()
@@ -369,50 +360,108 @@ def reset():
 
                 # If user account is locked (after 5 invalid attempts), send email without reset token
                 if user.AccountLocked == 1:
+
+                    # Send email object
                     email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nUnfortunately, your account has been locked after too many invalid attempts.\nPlease contact your Manager or IT Administrator for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(user.FullName)
-                    Thread(target=send_email, args=(app, email)).start()
+                    #Thread(target=send_email, args=(app, email)).start()
+                    print("Mimic: Email sent")
+
+                    # TODO: Commit email timestamp to db
+                    #user.AccountLockedDateTime = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    #db.session.commit()
 
                 # If user account is NOT locked, send email with reset token
                 else:
 
-                    # Generate CSPRNG token for password reset
-                    user.ResetToken = generate_csprng_token()  # 32-byte token in hexadecimal
-                    user.ResetDateTime = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    db.session.commit()
+                    # Generate reset token (output in Base64) for password reset
+                    email_token = generate_reset_token(user.get_id())
+                    #user.ResetDateTime = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    # user.ResetTokenFlag = 0
+                    #db.session.commit()
 
-                    reset_link = "http://localhost:5000/reset/new-password?token={}".format(user.ResetToken)
-                    email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nKindly click on the link below, or copy it into your trusted Web Browser (i.e. Google Chrome), to do so.\nPlease note that the link is only valid for 1 hour.\nLink: {}\n\nYou may ignore this email if you did not make this request.\nRest assure that your account has not been compromised, and your information are safe with us!\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(user.FullName, reset_link)
-                    Thread(target=send_email, args=(app, email)).start()
+                    # Send email object
+                    reset_link = "http://localhost:5000/new-password/{}".format(email_token)
+                    email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nKindly click on the link below, or copy it into your trusted Web Browser (i.e. Google Chrome), to do so.\nPlease note that the link is only valid for 1 hour.\nLink: {}\n\nYou may ignore this email if you did not make this request.\nRest assure that your account has not been compromised, and your information is safe with us!\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(user.FullName, reset_link)
+                    #Thread(target=send_email, args=(app, email)).start()
+                    print("Mimic: Email sent")
+
+                    # Print for testing
+                    print(reset_link)
 
             # Regardless if user exists or not, display generic message
-            message = ["A password reset link has been sent to your email if your account is registered under it.", "Do note that you can only perform this action once an hour. Thank you!"]
-            return redirect(url_for("new-password"))
-            #return render_template("reset.html", form=form, message=message)
-            """
+            return render_template("reset/reset-message.html")
 
-        # Else Form is invalidated
-        message = ["The format of your Phone and/or Email is wrong. Please try again.", "Check the ReCaptcha too!"]
-        return render_template("reset.html", form=form, message=message)
-
-    # Else GET request
-    return render_template("reset.html", form=form)
+    # Else GET request OR Form is invalidated
+    return render_template("reset/reset.html", form=form)
 
 
-@app.route("/new-password", methods=["GET", "POST"])
-def newPassword():
+@app.route("/new-password/<email_token>", methods=["GET"])
+def newPassword(email_token):
     form = NewPasswordForm(request.form)
 
-    # Work In Progress (need assistance to dynamically generate Web pages based on URL parameters GET request)
-    """
-    # If GET request
-    if request.method == "GET":
-        message = ["A password reset link has been sent to your email if your account is registered under it.", "Do note that you can only perform this action once an hour. Thank you!"]
-        return render_template("new-password.html", form=form, message=message)
+    # Validate if email_token is still valid (within 1 hour AND not used yet)
+    try:
+        token_payload = decode_reset_token(email_token)
+        # TODO: Validate if email_token has been used (user.ResetTokenFlag)
+
+    except:
+        return render_template("reset/reset-expired.html")
+
+    # GET request
+    return render_template("reset/new-password.html", form=form, email_token=email_token)
+
+
+@app.route("/new-password", methods=["POST"])
+def postPassword():
+    form = NewPasswordForm(request.form)
+
+    # Validate if email_token is still valid (within 1 hour AND not used yet)
+    try:
+        token_payload = decode_reset_token(form.EmailToken.data)
+        # TODO: Validate if email_token has been used (user.ResetTokenFlag)
+
+    except:
+        return render_template("reset/reset-expired.html")
 
     # If POST request
     if request.method == "POST":
-        print("hi")
-    """
+
+        # If Form is validated
+        if form.validate_on_submit():
+            account = Employee.query
+            user = account.filter_by(EmployeeId=token_payload["reset_token"]).first()
+
+            # If user exists in db
+            if user:
+                PasswordSalt = generate_csprng_token()  # 32-byte salt in hexadecimal
+                
+                # If password chosen is a common password
+                is_common_password = check_common_password(form.NewPassword.data)
+                if is_common_password:
+                    message = ["Password chosen is a commonly used password.", "Please choose another."]
+                    return render_template("reset/new-password.html", form=form, email_token=form.EmailToken.data, message=message)
+
+                user.Password = process_password(form.NewPassword.data, PasswordSalt)
+                user.PasswordSalt = PasswordSalt
+                # user.ResetTokenFlag = 1
+                db.session.commit()
+
+                # TODO: Log user out of all logged-in sessions.
+
+                return render_template("reset/reset-success.html")
+
+    return render_template("reset/new-password.html", form=form, email_token=form.EmailToken.data)
+
+
+@app.route("/reset-success", methods=["GET"])
+def resetSuccess():
+    
+    # Only allow access if URL referrer is "new-password"
+    try:
+        if request.referrer.split("/")[-2] == "new-password":
+            return render_template("reset/reset-success.html")
+    except:
+        return redirect(url_for("notFound"))
 
 
 # ----- END RESET PASSWORD STUFF --------------------------------------------------------------
@@ -427,6 +476,11 @@ def index():
     # app.logger.error("error")
     # app.logger.critical("critical")
     return render_template("index.html")
+
+
+@app.route("/404")
+def notFound():
+    return render_template("404.html")
 
 
 # ----- END ROUTES -------------------------------------------------------------------

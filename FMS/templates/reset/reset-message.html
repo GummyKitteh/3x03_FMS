@@ -1,0 +1,23 @@
+{% extends 'base.html' %} {% include 'header.html' %} {% block title %} Reset Password {%
+endblock %} {% block body %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reset Password</title>
+  </head>
+  <body class="">
+    <main class="form-signin w-100 m-auto">
+      <h1 class="display-5 my-5">Reset Password</h1>
+      <h5>A reset link has been sent to your email if your account is registered with the details provided.</h5>
+      <h6>Do note that you can only receive a new link once an hour. Thank you!</h6>
+      <hr class="my-4" />
+      <small class="text-muted">
+        Return to <a href="/login">Login</a>.
+      </small>
+    </main>
+  </body>
+</html>
+{% endblock %}
