@@ -1,0 +1,18 @@
+pipeline {
+    agent {
+		docker {
+			image 'python:3.10.8-alpine3.16' 
+			args '-p 3000:3000'
+		}
+	}
+	environment {
+		CI = 'true'
+	}
+    stages {
+        stage('Build') { 
+            steps {
+                sh 'pip install' 
+            }
+        }
+    }
+}
