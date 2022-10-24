@@ -1,4 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
+from flask_mail import Mail, Message
+from threading import Thread
 
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import true, ForeignKey
@@ -23,10 +25,12 @@ from flask_login import (
     logout_user,
     current_user,
 )
-import logging
+import logging, jwt
 from time import strftime
+from datetime import datetime
 
-from form import employeeInsert, employeeUpdate, fleetInsert, LoginForm
+from form import LoginForm, ResetPasswordForm, NewPasswordForm
+from form import employeeInsert, employeeUpdate, fleetInsert
 from form import RoleTypes, TripStatusTypes
 from form import SearchFormEmployee, SearchFormFleet, SearchFormTrip
 from security_controls import *
@@ -37,13 +41,26 @@ app = Flask(__name__)
 app.secret_key = "abcd"
 app.config["SECRET_KEY"] = "I really hope fking this work if never idk what to do :("
 
+# Db configuration
 # app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
 # app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwerty1234@localhost/fmssql"
 app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:B33pb33p!@178.128.17.35/fmssql"
 # app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwert54321@localhost/fmssql"
-
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
+
+# Mail configuration
+app.config["MAIL_SERVER"] = "smtp.gmail.com"
+app.config["MAIL_PORT"] = 587
+app.config["MAIL_USE_TLS"] = True
+app.config["MAIL_USE_SSL"] = False
+app.config["MAIL_USERNAME"] = "b33p33p@gmail.com"
+#app.config["MAIL_PASSWORD"] = "<contact JM>"
+app.config["MAIL_DEFAULT_SENDER"] = "b33p33p@gmail.com"
+email_service = Mail(app)
+
+#app.config["RECAPTCHA_PUBLIC_KEY"] = "<contact JM>"
+#app.config["RECAPTCHA_PRIVATE_KEY"] = "<contact JM>"
 
 # https://www.youtube.com/watch?v=4gRMV-wZTQs
 # http://127.0.0.1:5000
@@ -52,7 +69,7 @@ db = SQLAlchemy(app)
 # ----- LOGGGING ----------------------------------------------------------------------
 
 logging.basicConfig(
-    filename="./FMS/logs/generallog.log",
+    filename="./logs/generallog.log",
     encoding="utf-8",
     filemode="a",
     level=logging.INFO,
@@ -65,8 +82,8 @@ logger_auth = logging.getLogger("AUTH")
 logger_crud = logging.getLogger("CRUD")
 
 # Create FileHandler
-handler_auth = logging.FileHandler(strftime(f"./FMS/logs/authlog_%d%m%y.log"))
-handler_crud = logging.FileHandler(strftime(f"./FMS/logs/crudlog_%d%m%y.log"))
+handler_auth = logging.FileHandler(strftime(f"./logs/authlog_%d%m%y.log"))
+handler_crud = logging.FileHandler(strftime(f"./logs/crudlog_%d%m%y.log"))
 
 # Set Formatter for Logger
 formatter_auth = logging.Formatter(
@@ -103,8 +120,13 @@ class Employee(db.Model, UserMixin, Base):
     Password = db.Column(db.String(64), nullable=False, unique=True)
     DOB = db.Column(db.DateTime, nullable=False)
     PasswordSalt = db.Column(db.String(64), nullable=False)
-    # AccountLocked = db.Column(db.Integer, nullable=False)
-    # LoginCounter = db.Column(db.Integer, nullable=False)
+    AccountLocked = db.Column(db.Integer, nullable=False)
+    LoginCounter = db.Column(db.Integer, nullable=False)
+    LastLogin = db.Column(db.DateTime, nullable=False)
+    RestDateTime = db.Column(db.DateTime, nullable=False)
+    Flag = db.Column(db.Integer, nullable=False)
+    #OTP = db.Column(db.Integer, nullable=False)
+    #OTPDateTime = db.Column(db.DateTime, nullable=False)
 
     driver_child = relationship("Driver", cascade="all, delete", backref="Employee")
 
@@ -117,7 +139,13 @@ class Employee(db.Model, UserMixin, Base):
         Password,
         DOB,
         PasswordSalt,
-        # AccountLocked, LoginCounter
+        AccountLocked,
+        LoginCounter,
+        LastLogin,
+        ResetDateTime,
+        ResetTokenFlag
+        #OTP,
+        #OTPDateTime
     ):
         self.FullName = FullName
         self.Email = Email
@@ -126,8 +154,13 @@ class Employee(db.Model, UserMixin, Base):
         self.Password = Password
         self.DOB = DOB
         self.PasswordSalt = PasswordSalt
-        # self.AccountLocked = AccountLocked
-        # self.LoginCounter = LoginCounter
+        self.AccountLocked = AccountLocked
+        self.LoginCounter = LoginCounter
+        self.LastLogin = LastLogin
+        self.ResetDateTime = RestDateTime
+        self.ResetTokenFlag = Flag
+        #self.OTP = OTP
+        #self.OTPDateTime = OTPDateTime
 
     def get_id(self):
         return self.EmployeeId
@@ -221,47 +254,71 @@ def load_user(EmployeeId):
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    form = LoginForm()
-    account = Employee.query
-    if request.method == "POST" and form.validate_on_submit():
-        user = account.filter_by(Email=form.Email.data).first()
+    form = LoginForm(request.form)
 
-        # If the user exists in db
-        if user:
-            # If Login_Count = 5:
-            ## Lock Account
-            ### flask("Your account has been locked. Please contact administrator.")
-            ### return redirect
+    # If POST request
+    if request.method == "POST":
 
-            # Else If Login_Count = 3 or 4
-            ## Validate CAPTCHA
-            ## While wrong CAPTCHA, re-try CAPTCHA
+        # If Form is validated
+        if form.validate_on_submit():
+            account = Employee.query
+            user = account.filter_by(Email=form.Email.data).first()
 
-            # Check password
-            derived_password = process_password(form.password.data, user.PasswordSalt)
-            if user.Password == derived_password:
-                # Reset Login_Count to 0
+            # If user exists in db
+            if user:
 
-                # Authorise login
-                login_user(user)
-                logger_auth.info(
-                    f"{user.FullName} (ID: {user.EmployeeId}) has logged IN."
-                )
-                return redirect(url_for("employees"))
-            else:
-                # user.AccountLocked = 0
-                # user.LoginCounter += 1
-                logger_auth.warning(
-                    f"{user.FullName} (ID: {user.EmployeeId}) attempted to log in: x time(s)."
-                )
-                # if user.LoginCounter == 5:
-                #     user.AccountLocked = 1
-                # How to commit to db?
+                # Security Control
+                derived_password = process_password(form.password.data, user.PasswordSalt)
 
-        # Else if the user does not exist in db
-        else:
-            # flash("Please check your credentials.", "error")
-            return render_template("login.html", form=form)
+                # If authenticated credentials
+                if user.Password == derived_password:
+
+                    # Reset LoginCounter
+                    user.LoginCounter = 0
+                    user.LastLogin = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    db.session.commit()
+
+                    # Authorise login
+                    login_user(user)
+                    logger_auth.info(
+                        f"{user.FullName} (ID: {user.EmployeeId}) has logged IN."
+                    )
+                    return redirect(url_for("employees"))
+
+                # Else unauthenticated credentials
+                else:
+                    user.LoginCounter += 1
+                    logger_auth.warning(
+                        f"{user.FullName} (ID: {user.EmployeeId}) attempted to log in: {user.LoginCounter} time(s)."
+                    )
+
+                    # If accumulated 5 invalid attempts, lock user account
+                    if user.LoginCounter == 5:
+                        user.AccountLocked = 1
+                        logger_auth.warning(
+                            f"{user.FullName} (ID: {user.EmployeeId}) account has been locked after 5 incorrect login attempts."
+                        )
+                    db.session.commit()
+
+                    # If user account is locked
+                    if user.AccountLocked:
+
+                        # Send email to notify user
+                        email = Message()
+                        email.subject = "You Account Has Been Locked"
+                        #email.recipients = [form.Email.data]
+                        email.recipients = ["b33p33p@gmail.com"]
+                        email.body = "Dear {},\n\nWe note that you have attempted to log in to your Bus FMS account multiple times without success.\nUnfortunately, your account has been locked after too many invalid login attempts.\n\nPlease contact your Manager or IT Administrator for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(user.FullName)
+                        #Thread(target=send_email, args=(app, email)).start()
+                        print("Mimic: Email sent")
+
+                        return render_template("login-locked.html")
+
+        # Else Form is invalidated OR User does not exist in db
+        message = ["You have entered an invalid Email and/or Password.", "Please try again."]
+        return render_template("login.html", form=form, message=message)
+
+    # Else GET request
     return render_template("login.html", form=form)
 
 
@@ -274,6 +331,171 @@ def logout():
 
 
 # ----- END LOGIN STUFF --------------------------------------------------------------
+# ----- END RESET PASSWORD STUFF --------------------------------------------------------------
+
+
+@app.route("/reset", methods=["GET", "POST"])
+def reset():
+    form = ResetPasswordForm(request.form)
+
+    # If POST request
+    if request.method == "POST":
+
+        # If Form is validated
+        if form.validate_on_submit():
+            account = Employee.query
+            user = account.filter_by(ContactNumber=form.Phone.data, Email=form.Email.data).first()
+
+            # If user exists in db
+            if user:
+
+                # Calculate time delta between current time and last sent email
+                try:
+                    # If there is a timestamp in user.RestDateTime
+                    email_token_delta = datetime.utcnow() - user.RestDateTime
+                    delta_hour = email_token_delta.seconds // 3600
+                except:
+                    # If there is no timestamp in user.RestDateTime
+                    delta_hour = 1
+
+                # If user has NOT sent a reset link in the last 1 hour
+                if delta_hour > 0:
+
+                    # Craft email object
+                    email = Message()
+                    email.subject = "Password Reset Link"
+                    #email.recipients = [form.Email.data]
+                    email.recipients = ["b33p33p@gmail.com"]
+
+                    # If user account is locked (after 5 invalid attempts), send email without reset token
+                    if user.AccountLocked:
+
+                        # Send email object
+                        email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nUnfortunately, your account has been locked after too many invalid attempts.\nPlease contact your Manager or IT Administrator for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(user.FullName)
+                        #Thread(target=send_email, args=(app, email)).start()
+                        print("Mimic: Email sent")
+
+                        # TODO: Commit email timestamp to db
+                        #user.AccountLockedDateTime = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                        #db.session.commit()
+
+                    # If user account is NOT locked, send email with reset token
+                    else:
+
+                        # Generate reset token (output in Base64) for password reset
+                        email_token = generate_reset_token(user.get_id())
+                        user.RestDateTime = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                        user.Flag = 1     # 1 means reset token is STILL VALID & has not been used
+                        db.session.commit()
+
+                        # Send email object
+                        reset_link = "http://localhost:5000/new-password/{}".format(email_token)
+                        email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nKindly click on the link below, or copy it into your trusted Web Browser (i.e. Google Chrome), to do so.\nPlease note that the link is only valid for 1 hour.\nLink: {}\n\nYou may ignore this email if you did not make this request.\nRest assure that your account has not been compromised, and your information is safe with us!\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(user.FullName, reset_link)
+                        #Thread(target=send_email, args=(app, email)).start()
+                        print("Mimic: Email sent")
+
+                        # Print for testing
+                        print(reset_link)
+
+            # Regardless if user exists or not, display generic message
+            return render_template("reset/reset-message.html")
+
+    # Else GET request OR Form is invalidated
+    return render_template("reset/reset.html", form=form)
+
+
+@app.route("/new-password/<email_token>", methods=["GET"])
+def newPassword(email_token):
+    form = NewPasswordForm(request.form)
+
+    try:
+        # Validate if email_token is still valid (within 1 hour)
+        token_payload = decode_reset_token(email_token)
+
+        # Validate if email_token has not been used yet
+        account = Employee.query
+        user = account.filter_by(EmployeeId=token_payload["reset_token"]).first()
+
+        # If user exists in db
+        if user:
+            if not user.Flag:   # 0 means reset token is NOT VALID & has been used
+                return render_template("reset/reset-expired.html")
+            if user.AccountLocked:  # 1 means user account is locked (after 5 invalid attempts)
+                return render_template("login-locked.html")
+
+    except:
+        return render_template("reset/reset-expired.html")
+
+    # GET request if email_token is still valid & not been used
+    return render_template("reset/new-password.html", form=form, email_token=email_token)
+
+
+@app.route("/new-password", methods=["POST"])
+def postPassword():
+    form = NewPasswordForm(request.form)
+
+    try:
+        # Validate if email_token is still valid (within 1 hour)
+        token_payload = decode_reset_token(form.EmailToken.data)
+
+        # Validate if email_token has not been used yet
+        account = Employee.query
+        user = account.filter_by(EmployeeId=token_payload["reset_token"]).first()
+
+        # If user exists in db
+        if user:
+            if not user.Flag:   # 0 means reset token is NOT VALID & has been used
+                return render_template("reset/reset-expired.html")
+            if user.AccountLocked:  # 1 means user account is locked (after 5 invalid attempts)
+                return render_template("login-locked.html")
+
+    except:
+        return render_template("reset/reset-expired.html")
+
+    # If POST request
+    if request.method == "POST":
+
+        # If Form is validated
+        if form.validate_on_submit():
+            account = Employee.query
+            user = account.filter_by(EmployeeId=token_payload["reset_token"]).first()
+
+            # If user exists in db
+            if user:
+                PasswordSalt = generate_csprng_token()  # 32-byte salt in hexadecimal
+                
+                # If password chosen is a common password
+                is_common_password = check_common_password(form.NewPassword.data)
+                if is_common_password:
+                    message = ["Password chosen is a commonly used password.", "Please choose another."]
+                    return render_template("reset/new-password.html", form=form, email_token=form.EmailToken.data, message=message)
+
+                user.Password = process_password(form.NewPassword.data, PasswordSalt)
+                user.PasswordSalt = PasswordSalt
+                user.Flag = 0     # 0 means reset token is NOT VALID & has been used
+                db.session.commit()
+
+                # Log user out of all logged-in sessions.
+                logout_user()
+                logger_auth.info("This fella has changed password and logged OUT.")
+
+                return render_template("reset/reset-success.html")
+
+    return render_template("reset/new-password.html", form=form, email_token=form.EmailToken.data)
+
+
+@app.route("/reset-success", methods=["GET"])
+def resetSuccess():
+    
+    # Only allow access if URL referrer is "new-password"
+    try:
+        if request.referrer.split("/")[-2] == "new-password":
+            return render_template("reset/reset-success.html")
+    except:
+        return redirect(url_for("notFound"))
+
+
+# ----- END RESET PASSWORD STUFF --------------------------------------------------------------
 # ----- ROUTES -----------------------------------------------------------------------
 
 
@@ -287,9 +509,9 @@ def index():
     return render_template("index.html")
 
 
-@app.route("/reset")
-def reset():
-    return render_template("reset.html")
+@app.route("/404")
+def notFound():
+    return render_template("404.html")
 
 
 # ----- END ROUTES -------------------------------------------------------------------
@@ -434,7 +656,7 @@ def addEmployee():
         Email = formEmployee.Email.data
         Role = formEmployee.Role.data
         DOB = formEmployee.DOB.data
-        PasswordSalt = generate_salt()  # 32-byte salt in hexadecimal
+        PasswordSalt = generate_csprng_token()  # 32-byte salt in hexadecimal
         is_common_password = check_common_password(formEmployee.Password.data)
         # If password chosen is a common password
         if is_common_password:
@@ -677,7 +899,7 @@ def profile():
         )
         if name_to_update.Password == derived_password:
             if request.form["ConfirmPassword"] == request.form["NewPassword"]:
-                PasswordSalt = generate_salt()  # 32-byte salt in hexadecimal
+                PasswordSalt = generate_csprng_token()  # 32-byte salt in hexadecimal
                 is_common_password = check_common_password(request.form["NewPassword"])
 
                 # If password chosen is a common password
@@ -713,6 +935,11 @@ def profile():
 
 
 # ----- END PROFILE INFO ---------------------------------------------------------------
+
+def send_email(app, email):
+    with app.app_context():
+        email_service.send(email)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
