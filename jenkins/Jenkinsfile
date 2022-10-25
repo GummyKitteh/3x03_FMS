@@ -12,8 +12,6 @@ pipeline {
 				checkout scm
 			}
 		}
-	}
-    stages {
         stage('Build') { 
             steps {
                 sh 'pip install --no-cache-dir -r src/requirements.txt' 
