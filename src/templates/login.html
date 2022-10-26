@@ -10,6 +10,13 @@ endblock %} {% block body %}
   </head>
   <body class="">
     <main class="form-signin w-75 m-auto">
+      {%for msg in message%}
+        {{msg}}<br />
+      {%endfor%}
+      {% if form.Email.errors or form.password.errors %}
+        You have entered an invalid Email and/or Password. Please try again.<br />
+      {%endif%}
+      <!-- print recaptcha error -->
       <h1 class="display-5 my-5">Login</h1>
       <form action="/login" method="POST">
         {{form.hidden_tag()}}
@@ -21,10 +28,11 @@ endblock %} {% block body %}
           {{form.password.label(class="form-label")}}
           {{form.password(class="form-control")}}
         </div>
+        <!-- {{form.recaptcha}}<br /> -->
         {{form.submit(class="w-100 btn btn-md btn-primary")}}
         <hr class="my-4" />
-        <small class="text-muted"
-          >Click here to <a href="./reset">Forget Password</a>.
+        <small class="text-muted">
+          Click here to <a href="./reset">Reset Password</a>.
         </small>
       </form>
     </main>

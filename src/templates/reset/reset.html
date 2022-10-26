@@ -1,0 +1,41 @@
+{% extends 'base.html' %} {% include 'header.html' %} {% block title %} Reset {%
+endblock %} {% block body %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reset Password</title>
+  </head>
+  <body class="">
+    <main class="form-signin w-100 m-auto">
+      {%for msg in message%}
+        {{msg}}<br />
+      {%endfor%}
+      {% if form.Phone.errors or form.Email.errors %}
+        The format of your Phone and/or Email is wrong. Please try again.<br />
+      {%endif%}
+      <!-- print recaptcha error -->
+      <h1 class="display-5 my-5">Reset Password</h1>
+      <form action="/reset" method="POST">
+        {{form.hidden_tag()}}
+        <div class="input-group mb-3">
+          <span class="input-group-text" id="phoneNumber">Phone</span>
+          {{form.Phone(class="form-control")}}
+        </div>
+        <div class="input-group mb-3">
+          <span class="input-group-text" id="email">Email</span>
+          {{form.Email(class="form-control")}}
+        </div>
+        <!-- {{form.recaptcha}}<br /> -->
+        {{form.submit(class="w-100 btn btn-md btn-primary")}}
+        <hr class="my-4" />
+        <small class="text-muted">
+          Remembered your password? Return to <a href="./login">Login</a>.
+        </small>
+      </form>
+    </main>
+  </body>
+</html>
+{% endblock %}
