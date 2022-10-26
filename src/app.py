@@ -37,37 +37,36 @@ from security_controls import *
 
 Base = declarative_base()
 
-app = Flask(__name__)
-app.secret_key = "abcd"
-app.config["SECRET_KEY"] = "I really hope fking this work if never idk what to do :("
+server = Flask(__name__)
+server.secret_key = "abcd"
+server.config["SECRET_KEY"] = "I really hope fking this work if never idk what to do :("
 
 # Db configuration
-# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
-# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwerty1234@localhost/fmssql"
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:B33pb33p!@178.128.17.35/fmssql"
-# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwert54321@localhost/fmssql"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-db = SQLAlchemy(app)
+# server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
+# server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwerty1234@localhost/fmssql"
+server.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:B33pb33p!@178.128.17.35/fmssql"
+# server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwert54321@localhost/fmssql"
+server.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db = SQLAlchemy(server)
 
 # Mail configuration
-app.config["MAIL_SERVER"] = "smtp.gmail.com"
-app.config["MAIL_PORT"] = 587
-app.config["MAIL_USE_TLS"] = True
-app.config["MAIL_USE_SSL"] = False
-app.config["MAIL_USERNAME"] = "b33p33p@gmail.com"
-#app.config["MAIL_PASSWORD"] = "<contact JM>"
-app.config["MAIL_DEFAULT_SENDER"] = "b33p33p@gmail.com"
-email_service = Mail(app)
+server.config["MAIL_SERVER"] = "smtp.gmail.com"
+server.config["MAIL_PORT"] = 587
+server.config["MAIL_USE_TLS"] = True
+server.config["MAIL_USE_SSL"] = False
+server.config["MAIL_USERNAME"] = "b33p33p@gmail.com"
+#server.config["MAIL_PASSWORD"] = "<contact JM>"
+server.config["MAIL_DEFAULT_SENDER"] = "b33p33p@gmail.com"
+email_service = Mail(server)
 
-#app.config["RECAPTCHA_PUBLIC_KEY"] = "<contact JM>"
-#app.config["RECAPTCHA_PRIVATE_KEY"] = "<contact JM>"
+#server.config["RECAPTCHA_PUBLIC_KEY"] = "<contact JM>"
+#server.config["RECAPTCHA_PRIVATE_KEY"] = "<contact JM>"
 
 # https://www.youtube.com/watch?v=4gRMV-wZTQs
 # http://127.0.0.1:5000
 
 
 # ----- LOGGGING ----------------------------------------------------------------------
-
 logging.basicConfig(
     filename="./logs/generallog.log",
     encoding="utf-8",
@@ -240,7 +239,7 @@ class Trip(db.Model):
 
 # Flask_login Stuff
 login_manager = LoginManager()
-login_manager.init_app(app)
+login_manager.init_app(server)
 login_manager.login_view = "login"
 
 
@@ -252,7 +251,7 @@ def load_user(EmployeeId):
         return None
 
 
-@app.route("/login", methods=["GET", "POST"])
+@server.route("/login", methods=["GET", "POST"])
 def login():
     form = LoginForm(request.form)
 
@@ -309,7 +308,7 @@ def login():
                         #email.recipients = [form.Email.data]
                         email.recipients = ["b33p33p@gmail.com"]
                         email.body = "Dear {},\n\nWe note that you have attempted to log in to your Bus FMS account multiple times without success.\nUnfortunately, your account has been locked after too many invalid login attempts.\n\nPlease contact your Manager or IT Administrator for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(user.FullName)
-                        #Thread(target=send_email, args=(app, email)).start()
+                        #Thread(target=send_email, args=(server, email)).start()
                         print("Mimic: Email sent")
 
                         return render_template("login-locked.html")
@@ -322,7 +321,7 @@ def login():
     return render_template("login.html", form=form)
 
 
-@app.route("/logout", methods=["GET", "POST"])
+@server.route("/logout", methods=["GET", "POST"])
 @login_required
 def logout():
     logout_user()
@@ -334,7 +333,7 @@ def logout():
 # ----- END RESET PASSWORD STUFF --------------------------------------------------------------
 
 
-@app.route("/reset", methods=["GET", "POST"])
+@server.route("/reset", methods=["GET", "POST"])
 def reset():
     form = ResetPasswordForm(request.form)
 
@@ -372,7 +371,7 @@ def reset():
 
                         # Send email object
                         email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nUnfortunately, your account has been locked after too many invalid attempts.\nPlease contact your Manager or IT Administrator for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(user.FullName)
-                        #Thread(target=send_email, args=(app, email)).start()
+                        #Thread(target=send_email, args=(server, email)).start()
                         print("Mimic: Email sent")
 
                         # TODO: Commit email timestamp to db
@@ -391,7 +390,7 @@ def reset():
                         # Send email object
                         reset_link = "http://localhost:5000/new-password/{}".format(email_token)
                         email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nKindly click on the link below, or copy it into your trusted Web Browser (i.e. Google Chrome), to do so.\nPlease note that the link is only valid for 1 hour.\nLink: {}\n\nYou may ignore this email if you did not make this request.\nRest assure that your account has not been compromised, and your information is safe with us!\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(user.FullName, reset_link)
-                        #Thread(target=send_email, args=(app, email)).start()
+                        #Thread(target=send_email, args=(server, email)).start()
                         print("Mimic: Email sent")
 
                         # Print for testing
@@ -404,7 +403,7 @@ def reset():
     return render_template("reset/reset.html", form=form)
 
 
-@app.route("/new-password/<email_token>", methods=["GET"])
+@server.route("/new-password/<email_token>", methods=["GET"])
 def newPassword(email_token):
     form = NewPasswordForm(request.form)
 
@@ -430,7 +429,7 @@ def newPassword(email_token):
     return render_template("reset/new-password.html", form=form, email_token=email_token)
 
 
-@app.route("/new-password", methods=["POST"])
+@server.route("/new-password", methods=["POST"])
 def postPassword():
     form = NewPasswordForm(request.form)
 
@@ -484,7 +483,7 @@ def postPassword():
     return render_template("reset/new-password.html", form=form, email_token=form.EmailToken.data)
 
 
-@app.route("/reset-success", methods=["GET"])
+@server.route("/reset-success", methods=["GET"])
 def resetSuccess():
     
     # Only allow access if URL referrer is "new-password"
@@ -499,17 +498,17 @@ def resetSuccess():
 # ----- ROUTES -----------------------------------------------------------------------
 
 
-@app.route("/")
+@server.route("/")
 def index():
-    # app.logger.debug("debug")
-    # app.logger.info("info")
-    # app.logger.warning("warning")
-    # app.logger.error("error")
-    # app.logger.critical("critical")
+    # server.logger.debug("debug")
+    # server.logger.info("info")
+    # server.logger.warning("warning")
+    # server.logger.error("error")
+    # server.logger.critical("critical")
     return render_template("index.html")
 
 
-@app.route("/404")
+@server.route("/404")
 def notFound():
     return render_template("404.html")
 
@@ -518,26 +517,26 @@ def notFound():
 # ----- FLEET-------------------------------------------------------------------------
 
 
-@app.route("/fleet")
+@server.route("/fleet")
 @login_required
 def fleet():
     all_data = Fleet.query.all()
     return render_template("fleet.html", fleet=all_data)
 
 
-@app.context_processor
+@server.context_processor
 def fleet():
     formFleet = fleetInsert()
     return dict(formFleet=formFleet)
 
 
-@app.context_processor
+@server.context_processor
 def fleet():
     searchformFleet = SearchFormFleet()
     return dict(searchformFleet=searchformFleet)
 
 
-@app.route("/fleet/fleetinsert", methods=["POST"])
+@server.route("/fleet/fleetinsert", methods=["POST"])
 def addFleet():
     formFleet = fleetInsert()
     if request.method == "POST" and formFleet.validate_on_submit():
@@ -557,13 +556,13 @@ def addFleet():
         return redirect("/fleet")
 
 
-@app.context_processor
+@server.context_processor
 def fleet():
     fleetupdate = fleetInsert()
     return dict(fleetupdate=fleetupdate)
 
 
-@app.route("/fleetUpdate", methods=["GET", "POST"])
+@server.route("/fleetUpdate", methods=["GET", "POST"])
 def fleetUpdate():
     fleetupdate = fleetInsert()
     if request.method == "POST" and fleetupdate.validate_on_submit:
@@ -578,7 +577,7 @@ def fleetUpdate():
         return redirect(url_for("fleet", fleetupdate=fleetupdate))
 
 
-@app.route("/fleet/delete/<id>", methods=["GET", "POST"])
+@server.route("/fleet/delete/<id>", methods=["GET", "POST"])
 def delete(id):
     if request.method == "GET":
         fleet_data = Fleet.query.get(id)
@@ -589,7 +588,7 @@ def delete(id):
         return redirect(url_for("fleet"))
 
 
-@app.route("/fleet/fleetsearch", methods=["POST"])
+@server.route("/fleet/fleetsearch", methods=["POST"])
 def fleetsearch():
     searchform = SearchFormFleet()
     posts = Fleet.query
@@ -613,7 +612,7 @@ def fleetsearch():
 # ----- EMPLOYEE -------------------------------------------------------------------------
 
 
-@app.route("/employees")
+@server.route("/employees")
 @login_required
 def employees():
     userrole = current_user.Role
@@ -629,19 +628,19 @@ def employees():
         return render_template("trip.html")
 
 
-@app.context_processor
+@server.context_processor
 def employees():
     formEmployee = employeeInsert()
     return dict(formEmployee=formEmployee)
 
 
-@app.context_processor
+@server.context_processor
 def employees():
     searchFormEmployee = SearchFormEmployee()
     return dict(searchFormEmployee=searchFormEmployee)
 
 
-@app.route("/employees/insert", methods=["POST"])
+@server.route("/employees/insert", methods=["POST"])
 def addEmployee():
     formEmployee = employeeInsert()
     FullName = None
@@ -700,7 +699,7 @@ def addEmployee():
         return redirect("/employees")
 
 
-@app.route("/employees/delete/<id>", methods=["GET", "POST"])
+@server.route("/employees/delete/<id>", methods=["GET", "POST"])
 def employeeDelete(id):
     if request.method == "GET":
         my_data = Employee.query.get(id)
@@ -711,7 +710,7 @@ def employeeDelete(id):
         return redirect(url_for("employees"))
 
 
-@app.route("/employees/employeesearch", methods=["POST"])
+@server.route("/employees/employeesearch", methods=["POST"])
 def employeesearch():
     searchFormEmployee = SearchFormEmployee()
     posts = Employee.query
@@ -735,7 +734,7 @@ def employeesearch():
 # ----- TRIPS --------------------------------------------------------------------------
 
 
-@app.route("/trip")
+@server.route("/trip")
 @login_required
 def trip():
     trip_data = Trip.query.all()
@@ -744,13 +743,13 @@ def trip():
     return render_template("trip.html", trip=trip_data, fleet=fleet_data)
 
 
-@app.context_processor
+@server.context_processor
 def trip():
     formTrip = tripInsert()
     return dict(formTrip=formTrip)
 
 
-@app.context_processor
+@server.context_processor
 def trip():
     searchformTrip = SearchFormTrip()
     return dict(searchformTrip=searchformTrip)
@@ -787,7 +786,7 @@ class tripInsert(FlaskForm):
     submit = SubmitField("Submit", [DataRequired()])
 
 
-@app.route("/trip/tripinsert", methods=["POST"])
+@server.route("/trip/tripinsert", methods=["POST"])
 def addTrip():
     formTrip = tripInsert()
 
@@ -822,7 +821,7 @@ def addTrip():
         return redirect("/trip")
 
 
-@app.route("/trip/tripSearch", methods=["POST"])
+@server.route("/trip/tripSearch", methods=["POST"])
 def tripSearch():
     searchformTrip = SearchFormTrip()
     posts = Trip.query
@@ -842,13 +841,13 @@ def tripSearch():
             flash("Cannot find Trip")
 
 
-@app.context_processor
+@server.context_processor
 def trip():
     tripupdate = tripInsert()
     return dict(tripupdate=tripupdate)
 
 
-@app.route("/trip/tripUpdate", methods=["GET", "POST"])
+@server.route("/trip/tripUpdate", methods=["GET", "POST"])
 def tripUpdate():
     tripupdate = tripInsert()
     if request.method == "POST" and tripupdate.validate_on_submit:
@@ -867,7 +866,7 @@ def tripUpdate():
         return redirect(url_for("trip", tripupdate=tripupdate))
 
 
-@app.route("/trip/delete/<id>", methods=["GET", "POST"])
+@server.route("/trip/delete/<id>", methods=["GET", "POST"])
 def tripDelete(id):
     if request.method == "GET":
         trip_data = Trip.query.get(id)
@@ -882,7 +881,7 @@ def tripDelete(id):
 # ----- PROFILE INFO --------------------------------------------------------------------
 
 
-@app.route("/profile", methods=["GET", "POST"])
+@server.route("/profile", methods=["GET", "POST"])
 @login_required
 def profile():
     updateFormEmployee = employeeUpdate()
@@ -942,4 +941,4 @@ def send_email(app, email):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    server.run(debug=True)
