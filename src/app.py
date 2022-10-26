@@ -124,7 +124,7 @@ class Employee(db.Model, UserMixin, Base):
     AccountLocked = db.Column(db.Integer, nullable=False)
     LoginCounter = db.Column(db.Integer, nullable=False)
     LastLogin = db.Column(db.DateTime, nullable=False)
-    RestDateTime = db.Column(db.DateTime, nullable=False)
+    ResetDateTime = db.Column(db.DateTime, nullable=False)
     Flag = db.Column(db.Integer, nullable=False)
     # OTP = db.Column(db.Integer, nullable=False)
     # OTPDateTime = db.Column(db.DateTime, nullable=False)
@@ -363,11 +363,11 @@ def reset():
 
                 # Calculate time delta between current time and last sent email
                 try:
-                    # If there is a timestamp in user.RestDateTime
-                    email_token_delta = datetime.utcnow() - user.RestDateTime
+                    # If there is a timestamp in user.ResetDateTime
+                    email_token_delta = datetime.utcnow() - user.ResetDateTime
                     delta_hour = email_token_delta.seconds // 3600
                 except:
-                    # If there is no timestamp in user.RestDateTime
+                    # If there is no timestamp in user.ResetDateTime
                     delta_hour = 1
 
                 # If user has NOT sent a reset link in the last 1 hour
@@ -398,7 +398,7 @@ def reset():
 
                         # Generate reset token (output in Base64) for password reset
                         email_token = generate_reset_token(user.get_id())
-                        user.RestDateTime = datetime.utcnow().strftime(
+                        user.ResetDateTime = datetime.utcnow().strftime(
                             "%Y-%m-%d %H:%M:%S.%f"
                         )[:-3]
                         user.Flag = (
@@ -410,7 +410,7 @@ def reset():
                         reset_link = "http://localhost:5000/new-password/{}".format(
                             email_token
                         )
-                        email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nKindly click on the link below, or copy it into your trusted Web Browser (i.e. Google Chrome), to do so.\nPlease note that the link is only valid for 1 hour.\nLink: {}\n\nYou may ignore this email if you did not make this request.\nRest assure that your account has not been compromised, and your information is safe with us!\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
+                        email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nKindly click on the link below, or copy it into your trusted Web Browser (i.e. Google Chrome), to do so.\nPlease note that the link is only valid for 1 hour.\nLink: {}\n\nYou may ignore this email if you did not make this request.\nReset assure that your account has not been compromised, and your information is safe with us!\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
                             user.FullName, reset_link
                         )
                         # Thread(target=send_email, args=(app, email)).start()
