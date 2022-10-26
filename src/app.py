@@ -44,9 +44,7 @@ server.config["SECRET_KEY"] = "I really hope fking this work if never idk what t
 # Db configuration
 # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
 # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwerty1234@localhost/fmssql"
-server.config[
-    "SQLALCHEMY_DATABASE_URI"
-] = "mysql+pymysql://root:B33pb33p!@178.128.17.35/fmssql"
+server.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:B33pb33p!@178.128.17.35/fmssql"
 # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwert54321@localhost/fmssql"
 server.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(server)
@@ -70,7 +68,7 @@ email_service = Mail(server)
 
 # ----- LOGGGING ----------------------------------------------------------------------
 logging.basicConfig(
-    filename="./src/logs/generallog.log",
+    filename="./logs/generallog.log",
     encoding="utf-8",
     filemode="a",
     level=logging.INFO,
@@ -83,8 +81,8 @@ logger_auth = logging.getLogger("AUTH")
 logger_crud = logging.getLogger("CRUD")
 
 # Create FileHandler
-handler_auth = logging.FileHandler(strftime(f"./src/logs/authlog_%d%m%y.log"))
-handler_crud = logging.FileHandler(strftime(f"./src/logs/crudlog_%d%m%y.log"))
+handler_auth = logging.FileHandler(strftime(f"./logs/authlog_%d%m%y.log"))
+handler_crud = logging.FileHandler(strftime(f"./logs/crudlog_%d%m%y.log"))
 
 # Set Formatter for Logger
 formatter_auth = logging.Formatter(
@@ -106,7 +104,6 @@ logger_crud.addHandler(handler_crud)
 # logging.info("So should this")
 # logging.warning("And this, too")
 # logging.error("And non-ASCII stuff, too, like Øresund and Malmö")
-
 # ----- END LOGGGING ------------------------------------------------------------------
 # ----- CLASSES -----------------------------------------------------------------------
 
