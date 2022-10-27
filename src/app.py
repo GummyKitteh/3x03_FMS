@@ -42,9 +42,9 @@ server.secret_key = "abcd"
 server.config["SECRET_KEY"] = "I really hope fking this work if never idk what to do :("
 
 # Db configuration
-# server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
+server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
 # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwerty1234@localhost/fmssql"
-server.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:B33pb33p!@178.128.17.35/fmssql"
+# server.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:B33pb33p!@178.128.17.35/fmssql"
 # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwert54321@localhost/fmssql"
 server.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(server)
@@ -68,7 +68,7 @@ email_service = Mail(server)
 
 # ----- LOGGGING ----------------------------------------------------------------------
 logging.basicConfig(
-    filename="./logs/generallog.log",
+    filename="./src/logs/generallog.log",
     encoding="utf-8",
     filemode="a",
     level=logging.INFO,
@@ -81,8 +81,8 @@ logger_auth = logging.getLogger("AUTH")
 logger_crud = logging.getLogger("CRUD")
 
 # Create FileHandler
-handler_auth = logging.FileHandler(strftime(f"./logs/authlog_%d%m%y.log"))
-handler_crud = logging.FileHandler(strftime(f"./logs/crudlog_%d%m%y.log"))
+handler_auth = logging.FileHandler(strftime(f"./src/logs/authlog_%d%m%y.log"))
+handler_crud = logging.FileHandler(strftime(f"./src/logs/crudlog_%d%m%y.log"))
 
 # Set Formatter for Logger
 formatter_auth = logging.Formatter(
@@ -688,7 +688,7 @@ def addEmployee():
     AccountLock = 0
     LoginCounter = 0
     LastLogin = "2999-12-31 23:59:59"
-    ResetDateTime = ""
+    ResetDateTime = "2999-12-31 23:59:59"
     Flag = 0
 
     if request.method == "POST":
@@ -743,6 +743,8 @@ def addEmployee():
             driver_data = Driver(obj.EmployeeId, 1, "Account Created")
             emp_data.driver_child.append(driver_data)
             db.session.commit()
+            # db.session.close()
+            # db.session.expire_all()
 
             flash("Driver inserted sucessfully")
             return redirect("/employees")
@@ -756,8 +758,9 @@ def addEmployee():
 def employeeDelete(id):
     if request.method == "GET":
         my_data = Employee.query.get(id)
-        db.session.delete(my_data)
+        db.session.delete(my_data)  
         db.session.commit()
+        db.session.close()
 
         flash("Employee deleted sucessfully.")
         return redirect(url_for("employees"))
@@ -790,10 +793,14 @@ def employeesearch():
 @server.route("/trip")
 @login_required
 def trip():
+    formTrip = tripInsert()
+    employeeList = getFresh_Employee()
+    fleetList = getFresh_Fleet()
+    formTrip.EmployeeID.choices = employeeList
+    formTrip.VehicleID.choices = fleetList
     trip_data = Trip.query.all()
     fleet_data = Fleet.query.all()
-    # Fleet.
-    return render_template("trip.html", trip=trip_data, fleet=fleet_data)
+    return render_template("trip.html", trip=trip_data, fleet=fleet_data,formTrip = formTrip)
 
 
 @server.context_processor
@@ -807,16 +814,21 @@ def trip():
     searchformTrip = SearchFormTrip()
     return dict(searchformTrip=searchformTrip)
 
+def getFresh_Employee():
+    employeeList = []
+    employee = Employee.query.filter(Employee.Role == "driver")
+    for row in employee:
+        employeeList.append((row.EmployeeId, row.FullName))
+    return employeeList
 
 def getFresh_Fleet():
     fleetList = []
-    # get the Agencies from the database - syntax here would be SQLAlchemy
     fleet = Fleet.query.all()
     for a in fleet:
         # generate a new list of tuples
-        fleetList.append((a.VehicleId, a.BusNumberPlate))
-    # print(fleetList)
+        fleetList.append((a.VehicleId,a.BusNumberPlate))
     return fleetList
+
 
 
 class tripInsert(FlaskForm):
@@ -841,8 +853,12 @@ class tripInsert(FlaskForm):
 
 @server.route("/trip/tripinsert", methods=["POST"])
 def addTrip():
+    
     formTrip = tripInsert()
-
+    employeeList = getFresh_Employee()
+    fleetList = getFresh_Fleet()
+    formTrip.EmployeeID.choices = employeeList
+    formTrip.VehicleID.choices = fleetList
     if request.method == "POST" and formTrip.validate_on_submit():
         EmployeeID = formTrip.EmployeeID.data
         VehicleID = formTrip.VehicleID.data
@@ -851,7 +867,6 @@ def addTrip():
         StartTime = formTrip.StartTime.data
         EndTime = formTrip.EndTime.data
         TripStatus = formTrip.TripStatus.data
-
         driverIDForInsert = (
             Driver.query.filter(Driver.EmployeeId == EmployeeID).first().DriverId
         )
@@ -877,7 +892,7 @@ def addTrip():
 @server.route("/trip/tripSearch", methods=["POST"])
 def tripSearch():
     searchformTrip = SearchFormTrip()
-    posts = Trip.query
+    posts = Trip.query  
     if request.method == "POST" and searchformTrip.validate_on_submit():
         postsearched = searchformTrip.searched.data
         searchformTrip.searched.data = ""
@@ -996,3 +1011,4 @@ def send_email(app, email):
 
 if __name__ == "__main__":
     server.run(debug=True)
+    db.session.commit()
