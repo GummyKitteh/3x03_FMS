@@ -14,12 +14,8 @@ pipeline {
             }
         }
 		stage('OWASP Dependency-Check'){
-			agent { 
-				image 'owasp/dependency-check:latest' 
-				args '--volume "/opt/jenkins/dependency-check-data:/usr/share/dependency-check/data" --entrypoint='
-			}
 			steps {
-				sh '/usr/share/dependency-check/bin/dependency-check.sh --project 3x03_FMS --scan . --format XML'
+				dependencyCheck additionalArguments: '--format HTML --format XML', odcInstallation: '3x03_FMS'
 			}
 		}
     }
