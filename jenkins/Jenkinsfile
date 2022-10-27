@@ -17,5 +17,10 @@ pipeline {
                 sh 'pip install --no-cache-dir -r src/requirements.txt' 
             }
         }
+		stage('OWASP Dependency-Check'){
+			steps {
+				dependencyCheck additionalArguments: 'scan="src/" --format HTML', odcInstallation: '3x03_FMS'
+			}
+		}
     }
 }
