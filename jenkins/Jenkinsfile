@@ -19,7 +19,7 @@ pipeline {
         }
 		stage('OWASP Dependency-Check'){
 			steps {
-				dependencyCheck additionalArguments: '--format HTML --format XML', odcInstallation: '3x03_FMS'
+				dependencyCheck additionalArguments: '--scan "src/" --format HTML --format XML', odcInstallation: '3x03_FMS'
 			}
 		}
     }
