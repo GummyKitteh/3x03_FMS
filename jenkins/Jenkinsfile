@@ -8,15 +8,18 @@ pipeline {
 			}
 		}
         stage('Build') { 
-			agent { docker 'python:3' }
+			agent { image 'python:3' }
             steps {
                 sh 'pip install --no-cache-dir -r src/requirements.txt' 
             }
         }
 		stage('OWASP Dependency-Check'){
-			agent { docker 'owasp/dependency-check:latest' }
+			agent { 
+				image 'owasp/dependency-check:latest' 
+				args '--volume "/opt/jenkins/dependency-check-data:/usr/share/dependency-check/data" --entrypoint='
+			}
 			steps {
-				dependencyCheck additionalArguments: '--format HTML --format XML', odcInstallation: '3x03_FMS'
+				sh '/usr/share/dependency-check/bin/dependency-check.sh --project 3x03_FMS --scan . --format XML'
 			}
 		}
     }
