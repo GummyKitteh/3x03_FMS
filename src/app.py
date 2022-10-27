@@ -37,39 +37,38 @@ from security_controls import *
 
 Base = declarative_base()
 
-app = Flask(__name__)
-app.secret_key = "abcd"
-app.config["SECRET_KEY"] = "I really hope fking this work if never idk what to do :("
+server = Flask(__name__)
+server.secret_key = "abcd"
+server.config["SECRET_KEY"] = "I really hope fking this work if never idk what to do :("
 
 # Db configuration
-# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
-# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwerty1234@localhost/fmssql"
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:B33pb33p!@178.128.17.35/fmssql"
-# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwert54321@localhost/fmssql"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-db = SQLAlchemy(app)
+server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
+# server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwerty1234@localhost/fmssql"
+# server.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:B33pb33p!@178.128.17.35/fmssql"
+# server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwert54321@localhost/fmssql"
+server.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db = SQLAlchemy(server)
 
 # Mail configuration
-app.config["MAIL_SERVER"] = "smtp.gmail.com"
-app.config["MAIL_PORT"] = 587
-app.config["MAIL_USE_TLS"] = True
-app.config["MAIL_USE_SSL"] = False
-app.config["MAIL_USERNAME"] = "b33p33p@gmail.com"
-#app.config["MAIL_PASSWORD"] = "<contact JM>"
-app.config["MAIL_DEFAULT_SENDER"] = "b33p33p@gmail.com"
-email_service = Mail(app)
+server.config["MAIL_SERVER"] = "smtp.gmail.com"
+server.config["MAIL_PORT"] = 587
+server.config["MAIL_USE_TLS"] = True
+server.config["MAIL_USE_SSL"] = False
+server.config["MAIL_USERNAME"] = "b33p33p@gmail.com"
+# server.config["MAIL_PASSWORD"] = "<contact JM>"
+server.config["MAIL_DEFAULT_SENDER"] = "b33p33p@gmail.com"
+email_service = Mail(server)
 
-#app.config["RECAPTCHA_PUBLIC_KEY"] = "<contact JM>"
-#app.config["RECAPTCHA_PRIVATE_KEY"] = "<contact JM>"
+# server.config["RECAPTCHA_PUBLIC_KEY"] = "<contact JM>"
+# server.config["RECAPTCHA_PRIVATE_KEY"] = "<contact JM>"
 
 # https://www.youtube.com/watch?v=4gRMV-wZTQs
 # http://127.0.0.1:5000
 
 
 # ----- LOGGGING ----------------------------------------------------------------------
-
 logging.basicConfig(
-    filename="./logs/generallog.log",
+    filename="./src/logs/generallog.log",
     encoding="utf-8",
     filemode="a",
     level=logging.INFO,
@@ -82,8 +81,8 @@ logger_auth = logging.getLogger("AUTH")
 logger_crud = logging.getLogger("CRUD")
 
 # Create FileHandler
-handler_auth = logging.FileHandler(strftime(f"./logs/authlog_%d%m%y.log"))
-handler_crud = logging.FileHandler(strftime(f"./logs/crudlog_%d%m%y.log"))
+handler_auth = logging.FileHandler(strftime(f"./src/logs/authlog_%d%m%y.log"))
+handler_crud = logging.FileHandler(strftime(f"./src/logs/crudlog_%d%m%y.log"))
 
 # Set Formatter for Logger
 formatter_auth = logging.Formatter(
@@ -105,7 +104,6 @@ logger_crud.addHandler(handler_crud)
 # logging.info("So should this")
 # logging.warning("And this, too")
 # logging.error("And non-ASCII stuff, too, like Øresund and Malmö")
-
 # ----- END LOGGGING ------------------------------------------------------------------
 # ----- CLASSES -----------------------------------------------------------------------
 
@@ -123,10 +121,10 @@ class Employee(db.Model, UserMixin, Base):
     AccountLocked = db.Column(db.Integer, nullable=False)
     LoginCounter = db.Column(db.Integer, nullable=False)
     LastLogin = db.Column(db.DateTime, nullable=False)
-    RestDateTime = db.Column(db.DateTime, nullable=False)
+    ResetDateTime = db.Column(db.DateTime, nullable=False)
     Flag = db.Column(db.Integer, nullable=False)
-    #OTP = db.Column(db.Integer, nullable=False)
-    #OTPDateTime = db.Column(db.DateTime, nullable=False)
+    # OTP = db.Column(db.Integer, nullable=False)
+    # OTPDateTime = db.Column(db.DateTime, nullable=False)
 
     driver_child = relationship("Driver", cascade="all, delete", backref="Employee")
 
@@ -143,9 +141,9 @@ class Employee(db.Model, UserMixin, Base):
         LoginCounter,
         LastLogin,
         ResetDateTime,
-        ResetTokenFlag
-        #OTP,
-        #OTPDateTime
+        Flag
+        # OTP,
+        # OTPDateTime
     ):
         self.FullName = FullName
         self.Email = Email
@@ -157,10 +155,10 @@ class Employee(db.Model, UserMixin, Base):
         self.AccountLocked = AccountLocked
         self.LoginCounter = LoginCounter
         self.LastLogin = LastLogin
-        self.ResetDateTime = RestDateTime
+        self.ResetDateTime = ResetDateTime
         self.ResetTokenFlag = Flag
-        #self.OTP = OTP
-        #self.OTPDateTime = OTPDateTime
+        # self.OTP = OTP
+        # self.OTPDateTime = OTPDateTime
 
     def get_id(self):
         return self.EmployeeId
@@ -240,7 +238,7 @@ class Trip(db.Model):
 
 # Flask_login Stuff
 login_manager = LoginManager()
-login_manager.init_app(app)
+login_manager.init_app(server)
 login_manager.login_view = "login"
 
 
@@ -252,7 +250,7 @@ def load_user(EmployeeId):
         return None
 
 
-@app.route("/login", methods=["GET", "POST"])
+@server.route("/login", methods=["GET", "POST"])
 def login():
     form = LoginForm(request.form)
 
@@ -268,20 +266,24 @@ def login():
             if user:
 
                 # Security Control
-                derived_password = process_password(form.password.data, user.PasswordSalt)
+                derived_password = process_password(
+                    form.password.data, user.PasswordSalt
+                )
 
                 # If authenticated credentials
                 if user.Password == derived_password:
 
                     # Reset LoginCounter
                     user.LoginCounter = 0
-                    user.LastLogin = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    user.LastLogin = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")[
+                        :-3
+                    ]
                     db.session.commit()
 
                     # Authorise login
                     login_user(user)
                     logger_auth.info(
-                        f"{user.FullName} (ID: {user.EmployeeId}) has logged IN."
+                        f"{user.Email} (ID: {user.EmployeeId}) has logged IN."
                     )
                     return redirect(url_for("employees"))
 
@@ -289,14 +291,14 @@ def login():
                 else:
                     user.LoginCounter += 1
                     logger_auth.warning(
-                        f"{user.FullName} (ID: {user.EmployeeId}) attempted to log in: {user.LoginCounter} time(s)."
+                        f"{user.Email} (ID: {user.EmployeeId}) attempted to log in: {user.LoginCounter} time(s)."
                     )
 
                     # If accumulated 5 invalid attempts, lock user account
                     if user.LoginCounter == 5:
                         user.AccountLocked = 1
                         logger_auth.warning(
-                            f"{user.FullName} (ID: {user.EmployeeId}) account has been locked after 5 incorrect login attempts."
+                            f"{user.Email} (ID: {user.EmployeeId}) account has been locked after 5 incorrect login attempts."
                         )
                     db.session.commit()
 
@@ -306,23 +308,28 @@ def login():
                         # Send email to notify user
                         email = Message()
                         email.subject = "You Account Has Been Locked"
-                        #email.recipients = [form.Email.data]
+                        # email.recipients = [form.Email.data]
                         email.recipients = ["b33p33p@gmail.com"]
-                        email.body = "Dear {},\n\nWe note that you have attempted to log in to your Bus FMS account multiple times without success.\nUnfortunately, your account has been locked after too many invalid login attempts.\n\nPlease contact your Manager or IT Administrator for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(user.FullName)
-                        #Thread(target=send_email, args=(app, email)).start()
+                        email.body = "Dear {},\n\nWe note that you have attempted to log in to your Bus FMS account multiple times without success.\nUnfortunately, your account has been locked after too many invalid login attempts.\n\nPlease contact your Manager or IT Administrator for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
+                            user.FullName
+                        )
+                        # Thread(target=send_email, args=(app, email)).start()
                         print("Mimic: Email sent")
 
                         return render_template("login-locked.html")
 
         # Else Form is invalidated OR User does not exist in db
-        message = ["You have entered an invalid Email and/or Password.", "Please try again."]
+        message = [
+            "You have entered an invalid Email and/or Password.",
+            "Please try again.",
+        ]
         return render_template("login.html", form=form, message=message)
 
     # Else GET request
     return render_template("login.html", form=form)
 
 
-@app.route("/logout", methods=["GET", "POST"])
+@server.route("/logout", methods=["GET", "POST"])
 @login_required
 def logout():
     logout_user()
@@ -334,7 +341,7 @@ def logout():
 # ----- END RESET PASSWORD STUFF --------------------------------------------------------------
 
 
-@app.route("/reset", methods=["GET", "POST"])
+@server.route("/reset", methods=["GET", "POST"])
 def reset():
     form = ResetPasswordForm(request.form)
 
@@ -344,18 +351,20 @@ def reset():
         # If Form is validated
         if form.validate_on_submit():
             account = Employee.query
-            user = account.filter_by(ContactNumber=form.Phone.data, Email=form.Email.data).first()
+            user = account.filter_by(
+                ContactNumber=form.Phone.data, Email=form.Email.data
+            ).first()
 
             # If user exists in db
             if user:
 
                 # Calculate time delta between current time and last sent email
                 try:
-                    # If there is a timestamp in user.RestDateTime
-                    email_token_delta = datetime.utcnow() - user.RestDateTime
+                    # If there is a timestamp in user.ResetDateTime
+                    email_token_delta = datetime.utcnow() - user.ResetDateTime
                     delta_hour = email_token_delta.seconds // 3600
                 except:
-                    # If there is no timestamp in user.RestDateTime
+                    # If there is no timestamp in user.ResetDateTime
                     delta_hour = 1
 
                 # If user has NOT sent a reset link in the last 1 hour
@@ -364,34 +373,44 @@ def reset():
                     # Craft email object
                     email = Message()
                     email.subject = "Password Reset Link"
-                    #email.recipients = [form.Email.data]
+                    # email.recipients = [form.Email.data]
                     email.recipients = ["b33p33p@gmail.com"]
 
                     # If user account is locked (after 5 invalid attempts), send email without reset token
                     if user.AccountLocked:
 
                         # Send email object
-                        email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nUnfortunately, your account has been locked after too many invalid attempts.\nPlease contact your Manager or IT Administrator for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(user.FullName)
-                        #Thread(target=send_email, args=(app, email)).start()
+                        email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nUnfortunately, your account has been locked after too many invalid attempts.\nPlease contact your Manager or IT Administrator for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
+                            user.FullName
+                        )
+                        # Thread(target=send_email, args=(app, email)).start()
                         print("Mimic: Email sent")
 
                         # TODO: Commit email timestamp to db
-                        #user.AccountLockedDateTime = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                        #db.session.commit()
+                        # user.AccountLockedDateTime = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                        # db.session.commit()
 
                     # If user account is NOT locked, send email with reset token
                     else:
 
                         # Generate reset token (output in Base64) for password reset
                         email_token = generate_reset_token(user.get_id())
-                        user.RestDateTime = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                        user.Flag = 1     # 1 means reset token is STILL VALID & has not been used
+                        user.ResetDateTime = datetime.utcnow().strftime(
+                            "%Y-%m-%d %H:%M:%S.%f"
+                        )[:-3]
+                        user.Flag = (
+                            1  # 1 means reset token is STILL VALID & has not been used
+                        )
                         db.session.commit()
 
                         # Send email object
-                        reset_link = "http://localhost:5000/new-password/{}".format(email_token)
-                        email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nKindly click on the link below, or copy it into your trusted Web Browser (i.e. Google Chrome), to do so.\nPlease note that the link is only valid for 1 hour.\nLink: {}\n\nYou may ignore this email if you did not make this request.\nRest assure that your account has not been compromised, and your information is safe with us!\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(user.FullName, reset_link)
-                        #Thread(target=send_email, args=(app, email)).start()
+                        reset_link = "http://localhost:5000/new-password/{}".format(
+                            email_token
+                        )
+                        email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nKindly click on the link below, or copy it into your trusted Web Browser (i.e. Google Chrome), to do so.\nPlease note that the link is only valid for 1 hour.\nLink: {}\n\nYou may ignore this email if you did not make this request.\nReset assure that your account has not been compromised, and your information is safe with us!\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
+                            user.FullName, reset_link
+                        )
+                        # Thread(target=send_email, args=(app, email)).start()
                         print("Mimic: Email sent")
 
                         # Print for testing
@@ -404,7 +423,7 @@ def reset():
     return render_template("reset/reset.html", form=form)
 
 
-@app.route("/new-password/<email_token>", methods=["GET"])
+@server.route("/new-password/<email_token>", methods=["GET"])
 def newPassword(email_token):
     form = NewPasswordForm(request.form)
 
@@ -418,19 +437,23 @@ def newPassword(email_token):
 
         # If user exists in db
         if user:
-            if not user.Flag:   # 0 means reset token is NOT VALID & has been used
+            if not user.Flag:  # 0 means reset token is NOT VALID & has been used
                 return render_template("reset/reset-expired.html")
-            if user.AccountLocked:  # 1 means user account is locked (after 5 invalid attempts)
+            if (
+                user.AccountLocked
+            ):  # 1 means user account is locked (after 5 invalid attempts)
                 return render_template("login-locked.html")
 
     except:
         return render_template("reset/reset-expired.html")
 
     # GET request if email_token is still valid & not been used
-    return render_template("reset/new-password.html", form=form, email_token=email_token)
+    return render_template(
+        "reset/new-password.html", form=form, email_token=email_token
+    )
 
 
-@app.route("/new-password", methods=["POST"])
+@server.route("/new-password", methods=["POST"])
 def postPassword():
     form = NewPasswordForm(request.form)
 
@@ -444,9 +467,11 @@ def postPassword():
 
         # If user exists in db
         if user:
-            if not user.Flag:   # 0 means reset token is NOT VALID & has been used
+            if not user.Flag:  # 0 means reset token is NOT VALID & has been used
                 return render_template("reset/reset-expired.html")
-            if user.AccountLocked:  # 1 means user account is locked (after 5 invalid attempts)
+            if (
+                user.AccountLocked
+            ):  # 1 means user account is locked (after 5 invalid attempts)
                 return render_template("login-locked.html")
 
     except:
@@ -463,16 +488,24 @@ def postPassword():
             # If user exists in db
             if user:
                 PasswordSalt = generate_csprng_token()  # 32-byte salt in hexadecimal
-                
+
                 # If password chosen is a common password
                 is_common_password = check_common_password(form.NewPassword.data)
                 if is_common_password:
-                    message = ["Password chosen is a commonly used password.", "Please choose another."]
-                    return render_template("reset/new-password.html", form=form, email_token=form.EmailToken.data, message=message)
+                    message = [
+                        "Password chosen is a commonly used password.",
+                        "Please choose another.",
+                    ]
+                    return render_template(
+                        "reset/new-password.html",
+                        form=form,
+                        email_token=form.EmailToken.data,
+                        message=message,
+                    )
 
                 user.Password = process_password(form.NewPassword.data, PasswordSalt)
                 user.PasswordSalt = PasswordSalt
-                user.Flag = 0     # 0 means reset token is NOT VALID & has been used
+                user.Flag = 0  # 0 means reset token is NOT VALID & has been used
                 db.session.commit()
 
                 # Log user out of all logged-in sessions.
@@ -481,12 +514,14 @@ def postPassword():
 
                 return render_template("reset/reset-success.html")
 
-    return render_template("reset/new-password.html", form=form, email_token=form.EmailToken.data)
+    return render_template(
+        "reset/new-password.html", form=form, email_token=form.EmailToken.data
+    )
 
 
-@app.route("/reset-success", methods=["GET"])
+@server.route("/reset-success", methods=["GET"])
 def resetSuccess():
-    
+
     # Only allow access if URL referrer is "new-password"
     try:
         if request.referrer.split("/")[-2] == "new-password":
@@ -499,17 +534,17 @@ def resetSuccess():
 # ----- ROUTES -----------------------------------------------------------------------
 
 
-@app.route("/")
+@server.route("/")
 def index():
-    # app.logger.debug("debug")
-    # app.logger.info("info")
-    # app.logger.warning("warning")
-    # app.logger.error("error")
-    # app.logger.critical("critical")
+    # server.logger.debug("debug")
+    # server.logger.info("info")
+    # server.logger.warning("warning")
+    # server.logger.error("error")
+    # server.logger.critical("critical")
     return render_template("index.html")
 
 
-@app.route("/404")
+@server.route("/404")
 def notFound():
     return render_template("404.html")
 
@@ -518,26 +553,26 @@ def notFound():
 # ----- FLEET-------------------------------------------------------------------------
 
 
-@app.route("/fleet")
+@server.route("/fleet")
 @login_required
 def fleet():
     all_data = Fleet.query.all()
     return render_template("fleet.html", fleet=all_data)
 
 
-@app.context_processor
+@server.context_processor
 def fleet():
     formFleet = fleetInsert()
     return dict(formFleet=formFleet)
 
 
-@app.context_processor
+@server.context_processor
 def fleet():
     searchformFleet = SearchFormFleet()
     return dict(searchformFleet=searchformFleet)
 
 
-@app.route("/fleet/fleetinsert", methods=["POST"])
+@server.route("/fleet/fleetinsert", methods=["POST"])
 def addFleet():
     formFleet = fleetInsert()
     if request.method == "POST" and formFleet.validate_on_submit():
@@ -557,13 +592,13 @@ def addFleet():
         return redirect("/fleet")
 
 
-@app.context_processor
+@server.context_processor
 def fleet():
     fleetupdate = fleetInsert()
     return dict(fleetupdate=fleetupdate)
 
 
-@app.route("/fleetUpdate", methods=["GET", "POST"])
+@server.route("/fleetUpdate", methods=["GET", "POST"])
 def fleetUpdate():
     fleetupdate = fleetInsert()
     if request.method == "POST" and fleetupdate.validate_on_submit:
@@ -578,7 +613,7 @@ def fleetUpdate():
         return redirect(url_for("fleet", fleetupdate=fleetupdate))
 
 
-@app.route("/fleet/delete/<id>", methods=["GET", "POST"])
+@server.route("/fleet/delete/<id>", methods=["GET", "POST"])
 def delete(id):
     if request.method == "GET":
         fleet_data = Fleet.query.get(id)
@@ -589,7 +624,7 @@ def delete(id):
         return redirect(url_for("fleet"))
 
 
-@app.route("/fleet/fleetsearch", methods=["POST"])
+@server.route("/fleet/fleetsearch", methods=["POST"])
 def fleetsearch():
     searchform = SearchFormFleet()
     posts = Fleet.query
@@ -613,7 +648,7 @@ def fleetsearch():
 # ----- EMPLOYEE -------------------------------------------------------------------------
 
 
-@app.route("/employees")
+@server.route("/employees")
 @login_required
 def employees():
     userrole = current_user.Role
@@ -629,19 +664,19 @@ def employees():
         return render_template("trip.html")
 
 
-@app.context_processor
+@server.context_processor
 def employees():
     formEmployee = employeeInsert()
     return dict(formEmployee=formEmployee)
 
 
-@app.context_processor
+@server.context_processor
 def employees():
     searchFormEmployee = SearchFormEmployee()
     return dict(searchFormEmployee=searchFormEmployee)
 
 
-@app.route("/employees/insert", methods=["POST"])
+@server.route("/employees/insert", methods=["POST"])
 def addEmployee():
     formEmployee = employeeInsert()
     FullName = None
@@ -650,6 +685,12 @@ def addEmployee():
     DOB = None
     Role = None
     Password = None
+    AccountLock = 0
+    LoginCounter = 0
+    LastLogin = "2999-12-31 23:59:59"
+    ResetDateTime = "2999-12-31 23:59:59"
+    Flag = 0
+
     if request.method == "POST":
         FullName = formEmployee.FullName.data
         ContactNumber = formEmployee.ContactNumber.data
@@ -676,7 +717,18 @@ def addEmployee():
         formEmployee.Password.data = ""
         formEmployee.Password.data = ""
         emp_data = Employee(
-            FullName, Email, ContactNumber, Role, Password, DOB, PasswordSalt
+            FullName,
+            Email,
+            ContactNumber,
+            Role,
+            Password,
+            DOB,
+            PasswordSalt,
+            AccountLock,
+            LoginCounter,
+            LastLogin,
+            ResetDateTime,
+            Flag,
         )
         db.session.add(emp_data)
         db.session.commit()
@@ -691,6 +743,8 @@ def addEmployee():
             driver_data = Driver(obj.EmployeeId, 1, "Account Created")
             emp_data.driver_child.append(driver_data)
             db.session.commit()
+            # db.session.close()
+            # db.session.expire_all()
 
             flash("Driver inserted sucessfully")
             return redirect("/employees")
@@ -700,18 +754,19 @@ def addEmployee():
         return redirect("/employees")
 
 
-@app.route("/employees/delete/<id>", methods=["GET", "POST"])
+@server.route("/employees/delete/<id>", methods=["GET", "POST"])
 def employeeDelete(id):
     if request.method == "GET":
         my_data = Employee.query.get(id)
-        db.session.delete(my_data)
+        db.session.delete(my_data)  
         db.session.commit()
+        db.session.close()
 
         flash("Employee deleted sucessfully.")
         return redirect(url_for("employees"))
 
 
-@app.route("/employees/employeesearch", methods=["POST"])
+@server.route("/employees/employeesearch", methods=["POST"])
 def employeesearch():
     searchFormEmployee = SearchFormEmployee()
     posts = Employee.query
@@ -735,36 +790,45 @@ def employeesearch():
 # ----- TRIPS --------------------------------------------------------------------------
 
 
-@app.route("/trip")
+@server.route("/trip")
 @login_required
 def trip():
+    formTrip = tripInsert()
+    employeeList = getFresh_Employee()
+    fleetList = getFresh_Fleet()
+    formTrip.EmployeeID.choices = employeeList
+    formTrip.VehicleID.choices = fleetList
     trip_data = Trip.query.all()
     fleet_data = Fleet.query.all()
-    # Fleet.
-    return render_template("trip.html", trip=trip_data, fleet=fleet_data)
+    return render_template("trip.html", trip=trip_data, fleet=fleet_data,formTrip = formTrip)
 
 
-@app.context_processor
+@server.context_processor
 def trip():
     formTrip = tripInsert()
     return dict(formTrip=formTrip)
 
 
-@app.context_processor
+@server.context_processor
 def trip():
     searchformTrip = SearchFormTrip()
     return dict(searchformTrip=searchformTrip)
 
+def getFresh_Employee():
+    employeeList = []
+    employee = Employee.query.filter(Employee.Role == "driver")
+    for row in employee:
+        employeeList.append((row.EmployeeId, row.FullName))
+    return employeeList
 
 def getFresh_Fleet():
     fleetList = []
-    # get the Agencies from the database - syntax here would be SQLAlchemy
     fleet = Fleet.query.all()
     for a in fleet:
         # generate a new list of tuples
-        fleetList.append((a.VehicleId, a.BusNumberPlate))
-    # print(fleetList)
+        fleetList.append((a.VehicleId,a.BusNumberPlate))
     return fleetList
+
 
 
 class tripInsert(FlaskForm):
@@ -787,10 +851,14 @@ class tripInsert(FlaskForm):
     submit = SubmitField("Submit", [DataRequired()])
 
 
-@app.route("/trip/tripinsert", methods=["POST"])
+@server.route("/trip/tripinsert", methods=["POST"])
 def addTrip():
+    
     formTrip = tripInsert()
-
+    employeeList = getFresh_Employee()
+    fleetList = getFresh_Fleet()
+    formTrip.EmployeeID.choices = employeeList
+    formTrip.VehicleID.choices = fleetList
     if request.method == "POST" and formTrip.validate_on_submit():
         EmployeeID = formTrip.EmployeeID.data
         VehicleID = formTrip.VehicleID.data
@@ -799,7 +867,6 @@ def addTrip():
         StartTime = formTrip.StartTime.data
         EndTime = formTrip.EndTime.data
         TripStatus = formTrip.TripStatus.data
-
         driverIDForInsert = (
             Driver.query.filter(Driver.EmployeeId == EmployeeID).first().DriverId
         )
@@ -822,10 +889,10 @@ def addTrip():
         return redirect("/trip")
 
 
-@app.route("/trip/tripSearch", methods=["POST"])
+@server.route("/trip/tripSearch", methods=["POST"])
 def tripSearch():
     searchformTrip = SearchFormTrip()
-    posts = Trip.query
+    posts = Trip.query  
     if request.method == "POST" and searchformTrip.validate_on_submit():
         postsearched = searchformTrip.searched.data
         searchformTrip.searched.data = ""
@@ -842,13 +909,13 @@ def tripSearch():
             flash("Cannot find Trip")
 
 
-@app.context_processor
+@server.context_processor
 def trip():
     tripupdate = tripInsert()
     return dict(tripupdate=tripupdate)
 
 
-@app.route("/trip/tripUpdate", methods=["GET", "POST"])
+@server.route("/trip/tripUpdate", methods=["GET", "POST"])
 def tripUpdate():
     tripupdate = tripInsert()
     if request.method == "POST" and tripupdate.validate_on_submit:
@@ -867,7 +934,7 @@ def tripUpdate():
         return redirect(url_for("trip", tripupdate=tripupdate))
 
 
-@app.route("/trip/delete/<id>", methods=["GET", "POST"])
+@server.route("/trip/delete/<id>", methods=["GET", "POST"])
 def tripDelete(id):
     if request.method == "GET":
         trip_data = Trip.query.get(id)
@@ -882,7 +949,7 @@ def tripDelete(id):
 # ----- PROFILE INFO --------------------------------------------------------------------
 
 
-@app.route("/profile", methods=["GET", "POST"])
+@server.route("/profile", methods=["GET", "POST"])
 @login_required
 def profile():
     updateFormEmployee = employeeUpdate()
@@ -936,10 +1003,12 @@ def profile():
 
 # ----- END PROFILE INFO ---------------------------------------------------------------
 
+
 def send_email(app, email):
     with app.app_context():
         email_service.send(email)
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    server.run(debug=True)
+    db.session.commit()

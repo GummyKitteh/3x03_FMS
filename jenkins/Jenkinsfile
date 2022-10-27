@@ -1,10 +1,5 @@
 pipeline {
-    agent {
-		docker {
-			image 'python:3' 
-			args '-p 3000:3000'
-		}
-	}
+	agent any
 	stages {
 		stage('Checkout') {
 			steps {
@@ -13,9 +8,24 @@ pipeline {
 			}
 		}
         stage('Build') { 
+			agent { 
+				docker {
+					image 'python:3'
+				}
+			}
             steps {
                 sh 'pip install --no-cache-dir -r src/requirements.txt' 
             }
         }
+		stage('OWASP Dependency-Check'){
+			steps {
+				dependencyCheck additionalArguments: '--format HTML --format XML', odcInstallation: '3x03_FMS'
+			}
+		}
     }
+	post {
+		success {
+			dependencyCheckPublisher pattern: 'dependency-check-report.xml'
+		}
+	}
 }
