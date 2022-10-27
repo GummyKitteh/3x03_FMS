@@ -283,7 +283,7 @@ def login():
                     # Authorise login
                     login_user(user)
                     logger_auth.info(
-                        f"{user.FullName} (ID: {user.EmployeeId}) has logged IN."
+                        f"{user.Email} (ID: {user.EmployeeId}) has logged IN."
                     )
                     return redirect(url_for("employees"))
 
@@ -291,14 +291,14 @@ def login():
                 else:
                     user.LoginCounter += 1
                     logger_auth.warning(
-                        f"{user.FullName} (ID: {user.EmployeeId}) attempted to log in: {user.LoginCounter} time(s)."
+                        f"{user.Email} (ID: {user.EmployeeId}) attempted to log in: {user.LoginCounter} time(s)."
                     )
 
                     # If accumulated 5 invalid attempts, lock user account
                     if user.LoginCounter == 5:
                         user.AccountLocked = 1
                         logger_auth.warning(
-                            f"{user.FullName} (ID: {user.EmployeeId}) account has been locked after 5 incorrect login attempts."
+                            f"{user.Email} (ID: {user.EmployeeId}) account has been locked after 5 incorrect login attempts."
                         )
                     db.session.commit()
 
