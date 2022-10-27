@@ -19,6 +19,7 @@ pipeline {
         }
 		stage('OWASP Dependency-Check'){
 			steps {
+				sh 'whoami'
 				dependencyCheck additionalArguments: 'scan="src/" --format HTML', odcInstallation: '3x03_FMS'
 			}
 		}
