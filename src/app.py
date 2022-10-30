@@ -42,9 +42,11 @@ server.secret_key = "abcd"
 server.config["SECRET_KEY"] = "I really hope fking this work if never idk what to do :("
 
 # Db configuration
-server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
+# server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
 # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwerty1234@localhost/fmssql"
-# server.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:B33pb33p!@178.128.17.35/fmssql"
+server.config[
+    "SQLALCHEMY_DATABASE_URI"
+] = "mysql+pymysql://db_user:B33pb33p!us3r@178.128.17.35/fmssql"
 # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwert54321@localhost/fmssql"
 server.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(server)
@@ -895,8 +897,8 @@ def addTrip():
         )
         db.session.add(trip_data)
         db.session.commit()
-        obj = db.session.query(Trip).order_by(Trip.TripId.desc()).first()
-        logger_crud.info(f"Trip (ID: {obj.TripId}) inserted to Trip.")
+        obj = db.session.query(Trip).order_by(Trip.TripID.desc()).first()
+        logger_crud.info(f"Trip (ID: {obj.TripID}) inserted to Trip.")
         flash("Trip inserted sucessfully")
         return redirect("/trip")
     else:
