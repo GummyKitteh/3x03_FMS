@@ -11,3 +11,4 @@ Flask-Mail==0.9.1
 PyJWT==2.6.0
 cryptography
 pymysql
+python-dotenv

@@ -35,6 +35,15 @@ from form import RoleTypes, TripStatusTypes
 from form import SearchFormEmployee, SearchFormFleet, SearchFormTrip
 from security_controls import *
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  # take environment variables from .env.
+db_user = os.getenv("db_user")
+db_pwd = os.getenv("db_pwd")
+db_add = os.getenv("db_add")
+db_db = os.getenv("db_db")
+
 Base = declarative_base()
 
 server = Flask(__name__)
@@ -46,7 +55,7 @@ server.config["SECRET_KEY"] = "I really hope fking this work if never idk what t
 # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwerty1234@localhost/fmssql"
 server.config[
     "SQLALCHEMY_DATABASE_URI"
-] = "mysql+pymysql://db_user:B33pb33p!us3r@178.128.17.35/fmssql"
+] = f"mysql+pymysql://{db_user}:{db_pwd}@{db_add}/{db_db}"
 # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwert54321@localhost/fmssql"
 server.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(server)
@@ -64,9 +73,7 @@ email_service = Mail(server)
 # server.config["RECAPTCHA_PUBLIC_KEY"] = "<contact JM>"
 # server.config["RECAPTCHA_PRIVATE_KEY"] = "<contact JM>"
 
-# https://www.youtube.com/watch?v=4gRMV-wZTQs
 # http://127.0.0.1:5000
-
 
 # ----- LOGGGING ----------------------------------------------------------------------
 logging.basicConfig(
@@ -102,10 +109,6 @@ handler_crud.setFormatter(formatter_crud)
 logger_auth.addHandler(handler_auth)
 logger_crud.addHandler(handler_crud)
 
-# logging.debug("This message should go to the log file")
-# logging.info("So should this")
-# logging.warning("And this, too")
-# logging.error("And non-ASCII stuff, too, like Øresund and Malmö")
 # ----- END LOGGGING ------------------------------------------------------------------
 # ----- CLASSES -----------------------------------------------------------------------
 
