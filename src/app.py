@@ -42,11 +42,9 @@ server.secret_key = "abcd"
 server.config["SECRET_KEY"] = "I really hope fking this work if never idk what to do :("
 
 # Db configuration
-# server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
+server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
 # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwerty1234@localhost/fmssql"
-server.config[
-    "SQLALCHEMY_DATABASE_URI"
-] = "mysql+pymysql://root:B33pb33p!@178.128.17.35/fmssql"
+# server.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:B33pb33p!@178.128.17.35/fmssql"
 # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwert54321@localhost/fmssql"
 server.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(server)
@@ -106,7 +104,6 @@ logger_crud.addHandler(handler_crud)
 # logging.info("So should this")
 # logging.warning("And this, too")
 # logging.error("And non-ASCII stuff, too, like Øresund and Malmö")
-
 # ----- END LOGGGING ------------------------------------------------------------------
 # ----- CLASSES -----------------------------------------------------------------------
 
@@ -124,7 +121,7 @@ class Employee(db.Model, UserMixin, Base):
     AccountLocked = db.Column(db.Integer, nullable=False)
     LoginCounter = db.Column(db.Integer, nullable=False)
     LastLogin = db.Column(db.DateTime, nullable=False)
-    RestDateTime = db.Column(db.DateTime, nullable=False)
+    ResetDateTime = db.Column(db.DateTime, nullable=False)
     Flag = db.Column(db.Integer, nullable=False)
     # OTP = db.Column(db.Integer, nullable=False)
     # OTPDateTime = db.Column(db.DateTime, nullable=False)
@@ -286,7 +283,7 @@ def login():
                     # Authorise login
                     login_user(user)
                     logger_auth.info(
-                        f"{user.FullName} (ID: {user.EmployeeId}) has logged IN."
+                        f"{user.Email} (ID: {user.EmployeeId}) has logged IN."
                     )
                     return redirect(url_for("employees"))
 
@@ -294,14 +291,14 @@ def login():
                 else:
                     user.LoginCounter += 1
                     logger_auth.warning(
-                        f"{user.FullName} (ID: {user.EmployeeId}) attempted to log in: {user.LoginCounter} time(s)."
+                        f"{user.Email} (ID: {user.EmployeeId}) attempted to log in: {user.LoginCounter} time(s)."
                     )
 
                     # If accumulated 5 invalid attempts, lock user account
                     if user.LoginCounter == 5:
                         user.AccountLocked = 1
                         logger_auth.warning(
-                            f"{user.FullName} (ID: {user.EmployeeId}) account has been locked after 5 incorrect login attempts."
+                            f"{user.Email} (ID: {user.EmployeeId}) account has been locked after 5 incorrect login attempts."
                         )
                     db.session.commit()
 
@@ -363,11 +360,11 @@ def reset():
 
                 # Calculate time delta between current time and last sent email
                 try:
-                    # If there is a timestamp in user.RestDateTime
-                    email_token_delta = datetime.utcnow() - user.RestDateTime
+                    # If there is a timestamp in user.ResetDateTime
+                    email_token_delta = datetime.utcnow() - user.ResetDateTime
                     delta_hour = email_token_delta.seconds // 3600
                 except:
-                    # If there is no timestamp in user.RestDateTime
+                    # If there is no timestamp in user.ResetDateTime
                     delta_hour = 1
 
                 # If user has NOT sent a reset link in the last 1 hour
@@ -398,7 +395,7 @@ def reset():
 
                         # Generate reset token (output in Base64) for password reset
                         email_token = generate_reset_token(user.get_id())
-                        user.RestDateTime = datetime.utcnow().strftime(
+                        user.ResetDateTime = datetime.utcnow().strftime(
                             "%Y-%m-%d %H:%M:%S.%f"
                         )[:-3]
                         user.Flag = (
@@ -410,7 +407,7 @@ def reset():
                         reset_link = "http://localhost:5000/new-password/{}".format(
                             email_token
                         )
-                        email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nKindly click on the link below, or copy it into your trusted Web Browser (i.e. Google Chrome), to do so.\nPlease note that the link is only valid for 1 hour.\nLink: {}\n\nYou may ignore this email if you did not make this request.\nRest assure that your account has not been compromised, and your information is safe with us!\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
+                        email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nKindly click on the link below, or copy it into your trusted Web Browser (i.e. Google Chrome), to do so.\nPlease note that the link is only valid for 1 hour.\nLink: {}\n\nYou may ignore this email if you did not make this request.\nReset assure that your account has not been compromised, and your information is safe with us!\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
                             user.FullName, reset_link
                         )
                         # Thread(target=send_email, args=(app, email)).start()
@@ -695,7 +692,7 @@ def addEmployee():
     AccountLock = 0
     LoginCounter = 0
     LastLogin = "2999-12-31 23:59:59"
-    ResetDateTime = ""
+    ResetDateTime = "2999-12-31 23:59:59"
     Flag = 0
 
     if request.method == "POST":
@@ -753,6 +750,8 @@ def addEmployee():
             db.session.commit()
             obj = db.session.query(Driver).order_by(Driver.DriverId.desc()).first()
             logger_crud.info(f"Driver (ID: {obj.DriverId}) inserted to Driver.")
+            # db.session.close()
+            # db.session.expire_all()
 
             flash("Driver inserted sucessfully")
             return redirect("/employees")
@@ -769,6 +768,7 @@ def employeeDelete(id):
         db.session.delete(my_data)
         db.session.commit()
         logger_crud.info(f"Driver (ID: {id}) Deleted from Driver.")
+        db.session.close()
 
         flash("Employee deleted sucessfully.")
         return redirect(url_for("employees"))
@@ -803,10 +803,16 @@ def employeesearch():
 @server.route("/trip")
 @login_required
 def trip():
+    formTrip = tripInsert()
+    employeeList = getFresh_Employee()
+    fleetList = getFresh_Fleet()
+    formTrip.EmployeeID.choices = employeeList
+    formTrip.VehicleID.choices = fleetList
     trip_data = Trip.query.all()
     fleet_data = Fleet.query.all()
-    # Fleet.
-    return render_template("trip.html", trip=trip_data, fleet=fleet_data)
+    return render_template(
+        "trip.html", trip=trip_data, fleet=fleet_data, formTrip=formTrip
+    )
 
 
 @server.context_processor
@@ -821,14 +827,20 @@ def trip():
     return dict(searchformTrip=searchformTrip)
 
 
+def getFresh_Employee():
+    employeeList = []
+    employee = Employee.query.filter(Employee.Role == "driver")
+    for row in employee:
+        employeeList.append((row.EmployeeId, row.FullName))
+    return employeeList
+
+
 def getFresh_Fleet():
     fleetList = []
-    # get the Agencies from the database - syntax here would be SQLAlchemy
     fleet = Fleet.query.all()
     for a in fleet:
         # generate a new list of tuples
         fleetList.append((a.VehicleId, a.BusNumberPlate))
-    # print(fleetList)
     return fleetList
 
 
@@ -854,8 +866,12 @@ class tripInsert(FlaskForm):
 
 @server.route("/trip/tripinsert", methods=["POST"])
 def addTrip():
-    formTrip = tripInsert()
 
+    formTrip = tripInsert()
+    employeeList = getFresh_Employee()
+    fleetList = getFresh_Fleet()
+    formTrip.EmployeeID.choices = employeeList
+    formTrip.VehicleID.choices = fleetList
     if request.method == "POST" and formTrip.validate_on_submit():
         EmployeeID = formTrip.EmployeeID.data
         VehicleID = formTrip.VehicleID.data
@@ -864,7 +880,6 @@ def addTrip():
         StartTime = formTrip.StartTime.data
         EndTime = formTrip.EndTime.data
         TripStatus = formTrip.TripStatus.data
-
         driverIDForInsert = (
             Driver.query.filter(Driver.EmployeeId == EmployeeID).first().DriverId
         )
@@ -1028,3 +1043,4 @@ def send_email(app, email):
 
 if __name__ == "__main__":
     server.run(debug=True)
+    db.session.commit()
