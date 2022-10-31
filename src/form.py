@@ -91,6 +91,18 @@ class LoginForm(FlaskForm):
     submit = SubmitField("Login")
 
 
+class OTPForm(FlaskForm):
+    OTP = PasswordField("OTP", [DataRequired(), Length(min=6, max=6), Regexp(regex="^[0-9]+$")])
+    OTPUser = IntegerField([DataRequired()])
+    #recaptcha = RecaptchaField()
+    submit = SubmitField("Submit")
+
+
+class ResendOTPForm(FlaskForm):
+    OTPUser = IntegerField([DataRequired()])
+    submit = SubmitField("Request New OTP")
+
+
 class ResetPasswordForm(FlaskForm):
     Phone = StringField("Contact Number", [DataRequired(), Length(min=8, max=8), Regexp(regex="^[0-9]+$")])
     Email = StringField("Email", [DataRequired(), Email(), Length(max=100)])
