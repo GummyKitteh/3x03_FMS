@@ -81,7 +81,7 @@ server.config["RECAPTCHA_PRIVATE_KEY"] = recaptcha_prv
 
 # ----- LOGGGING ----------------------------------------------------------------------
 logging.basicConfig(
-    filename="./logs/generallog.log",
+    filename="./src/logs/generallog.log",
     encoding="utf-8",
     filemode="a",
     level=logging.INFO,
@@ -198,6 +198,7 @@ class Fleet(db.Model):
     BusNumberPlate = db.Column(db.String(8), nullable=False)
     VehicleCapacity = db.Column(db.Integer, nullable=False)
     VehicleStatus = db.Column(db.String(45), nullable=False)
+    Disabled = db.Column(db.Integer, nullable=False)
 
     trip_childFleet = relationship(
         "Trip",
@@ -205,10 +206,11 @@ class Fleet(db.Model):
         backref="Fleet",
     )
 
-    def __init__(self, BusNumberPlate, VehicleCapacity, VehicleStatus):
+    def __init__(self, BusNumberPlate, VehicleCapacity, VehicleStatus, Disabled):
         self.BusNumberPlate = BusNumberPlate
         self.VehicleCapacity = VehicleCapacity
         self.VehicleStatus = VehicleStatus
+        self.Disabled = Disabled
 
 
 class Trip(db.Model):
@@ -379,13 +381,17 @@ def login():
 
                         # Send email to notify Administrator
                         email = Message()
-                        email.subject = "Employee ID {}: Account Has Been Locked".format(user.EmployeeId)
+                        email.subject = (
+                            "Employee ID {}: Account Has Been Locked".format(
+                                user.EmployeeId
+                            )
+                        )
                         email.recipients = [mail_user]
                         email.body = "Dear IT Administrator,\n\nAn account has been locked followinng 5 invalid login attempts.\n\nEmployee ID: {}\n\nYou may wish to contact the user to assist.\nThank you.\n\nBest regards,\nBus FMS".format(
                             user.EmployeeId
                         )
                         Thread(target=send_email, args=(server, email)).start()
-                        print("Mimic: Email sent to Admin (Account Locked)")                        
+                        print("Mimic: Email sent to Admin (Account Locked)")
 
                         return render_template("login/login-locked.html")
 
@@ -849,7 +855,8 @@ def addFleet():
         BusNumberPlate = formFleet.BusNumberPlate.data
         VehicleCapacity = formFleet.VehicleCapacity.data
         VehicleStatus = formFleet.VehicleStatus.data
-        fleet_data = Fleet(BusNumberPlate, VehicleCapacity, VehicleStatus)
+        Disabled = 0
+        fleet_data = Fleet(BusNumberPlate, VehicleCapacity, VehicleStatus, Disabled)
         db.session.add(fleet_data)
         db.session.commit()
         flash("Vehicle inserted sucessfully")
@@ -889,10 +896,16 @@ def fleetUpdate():
 def delete(id):
     if request.method == "GET":
         fleet_data = Fleet.query.get(id)
-        db.session.delete(fleet_data)
+        if fleet_data.Disabled == 1:
+            fleet_data.Disabled = 0
+            logger_crud.info(f"Vechicle (ID: {id}) ENABLED in Fleet.")
+            flash("Vehicle enabled sucessfully.")
+        else:
+            fleet_data.Disabled = 1
+            logger_crud.info(f"Vechicle (ID: {id}) Disabled in Fleet.")
+            flash("Vehicle disabled sucessfully.")
         db.session.commit()
-        logger_crud.info(f"Vechicle (ID: {id}) Deleted from fleet.")
-        flash("Vehicle deleted sucessfully.")
+
         return redirect(url_for("fleet"))
 
 
@@ -972,7 +985,6 @@ def addEmployee():
         account = Employee.query
         user = account.filter_by(Email=formEmployee.Email.data).first()
 
-        
         # If email does not exist in db
         if not user:
             FullName = formEmployee.FullName.data
@@ -1074,14 +1086,18 @@ def addEmployee():
             )
             db.session.add(emp_data)
             db.session.commit()
-            obj = db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
+            obj = (
+                db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
+            )
             logger_crud.info(f"Employee (ID: {obj.EmployeeId}) inserted to Employee.")
             if Role != "driver":
                 flash("Employee inserted sucessfully")
                 return redirect("/employees")
             else:
                 obj = (
-                    db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
+                    db.session.query(Employee)
+                    .order_by(Employee.EmployeeId.desc())
+                    .first()
                 )
                 driver_data = Driver(obj.EmployeeId, 1, "Account Created")
                 emp_data.driver_child.append(driver_data)
@@ -1093,10 +1109,6 @@ def addEmployee():
 
                 flash("Driver inserted sucessfully")
                 return redirect("/employees")
-        
-        else:
-            flash("Email already exists. Please choose another.")
-            return redirect("/employees")
 
     else:
         flash("Employee insert failed. Please check your fields again.")
