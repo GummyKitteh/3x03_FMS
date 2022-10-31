@@ -43,6 +43,10 @@ db_user = os.getenv("db_user")
 db_pwd = os.getenv("db_pwd")
 db_add = os.getenv("db_add")
 db_db = os.getenv("db_db")
+mail_user = os.getenv("mail_user")
+mail_pwd = os.getenv("mail_pwd")
+recaptcha_pub = os.getenv("recaptcha_pub")
+recaptcha_prv = os.getenv("recaptcha_prv")
 
 Base = declarative_base()
 
@@ -65,13 +69,13 @@ server.config["MAIL_SERVER"] = "smtp.gmail.com"
 server.config["MAIL_PORT"] = 587
 server.config["MAIL_USE_TLS"] = True
 server.config["MAIL_USE_SSL"] = False
-server.config["MAIL_USERNAME"] = "b33p33p@gmail.com"
-# server.config["MAIL_PASSWORD"] = "<contact JM>"
-server.config["MAIL_DEFAULT_SENDER"] = "b33p33p@gmail.com"
+server.config["MAIL_USERNAME"] = mail_user
+server.config["MAIL_PASSWORD"] = mail_pwd
+server.config["MAIL_DEFAULT_SENDER"] = mail_user
 email_service = Mail(server)
 
-# server.config["RECAPTCHA_PUBLIC_KEY"] = "<contact JM>"
-# server.config["RECAPTCHA_PRIVATE_KEY"] = "<contact JM>"
+server.config["RECAPTCHA_PUBLIC_KEY"] = recaptcha_pub
+server.config["RECAPTCHA_PRIVATE_KEY"] = recaptcha_prv
 
 # http://127.0.0.1:5000
 
@@ -322,7 +326,7 @@ def login():
                             email.body = "Dear {},\n\nAs our valued partner, you are requested to create your first password before you can access our features.\n\nKindly click on the link below, or copy it into your trusted Web Browser (i.e. Google Chrome), to do so.\nPlease note that the link is only valid for 1 hour.\n\nLink: {}\n\nThank you for your support in Bus FMS. We hope you will have a pleasant experience with us!\n\nBest regards,\nBus FMS".format(
                                 user.FullName, reset_link
                             )
-                            # Thread(target=send_email, args=(server, email)).start()
+                            Thread(target=send_email, args=(server, email)).start()
                             logger_auth.warning(
                                 f"{user.FullName} (ID: {user.EmployeeId}) logs in for the first time and has requested a password reset via Email."
                             )
@@ -359,7 +363,7 @@ def login():
                         email.body = "Dear {},\n\nWe note that you have attempted to log in to your Bus FMS account multiple times without success.\nUnfortunately, your account has been locked after too many invalid login attempts.\n\nPlease contact your Manager or IT Administrator for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
                             user.FullName
                         )
-                        # Thread(target=send_email, args=(server, email)).start()
+                        Thread(target=send_email, args=(server, email)).start()
                         logger_auth.warning(
                             f"{user.FullName} (ID: {user.EmployeeId}) (Account Locked) attempted to log in."
                         )
@@ -406,7 +410,7 @@ def send_otp(user):
         user.FullName,
         user.OTP
     )
-    # Thread(target=send_email, args=(server, email)).start()
+    Thread(target=send_email, args=(server, email)).start()
     logger_auth.warning(
         f"{user.FullName} (ID: {user.EmployeeId}) requested an OTP via Email."
     )
@@ -585,7 +589,7 @@ def reset():
                         email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nUnfortunately, your account has been locked after too many invalid attempts.\nPlease contact your Manager or IT Administrator for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
                             user.FullName
                         )
-                        # Thread(target=send_email, args=(server, email)).start()
+                        Thread(target=send_email, args=(server, email)).start()
                         logger_auth.warning(
                             f"{user.FullName} (ID: {user.EmployeeId}) (Account Locked) requested a password reset via Email."
                         )
@@ -609,7 +613,7 @@ def reset():
                         email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nKindly click on the link below, or copy it into your trusted Web Browser (i.e. Google Chrome), to do so.\nPlease note that the link is only valid for 1 hour.\n\nLink: {}\n\nYou may ignore this email if you did not make this request.\nRest assure that your account has not been compromised, and your information is safe with us!\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
                             user.FullName, reset_link
                         )
-                        # Thread(target=send_email, args=(server, email)).start()
+                        Thread(target=send_email, args=(server, email)).start()
                         logger_auth.warning(
                             f"{user.FullName} (ID: {user.EmployeeId}) requested a password reset via Email."
                         )
