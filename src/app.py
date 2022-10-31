@@ -43,6 +43,10 @@ db_user = os.getenv("db_user")
 db_pwd = os.getenv("db_pwd")
 db_add = os.getenv("db_add")
 db_db = os.getenv("db_db")
+mail_user = os.getenv("mail_user")
+mail_pwd = os.getenv("mail_pwd")
+recaptcha_pub = os.getenv("recaptcha_pub")
+recaptcha_prv = os.getenv("recaptcha_prv")
 
 Base = declarative_base()
 
@@ -65,19 +69,19 @@ server.config["MAIL_SERVER"] = "smtp.gmail.com"
 server.config["MAIL_PORT"] = 587
 server.config["MAIL_USE_TLS"] = True
 server.config["MAIL_USE_SSL"] = False
-server.config["MAIL_USERNAME"] = "b33p33p@gmail.com"
-# server.config["MAIL_PASSWORD"] = "<contact JM>"
-server.config["MAIL_DEFAULT_SENDER"] = "b33p33p@gmail.com"
+server.config["MAIL_USERNAME"] = mail_user
+server.config["MAIL_PASSWORD"] = mail_pwd
+server.config["MAIL_DEFAULT_SENDER"] = mail_user
 email_service = Mail(server)
 
-# server.config["RECAPTCHA_PUBLIC_KEY"] = "<contact JM>"
-# server.config["RECAPTCHA_PRIVATE_KEY"] = "<contact JM>"
+server.config["RECAPTCHA_PUBLIC_KEY"] = recaptcha_pub
+server.config["RECAPTCHA_PRIVATE_KEY"] = recaptcha_prv
 
 # http://127.0.0.1:5000
 
 # ----- LOGGGING ----------------------------------------------------------------------
 logging.basicConfig(
-    filename="./src/logs/generallog.log",
+    filename="./logs/generallog.log",
     encoding="utf-8",
     filemode="a",
     level=logging.INFO,
@@ -120,7 +124,7 @@ class Employee(db.Model, UserMixin, Base):
     Email = db.Column(db.String(100), nullable=False, unique=True)
     ContactNumber = db.Column(db.Integer, nullable=False)
     Role = db.Column(db.Enum(RoleTypes), nullable=False)
-    Password = db.Column(db.String(64), nullable=False, unique=True)
+    Password = db.Column(db.String(64), nullable=False)
     DOB = db.Column(db.DateTime, nullable=False)
     PasswordSalt = db.Column(db.String(64), nullable=False)
     AccountLocked = db.Column(db.Integer, nullable=False)
@@ -330,7 +334,7 @@ def login():
                             email.body = "Dear {},\n\nAs our valued partner, you are requested to create your first password before you can access our features.\n\nKindly click on the link below, or copy it into your trusted Web Browser (i.e. Google Chrome), to do so.\nPlease note that the link is only valid for 1 hour.\n\nLink: {}\n\nThank you for your support in Bus FMS. We hope you will have a pleasant experience with us!\n\nBest regards,\nBus FMS".format(
                                 user.FullName, reset_link
                             )
-                            # Thread(target=send_email, args=(server, email)).start()
+                            Thread(target=send_email, args=(server, email)).start()
                             logger_auth.warning(
                                 f"{user.FullName} (ID: {user.EmployeeId}) logs in for the first time and has requested a password reset via Email."
                             )
@@ -367,7 +371,7 @@ def login():
                         email.body = "Dear {},\n\nWe note that you have attempted to log in to your Bus FMS account multiple times without success.\nUnfortunately, your account has been locked after too many invalid login attempts.\n\nPlease contact your Manager or IT Administrator for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
                             user.FullName
                         )
-                        # Thread(target=send_email, args=(server, email)).start()
+                        Thread(target=send_email, args=(server, email)).start()
                         logger_auth.warning(
                             f"{user.FullName} (ID: {user.EmployeeId}) (Account Locked) attempted to log in."
                         )
@@ -375,17 +379,13 @@ def login():
 
                         # Send email to notify Administrator
                         email = Message()
-                        email.subject = (
-                            "Employee ID {}: Account Has Been Locked".format(
-                                user.EmployeeId
-                            )
-                        )
+                        email.subject = "Employee ID {}: Account Has Been Locked".format(user.EmployeeId)
                         email.recipients = [mail_user]
                         email.body = "Dear IT Administrator,\n\nAn account has been locked followinng 5 invalid login attempts.\n\nEmployee ID: {}\n\nYou may wish to contact the user to assist.\nThank you.\n\nBest regards,\nBus FMS".format(
                             user.EmployeeId
                         )
                         Thread(target=send_email, args=(server, email)).start()
-                        print("Mimic: Email sent to Admin (Account Locked)")
+                        print("Mimic: Email sent to Admin (Account Locked)")                        
 
                         return render_template("login/login-locked.html")
 
@@ -429,7 +429,7 @@ def send_otp(user):
     email.body = "Dear {}, \n\nYour OTP is {}.\nPlease note that your OTP is only valid for 2 minutes.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
         user.FullName, user.OTP
     )
-    # Thread(target=send_email, args=(server, email)).start()
+    Thread(target=send_email, args=(server, email)).start()
     logger_auth.warning(
         f"{user.FullName} (ID: {user.EmployeeId}) requested an OTP via Email."
     )
@@ -635,7 +635,7 @@ def reset():
                         email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nUnfortunately, your account has been locked after too many invalid attempts.\nPlease contact your Manager or IT Administrator for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
                             user.FullName
                         )
-                        # Thread(target=send_email, args=(server, email)).start()
+                        Thread(target=send_email, args=(server, email)).start()
                         logger_auth.warning(
                             f"{user.FullName} (ID: {user.EmployeeId}) (Account Locked) requested a password reset via Email."
                         )
@@ -661,7 +661,7 @@ def reset():
                         email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nKindly click on the link below, or copy it into your trusted Web Browser (i.e. Google Chrome), to do so.\nPlease note that the link is only valid for 1 hour.\n\nLink: {}\n\nYou may ignore this email if you did not make this request.\nRest assure that your account has not been compromised, and your information is safe with us!\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
                             user.FullName, reset_link
                         )
-                        # Thread(target=send_email, args=(server, email)).start()
+                        Thread(target=send_email, args=(server, email)).start()
                         logger_auth.warning(
                             f"{user.FullName} (ID: {user.EmployeeId}) requested a password reset via Email."
                         )
@@ -972,6 +972,7 @@ def addEmployee():
         account = Employee.query
         user = account.filter_by(Email=formEmployee.Email.data).first()
 
+        
         # If email does not exist in db
         if not user:
             FullName = formEmployee.FullName.data
@@ -1045,55 +1046,60 @@ def addEmployee():
             flash("Email already exists. Please choose another.")
             return redirect("/employees")
 
-        Password = process_password(formEmployee.Password.data, PasswordSalt)
+            Password = process_password(formEmployee.Password.data, PasswordSalt)
 
-        formEmployee.FullName.data = ""
-        formEmployee.ContactNumber.data = ""
-        formEmployee.Email.data = ""
-        formEmployee.DOB.data = ""
-        formEmployee.Role.data = ""
-        formEmployee.Password.data = ""
-        formEmployee.Password.data = ""
-        emp_data = Employee(
-            FullName,
-            Email,
-            ContactNumber,
-            Role,
-            Password,
-            DOB,
-            PasswordSalt,
-            AccountLock,
-            LoginCounter,
-            LastLogin,
-            ResetDateTime,
-            ResetFlag,
-            OTP,
-            OTPDateTime,
-            OTPCounter,
-        )
-        db.session.add(emp_data)
-        db.session.commit()
-        obj = db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
-        logger_crud.info(f"Employee (ID: {obj.EmployeeId}) inserted to Employee.")
-        if Role != "driver":
-            flash("Employee inserted sucessfully")
-            return redirect("/employees")
-        else:
-            obj = (
-                db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
+            formEmployee.FullName.data = ""
+            formEmployee.ContactNumber.data = ""
+            formEmployee.Email.data = ""
+            formEmployee.DOB.data = ""
+            formEmployee.Role.data = ""
+            formEmployee.Password.data = ""
+            formEmployee.Password.data = ""
+            emp_data = Employee(
+                FullName,
+                Email,
+                ContactNumber,
+                Role,
+                Password,
+                DOB,
+                PasswordSalt,
+                AccountLock,
+                LoginCounter,
+                LastLogin,
+                ResetDateTime,
+                ResetFlag,
+                OTP,
+                OTPDateTime,
+                OTPCounter,
             )
-            driver_data = Driver(obj.EmployeeId, 1, "Account Created")
-            emp_data.driver_child.append(driver_data)
+            db.session.add(emp_data)
             db.session.commit()
-            obj = db.session.query(Driver).order_by(Driver.DriverId.desc()).first()
-            logger_crud.info(f"Driver (ID: {obj.DriverId}) inserted to Driver.")
-            # db.session.close()
-            # db.session.expire_all()
+            obj = db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
+            logger_crud.info(f"Employee (ID: {obj.EmployeeId}) inserted to Employee.")
+            if Role != "driver":
+                flash("Employee inserted sucessfully")
+                return redirect("/employees")
+            else:
+                obj = (
+                    db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
+                )
+                driver_data = Driver(obj.EmployeeId, 1, "Account Created")
+                emp_data.driver_child.append(driver_data)
+                db.session.commit()
+                obj = db.session.query(Driver).order_by(Driver.DriverId.desc()).first()
+                logger_crud.info(f"Driver (ID: {obj.DriverId}) inserted to Driver.")
+                # db.session.close()
+                # db.session.expire_all()
 
-            flash("Driver inserted sucessfully")
+                flash("Driver inserted sucessfully")
+                return redirect("/employees")
+        
+        else:
+            flash("Email already exists. Please choose another.")
             return redirect("/employees")
+
     else:
-        flash("Employee insert failed")
+        flash("Employee insert failed. Please check your fields again.")
         logger_crud.error(f"Employee insert failed.")
         return redirect("/employees")
 
