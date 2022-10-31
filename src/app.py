@@ -53,6 +53,12 @@ Base = declarative_base()
 server = Flask(__name__)
 server.secret_key = "abcd"
 server.config["SECRET_KEY"] = "I really hope fking this work if never idk what to do :("
+server.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=1)
+server.config["SESSION_COOKIE_DOMAIN"] = None   # Might set to helik1pter.tk?
+server.config["SESSION_COOKIE_HTTPONLY"] = True
+server.config["SESSION_COOKIE_SECURE"] = True
+server.config["SESSION_COOKIE_SAMESITE"] = "Strict"
+
 
 # Db configuration
 # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
@@ -252,6 +258,7 @@ class Trip(db.Model):
 login_manager = LoginManager()
 login_manager.init_app(server)
 login_manager.login_view = "login"
+login_manager.session_protection = "strong"
 
 
 @login_manager.user_loader
@@ -264,6 +271,9 @@ def load_user(EmployeeId):
 
 @server.route("/login", methods=["GET", "POST"])
 def login():
+    if current_user.is_authenticated:
+        return redirect(url_for("index"))
+
     form = LoginForm(request.form)
 
     # If POST request
@@ -286,10 +296,28 @@ def login():
                 if user.Password == derived_password:
 
                     if datetime.utcnow() > user.LastLogin:
+
+                        """Temporarily Bypass OTP"""
+                        # Reset LoginCounter
+                        user.LoginCounter = 0
+                        user.LastLogin = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+                        user.OTP = 0
+                        db.session.commit()
+
+                        # Authorise login
+                        login_user(user)#, duration=timedelta(seconds=3))
+
+                        logger_auth.info(
+                        f"{user.FullName} (ID: {user.EmployeeId}) has logged IN."
+                        )
+                        return redirect(url_for("employees"))
+
+                        """ UNDO this for OTP.
                         message = send_otp(user)
                         otp_form = OTPForm(request.form)
                         resend_form = ResendOTPForm(request.form)
                         return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, userid=user.get_id(), message=message)
+                        """
                     
                     # Else user has never logged in before (i.e. First login)
                     else:
