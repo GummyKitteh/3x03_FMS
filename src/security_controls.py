@@ -20,11 +20,11 @@ Passwords set shall be validated against a security list (SecList) of common pas
 SecList: https://raw.githubusercontent.com/danielmiessler/SecLists/master/Passwords/Common-Credentials/10-million-password-list-top-100000.txt
 """
 def check_common_password(password):
-	filepath = os.getcwd() + "\\10-million-password-list-top-1000000.txt"
-	with open(filepath, "r") as file:
-		if password in file.read():
-			return True
-		return False
+    filepath = os.getcwd() + "\\10-million-password-list-top-1000000.txt"
+    with open(filepath, "r") as file:
+        if password in file.read():
+            return True
+        return False
 
 
 """
@@ -73,11 +73,11 @@ Decoding password reset tokens with PyJWT, and must be unique and not easily gue
 https://pyjwt.readthedocs.io/en/latest/usage.html
 """
 def decode_reset_token(token):
-	jwt_token = base64.urlsafe_b64decode(token).decode("utf-8", "strict")
-	return jwt.decode(
-		jwt_token,
-		key="I really hope fking this work if never idk what to do :(",
-		algorithms="HS256")
+    jwt_token = base64.urlsafe_b64decode(token).decode("utf-8", "strict")
+    return jwt.decode(
+        jwt_token,
+        key="I really hope fking this work if never idk what to do :(",
+        algorithms="HS256",
+    )
 
-	# TODO: Update key to point to Config file.
-
+    # TODO: Update key to point to Config file.
