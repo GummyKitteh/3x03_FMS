@@ -94,8 +94,8 @@ logger_auth = logging.getLogger("AUTH")
 logger_crud = logging.getLogger("CRUD")
 
 # Create FileHandler
-handler_auth = logging.FileHandler(strftime(f"./logs/authlog_%d%m%y.log"))
-handler_crud = logging.FileHandler(strftime(f"./logs/crudlog_%d%m%y.log"))
+handler_auth = logging.FileHandler(strftime(f"./src/logs/authlog_%d%m%y.log"))
+handler_crud = logging.FileHandler(strftime(f"./src/logs/crudlog_%d%m%y.log"))
 
 # Set Formatter for Logger
 formatter_auth = logging.Formatter(
@@ -124,7 +124,7 @@ class Employee(db.Model, UserMixin, Base):
     Email = db.Column(db.String(100), nullable=False, unique=True)
     ContactNumber = db.Column(db.Integer, nullable=False)
     Role = db.Column(db.Enum(RoleTypes), nullable=False)
-    Password = db.Column(db.String(64), nullable=False, unique=True)
+    Password = db.Column(db.String(64), nullable=False)
     DOB = db.Column(db.DateTime, nullable=False)
     PasswordSalt = db.Column(db.String(64), nullable=False)
     AccountLocked = db.Column(db.Integer, nullable=False)
@@ -367,7 +367,17 @@ def login():
                         logger_auth.warning(
                             f"{user.FullName} (ID: {user.EmployeeId}) (Account Locked) attempted to log in."
                         )
-                        print("Mimic: Email sent")
+                        print("Mimic: Email sent (Account Locked)")
+
+                        # Send email to notify Administrator
+                        email = Message()
+                        email.subject = "Employee ID {}: Account Has Been Locked".format(user.EmployeeId)
+                        email.recipients = [mail_user]
+                        email.body = "Dear IT Administrator,\n\nAn account has been locked followinng 5 invalid login attempts.\n\nEmployee ID: {}\n\nYou may wish to contact the user to assist.\nThank you.\n\nBest regards,\nBus FMS".format(
+                            user.EmployeeId
+                        )
+                        Thread(target=send_email, args=(server, email)).start()
+                        print("Mimic: Email sent to Admin (Account Locked)")                        
 
                         return render_template("login/login-locked.html")
 
@@ -916,71 +926,81 @@ def addEmployee():
     OTPDateTime = "1970-01-01 00:00:01"
     OTPCounter = 0
 
-    if request.method == "POST":
-        FullName = formEmployee.FullName.data
-        ContactNumber = formEmployee.ContactNumber.data
-        Email = formEmployee.Email.data
-        Role = formEmployee.Role.data
-        DOB = formEmployee.DOB.data
-        PasswordSalt = generate_csprng_token()  # 32-byte salt in hexadecimal
-        is_common_password = check_common_password(formEmployee.Password.data)
-        # If password chosen is a common password
-        if is_common_password:
-            flash(
-                "Password chosen is a commonly used password. Please choose another.",
-                "error",
-            )
-            return redirect("/employees")
+    if request.method == "POST" and formEmployee.validate_on_submit():
+        account = Employee.query
+        user = account.filter_by(Email=formEmployee.Email.data).first()
+        
+        # If email does not exist in db
+        if not user:
+            FullName = formEmployee.FullName.data
+            ContactNumber = formEmployee.ContactNumber.data
+            Email = formEmployee.Email.data
+            Role = formEmployee.Role.data
+            DOB = formEmployee.DOB.data
+            PasswordSalt = generate_csprng_token()  # 32-byte salt in hexadecimal
+            is_common_password = check_common_password(formEmployee.Password.data)
+            # If password chosen is a common password
+            if is_common_password:
+                flash(
+                    "Password chosen is a commonly used password. Please choose another.",
+                    "error",
+                )
+                return redirect("/employees")
 
-        Password = process_password(formEmployee.Password.data, PasswordSalt)
+            Password = process_password(formEmployee.Password.data, PasswordSalt)
 
-        formEmployee.FullName.data = ""
-        formEmployee.ContactNumber.data = ""
-        formEmployee.Email.data = ""
-        formEmployee.DOB.data = ""
-        formEmployee.Role.data = ""
-        formEmployee.Password.data = ""
-        formEmployee.Password.data = ""
-        emp_data = Employee(
-            FullName,
-            Email,
-            ContactNumber,
-            Role,
-            Password,
-            DOB,
-            PasswordSalt,
-            AccountLock,
-            LoginCounter,
-            LastLogin,
-            ResetDateTime,
-            ResetFlag,
-            OTP,
-            OTPDateTime,
-            OTPCounter,
-        )
-        db.session.add(emp_data)
-        db.session.commit()
-        obj = db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
-        logger_crud.info(f"Employee (ID: {obj.EmployeeId}) inserted to Employee.")
-        if Role != "driver":
-            flash("Employee inserted sucessfully")
-            return redirect("/employees")
-        else:
-            obj = (
-                db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
+            formEmployee.FullName.data = ""
+            formEmployee.ContactNumber.data = ""
+            formEmployee.Email.data = ""
+            formEmployee.DOB.data = ""
+            formEmployee.Role.data = ""
+            formEmployee.Password.data = ""
+            formEmployee.Password.data = ""
+            emp_data = Employee(
+                FullName,
+                Email,
+                ContactNumber,
+                Role,
+                Password,
+                DOB,
+                PasswordSalt,
+                AccountLock,
+                LoginCounter,
+                LastLogin,
+                ResetDateTime,
+                ResetFlag,
+                OTP,
+                OTPDateTime,
+                OTPCounter,
             )
-            driver_data = Driver(obj.EmployeeId, 1, "Account Created")
-            emp_data.driver_child.append(driver_data)
+            db.session.add(emp_data)
             db.session.commit()
-            obj = db.session.query(Driver).order_by(Driver.DriverId.desc()).first()
-            logger_crud.info(f"Driver (ID: {obj.DriverId}) inserted to Driver.")
-            # db.session.close()
-            # db.session.expire_all()
+            obj = db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
+            logger_crud.info(f"Employee (ID: {obj.EmployeeId}) inserted to Employee.")
+            if Role != "driver":
+                flash("Employee inserted sucessfully")
+                return redirect("/employees")
+            else:
+                obj = (
+                    db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
+                )
+                driver_data = Driver(obj.EmployeeId, 1, "Account Created")
+                emp_data.driver_child.append(driver_data)
+                db.session.commit()
+                obj = db.session.query(Driver).order_by(Driver.DriverId.desc()).first()
+                logger_crud.info(f"Driver (ID: {obj.DriverId}) inserted to Driver.")
+                # db.session.close()
+                # db.session.expire_all()
 
-            flash("Driver inserted sucessfully")
+                flash("Driver inserted sucessfully")
+                return redirect("/employees")
+        
+        else:
+            flash("Email already exists. Please choose another.")
             return redirect("/employees")
+
     else:
-        flash("Employee insert failed")
+        flash("Employee insert failed. Please check your fields again.")
         logger_crud.error(f"Employee insert failed.")
         return redirect("/employees")
 
