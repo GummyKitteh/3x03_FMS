@@ -1127,6 +1127,11 @@ def employeeDelete(id):
         if my_data.Disabled == 1:
             my_data.Disabled = 0
             my_data.AccountLocked = 0
+            my_data.LoginCount = 0
+            my_data.ResetCount = 0
+            my_data.OTPCount = 0
+            my_data.OTP = 0
+
             logger_crud.info(f"Employee (ID: {id}) ENABLED in Employee.")
             flash("Employee enabled sucessfully.")
         else:
