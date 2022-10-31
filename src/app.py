@@ -336,8 +336,8 @@ def login():
                             # Craft email object
                             email = Message()
                             email.subject = "Welcome To Bus FMS!"
-                            # email.recipients = [form.Email.data]
-                            email.recipients = ["b33p33p@gmail.com"]
+                            email.recipients = [form.Email.data]
+                            ##email.recipients = ["b33p33p@gmail.com"]
 
                             # Generate reset token (output in Base64) for password reset
                             email_token = generate_reset_token(user.get_id())
@@ -348,9 +348,8 @@ def login():
                             db.session.commit()
 
                             # Send email object
-                            reset_link = "http://localhost:5000/new-password/{}".format(
-                                email_token
-                            )
+                            reset_link = "http://localhost:5000/new-password/{}".format(email_token)
+                            #reset_link = "http://busfms.tk/new-password/{}".format(email_token)
                             email.body = "Dear {},\n\nAs our valued partner, you are requested to create your first password before you can access our features.\n\nKindly click on the link below, or copy it into your trusted Web Browser (i.e. Google Chrome), to do so.\nPlease note that the link is only valid for 1 hour.\n\nLink: {}\n\nThank you for your support in Bus FMS. We hope you will have a pleasant experience with us!\n\nBest regards,\nBus FMS".format(
                                 user.FullName, reset_link
                             )
@@ -386,8 +385,8 @@ def login():
                         # Send email to notify user
                         email = Message()
                         email.subject = "You Account Has Been Locked"
-                        # email.recipients = [form.Email.data]
-                        email.recipients = ["b33p33p@gmail.com"]
+                        email.recipients = [form.Email.data]
+                        #email.recipients = ["b33p33p@gmail.com"]
                         email.body = "Dear {},\n\nWe note that you have attempted to log in to your Bus FMS account multiple times without success.\nUnfortunately, your account has been locked after too many invalid login attempts.\n\nPlease contact your Manager or IT Administrator for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
                             user.FullName
                         )
@@ -442,8 +441,8 @@ def send_otp(user):
     # Send email to notify user
     email = Message()
     email.subject = "Your Bus FMS OTP"
-    # email.recipients = [form.Email.data]
-    email.recipients = ["b33p33p@gmail.com"]
+    email.recipients = [form.Email.data]
+    #email.recipients = ["b33p33p@gmail.com"]
     email.body = "Dear {}, \n\nYour OTP is {}.\nPlease note that your OTP is only valid for 2 minutes.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
         user.FullName,
         user.OTP
@@ -617,8 +616,8 @@ def reset():
                     # Craft email object
                     email = Message()
                     email.subject = "Password Reset Link"
-                    # email.recipients = [form.Email.data]
-                    email.recipients = ["b33p33p@gmail.com"]
+                    email.recipients = [form.Email.data]
+                    #email.recipients = ["b33p33p@gmail.com"]
 
                     # If user account is locked (after 5 invalid attempts), send email without reset token
                     if user.AccountLocked:
@@ -645,9 +644,8 @@ def reset():
                         db.session.commit()
 
                         # Send email object
-                        reset_link = "http://localhost:5000/new-password/{}".format(
-                            email_token
-                        )
+                        reset_link = "http://localhost:5000/new-password/{}".format(email_token)
+                        #reset_link = "http://busfms.tk/new-password/{}".format(email_token)
                         email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nKindly click on the link below, or copy it into your trusted Web Browser (i.e. Google Chrome), to do so.\nPlease note that the link is only valid for 1 hour.\n\nLink: {}\n\nYou may ignore this email if you did not make this request.\nRest assure that your account has not been compromised, and your information is safe with us!\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
                             user.FullName, reset_link
                         )
