@@ -35,6 +35,15 @@ from form import RoleTypes, TripStatusTypes
 from form import SearchFormEmployee, SearchFormFleet, SearchFormTrip
 from security_controls import *
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  # take environment variables from .env.
+db_user = os.getenv("db_user")
+db_pwd = os.getenv("db_pwd")
+db_add = os.getenv("db_add")
+db_db = os.getenv("db_db")
+
 Base = declarative_base()
 
 server = Flask(__name__)
@@ -42,9 +51,11 @@ server.secret_key = "abcd"
 server.config["SECRET_KEY"] = "I really hope fking this work if never idk what to do :("
 
 # Db configuration
-server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
+# server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
 # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwerty1234@localhost/fmssql"
-# server.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:B33pb33p!@178.128.17.35/fmssql"
+server.config[
+    "SQLALCHEMY_DATABASE_URI"
+] = f"mysql+pymysql://{db_user}:{db_pwd}@{db_add}/{db_db}"
 # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwert54321@localhost/fmssql"
 server.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(server)
@@ -62,9 +73,7 @@ email_service = Mail(server)
 # server.config["RECAPTCHA_PUBLIC_KEY"] = "<contact JM>"
 # server.config["RECAPTCHA_PRIVATE_KEY"] = "<contact JM>"
 
-# https://www.youtube.com/watch?v=4gRMV-wZTQs
 # http://127.0.0.1:5000
-
 
 # ----- LOGGGING ----------------------------------------------------------------------
 logging.basicConfig(
@@ -100,10 +109,6 @@ handler_crud.setFormatter(formatter_crud)
 logger_auth.addHandler(handler_auth)
 logger_crud.addHandler(handler_crud)
 
-# logging.debug("This message should go to the log file")
-# logging.info("So should this")
-# logging.warning("And this, too")
-# logging.error("And non-ASCII stuff, too, like Øresund and Malmö")
 # ----- END LOGGGING ------------------------------------------------------------------
 # ----- CLASSES -----------------------------------------------------------------------
 
@@ -811,12 +816,14 @@ def fleet():
 def fleetUpdate():
     fleetupdate = fleetInsert()
     if request.method == "POST" and fleetupdate.validate_on_submit:
+        vID = request.form.get("VehicleId")
         fleet_data = Fleet.query.get(request.form.get("VehicleId"))
         fleet_data.BusNumberPlate = request.form["BusNumberPlate"]
         fleet_data.VehicleCapacity = request.form["VehicleCapacity"]
         fleet_data.VehicleStatus = request.form["VehicleStatus"]
 
         db.session.commit()
+        logger_crud.info(f"Vechicle (ID: {vID}) was updated in Fleet.")
         flash("Vehicle Updated Successfully")
 
         return redirect(url_for("fleet", fleetupdate=fleetupdate))
@@ -828,7 +835,7 @@ def delete(id):
         fleet_data = Fleet.query.get(id)
         db.session.delete(fleet_data)
         db.session.commit()
-
+        logger_crud.info(f"Vechicle (ID: {id}) Deleted from fleet.")
         flash("Vehicle deleted sucessfully.")
         return redirect(url_for("fleet"))
 
@@ -842,6 +849,8 @@ def fleetsearch():
         searchform.searched.data = ""
         posts = posts.filter(Fleet.BusNumberPlate.like("%" + postsearched + "%"))
         posts = posts.order_by(Fleet.VehicleId).all()
+        logger_crud.info(f"[{postsearched}] searched.")
+
         if posts != 0:
             return render_template(
                 "fleet.html",
@@ -947,7 +956,8 @@ def addEmployee():
         )
         db.session.add(emp_data)
         db.session.commit()
-
+        obj = db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
+        logger_crud.info(f"Employee (ID: {obj.EmployeeId}) inserted to Employee.")
         if Role != "driver":
             flash("Employee inserted sucessfully")
             return redirect("/employees")
@@ -958,6 +968,8 @@ def addEmployee():
             driver_data = Driver(obj.EmployeeId, 1, "Account Created")
             emp_data.driver_child.append(driver_data)
             db.session.commit()
+            obj = db.session.query(Driver).order_by(Driver.DriverId.desc()).first()
+            logger_crud.info(f"Driver (ID: {obj.DriverId}) inserted to Driver.")
             # db.session.close()
             # db.session.expire_all()
 
@@ -973,8 +985,9 @@ def addEmployee():
 def employeeDelete(id):
     if request.method == "GET":
         my_data = Employee.query.get(id)
-        db.session.delete(my_data)  
+        db.session.delete(my_data)
         db.session.commit()
+        logger_crud.info(f"Driver (ID: {id}) Deleted from Driver.")
         db.session.close()
 
         flash("Employee deleted sucessfully.")
@@ -990,6 +1003,8 @@ def employeesearch():
         searchFormEmployee.searched.data = ""
         posts = posts.filter(Employee.FullName.like("%" + postsearched + "%"))
         posts = posts.order_by(Employee.EmployeeId).all()
+        logger_crud.info(f"[{postsearched}] searched.")
+
         if posts != 0:
             return render_template(
                 "Employees.html",
@@ -1015,7 +1030,9 @@ def trip():
     formTrip.VehicleID.choices = fleetList
     trip_data = Trip.query.all()
     fleet_data = Fleet.query.all()
-    return render_template("trip.html", trip=trip_data, fleet=fleet_data,formTrip = formTrip)
+    return render_template(
+        "trip.html", trip=trip_data, fleet=fleet_data, formTrip=formTrip
+    )
 
 
 @server.context_processor
@@ -1029,6 +1046,7 @@ def trip():
     searchformTrip = SearchFormTrip()
     return dict(searchformTrip=searchformTrip)
 
+
 def getFresh_Employee():
     employeeList = []
     employee = Employee.query.filter(Employee.Role == "driver")
@@ -1036,14 +1054,14 @@ def getFresh_Employee():
         employeeList.append((row.EmployeeId, row.FullName))
     return employeeList
 
+
 def getFresh_Fleet():
     fleetList = []
     fleet = Fleet.query.all()
     for a in fleet:
         # generate a new list of tuples
-        fleetList.append((a.VehicleId,a.BusNumberPlate))
+        fleetList.append((a.VehicleId, a.BusNumberPlate))
     return fleetList
-
 
 
 class tripInsert(FlaskForm):
@@ -1068,7 +1086,7 @@ class tripInsert(FlaskForm):
 
 @server.route("/trip/tripinsert", methods=["POST"])
 def addTrip():
-    
+
     formTrip = tripInsert()
     employeeList = getFresh_Employee()
     fleetList = getFresh_Fleet()
@@ -1097,9 +1115,12 @@ def addTrip():
         )
         db.session.add(trip_data)
         db.session.commit()
+        obj = db.session.query(Trip).order_by(Trip.TripID.desc()).first()
+        logger_crud.info(f"Trip (ID: {obj.TripID}) inserted to Trip.")
         flash("Trip inserted sucessfully")
         return redirect("/trip")
     else:
+        logger_crud.warning(f"Trip insert failed.")
         flash("Trip insert failed.")
         return redirect("/trip")
 
@@ -1107,12 +1128,14 @@ def addTrip():
 @server.route("/trip/tripSearch", methods=["POST"])
 def tripSearch():
     searchformTrip = SearchFormTrip()
-    posts = Trip.query  
+    posts = Trip.query
     if request.method == "POST" and searchformTrip.validate_on_submit():
         postsearched = searchformTrip.searched.data
         searchformTrip.searched.data = ""
         posts = posts.filter(Trip.TripID.like("%" + postsearched + "%"))
         posts = posts.order_by(Trip.TripID).all()
+        logger_crud.info(f"[{postsearched}] searched.")
+
         if posts != 0:
             return render_template(
                 "trip.html",
@@ -1134,6 +1157,7 @@ def trip():
 def tripUpdate():
     tripupdate = tripInsert()
     if request.method == "POST" and tripupdate.validate_on_submit:
+        tID = request.form.get("TripID")
         trip_data = Trip.query.get(request.form.get("TripID"))
         trip_data.DriverID = request.form["DriverID"]
         trip_data.VehicleID = request.form["VehicleID"]
@@ -1145,6 +1169,7 @@ def tripUpdate():
 
         db.session.commit()
         flash("Trip Updated Successfully")
+        logger_crud.info(f"Trip (ID: {tID}) was updated in Trip.")
 
         return redirect(url_for("trip", tripupdate=tripupdate))
 
@@ -1155,6 +1180,7 @@ def tripDelete(id):
         trip_data = Trip.query.get(id)
         db.session.delete(trip_data)
         db.session.commit()
+        logger_crud.info(f"Trip (ID: {id}) Deleted from Trip.")
 
         flash("Trip deleted sucessfully.")
         return redirect(url_for("trip"))
@@ -1190,7 +1216,9 @@ def profile():
                         "Password chosen is a commonly used password. Please choose another.",
                         "error",
                     )
-
+                    logger_auth.info(
+                        f"Common Password attempted when updating profile by (ID: {id})."
+                    )
                 else:
                     NewPassword = process_password(
                         request.form["NewPassword"], PasswordSalt
@@ -1199,6 +1227,9 @@ def profile():
                     name_to_update.PasswordSalt = PasswordSalt
                     db.session.commit()
                     flash("Profile has been updated")
+                    logger_auth.info(f"Employee (ID: {id}) was updated in Employee.")
+                    logger_crud.info(f"Employee (ID: {id}) was updated in Employee.")
+
                     return render_template(
                         "profile.html",
                         updateFormEmployee=updateFormEmployee,
@@ -1206,8 +1237,14 @@ def profile():
                     )
 
             else:
+                logger_auth.info(
+                    f"Password re-used when updating profile by (ID: {id})."
+                )
                 flash("Does not match new password or confirm password")
         else:
+            logger_auth.info(
+                f"Password is incorrect when updating profile by (ID: {id})."
+            )
             flash("Password Incorrect")
     return render_template(
         "profile.html",
