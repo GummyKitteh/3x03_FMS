@@ -90,8 +90,8 @@ logger_auth = logging.getLogger("AUTH")
 logger_crud = logging.getLogger("CRUD")
 
 # Create FileHandler
-handler_auth = logging.FileHandler(strftime(f"./logs/authlog_%d%m%y.log"))
-handler_crud = logging.FileHandler(strftime(f"./logs/crudlog_%d%m%y.log"))
+handler_auth = logging.FileHandler(strftime(f"./src/logs/authlog_%d%m%y.log"))
+handler_crud = logging.FileHandler(strftime(f"./src/logs/crudlog_%d%m%y.log"))
 
 # Set Formatter for Logger
 formatter_auth = logging.Formatter(
@@ -150,7 +150,7 @@ class Employee(db.Model, UserMixin, Base):
         ResetFlag,
         OTP,
         OTPDateTime,
-        OTPCounter
+        OTPCounter,
     ):
         self.FullName = FullName
         self.Email = Email
@@ -285,15 +285,23 @@ def login():
                         message = send_otp(user)
                         otp_form = OTPForm(request.form)
                         resend_form = ResendOTPForm(request.form)
-                        return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, userid=user.get_id(), message=message)
-                    
+                        return render_template(
+                            "login/login-otp.html",
+                            otp_form=otp_form,
+                            resend_form=resend_form,
+                            userid=user.get_id(),
+                            message=message,
+                        )
+
                     # Else user has never logged in before (i.e. First login)
                     else:
 
                         # Calculate time delta between current time and last sent email
                         try:
                             # If there is a timestamp in user.ResetDateTime
-                            email_token_delta = (datetime.utcnow() - user.ResetDateTime).total_seconds()
+                            email_token_delta = (
+                                datetime.utcnow() - user.ResetDateTime
+                            ).total_seconds()
                             delta_hour = email_token_delta // 3600
                         except:
                             # If there is no timestamp in user.ResetDateTime
@@ -363,14 +371,28 @@ def login():
                         logger_auth.warning(
                             f"{user.FullName} (ID: {user.EmployeeId}) (Account Locked) attempted to log in."
                         )
-                        print("Mimic: Email sent")
+                        print("Mimic: Email sent (Account Locked)")
+
+                        # Send email to notify Administrator
+                        email = Message()
+                        email.subject = (
+                            "Employee ID {}: Account Has Been Locked".format(
+                                user.EmployeeId
+                            )
+                        )
+                        email.recipients = [mail_user]
+                        email.body = "Dear IT Administrator,\n\nAn account has been locked followinng 5 invalid login attempts.\n\nEmployee ID: {}\n\nYou may wish to contact the user to assist.\nThank you.\n\nBest regards,\nBus FMS".format(
+                            user.EmployeeId
+                        )
+                        Thread(target=send_email, args=(server, email)).start()
+                        print("Mimic: Email sent to Admin (Account Locked)")
 
                         return render_template("login/login-locked.html")
 
         # Else Form is invalidated OR User does not exist in db
         message = [
             "You have entered an invalid Email and/or Password.",
-            "Please try again."
+            "Please try again.",
         ]
         return render_template("login/login.html", form=form, message=message)
 
@@ -382,17 +404,19 @@ def send_otp(user):
     if user.OTPCounter == 0:
         message = [
             "An OTP has been sent to your email.",
-            "Please submit the correct OTP."
+            "Please submit the correct OTP.",
         ]
     else:
         message = [
             "A new OTP has been sent to your email.",
-            "Please submit the latest OTP."
+            "Please submit the latest OTP.",
         ]
 
     # Generate OTP
-    random.seed(generate_csprng_token())  # Set random.seed() with 32-byte hexadecimal salt
-    user.OTP = random.randint(100000,999999)
+    random.seed(
+        generate_csprng_token()
+    )  # Set random.seed() with 32-byte hexadecimal salt
+    user.OTP = random.randint(100000, 999999)
     user.OTPDateTime = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     user.OTPCounter = 0
     db.session.commit()
@@ -403,8 +427,7 @@ def send_otp(user):
     # email.recipients = [form.Email.data]
     email.recipients = ["b33p33p@gmail.com"]
     email.body = "Dear {}, \n\nYour OTP is {}.\nPlease note that your OTP is only valid for 2 minutes.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
-        user.FullName,
-        user.OTP
+        user.FullName, user.OTP
     )
     # Thread(target=send_email, args=(server, email)).start()
     logger_auth.warning(
@@ -436,16 +459,19 @@ def validate_otp():
 
                 # If OTP has been attempted 5 times, invalidate the OTP
                 if user.OTPCounter == 5:
-                    message = [
-                        "Your OTP has expired.",
-                        "Please request for a new OTP."
-                    ]
-                    return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, userid=user.get_id(), message=message)
+                    message = ["Your OTP has expired.", "Please request for a new OTP."]
+                    return render_template(
+                        "login/login-otp.html",
+                        otp_form=otp_form,
+                        resend_form=resend_form,
+                        userid=user.get_id(),
+                        message=message,
+                    )
 
                 # Calculate time delta between current time and time of OTP creation
                 otp_delta = (datetime.utcnow() - user.OTPDateTime).total_seconds()
-                if otp_delta <= 120:    # If OTP validity is within 120 seconds
-                
+                if otp_delta <= 120:  # If OTP validity is within 120 seconds
+
                     # If OTP same, then login
                     if int(otp_form.OTP.data) == user.OTP:
 
@@ -461,36 +487,50 @@ def validate_otp():
                             f"{user.FullName} (ID: {user.EmployeeId}) has logged IN."
                         )
                         return redirect(url_for("employees"))
-                    
+
                     # Else GET OTP page
                     else:
                         user.OTPCounter += 1
                         db.session.commit()
                         message = [
                             "You have entered an invalid OTP.",
-                            "Please try again."
+                            "Please try again.",
                         ]
 
                         if user.OTPCounter == 5:
                             message = [
                                 "Your OTP has expired.",
-                                "Please request for a new OTP."
+                                "Please request for a new OTP.",
                             ]
 
                         logger_auth.warning(
                             f"{user.FullName} (ID: {user.EmployeeId}) attempted to log in: {user.LoginCounter} time(s)."
                         )
-                        return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, userid=user.get_id(), message=message)
+                        return render_template(
+                            "login/login-otp.html",
+                            otp_form=otp_form,
+                            resend_form=resend_form,
+                            userid=user.get_id(),
+                            message=message,
+                        )
 
                 # Else OTP exceeds the 120 seconds valiity
                 else:
-                    message = [
-                        "Your OTP has expired.",
-                        "Please request for a new OTP."
-                    ]
-                    return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, userid=user.get_id(), message=message)
+                    message = ["Your OTP has expired.", "Please request for a new OTP."]
+                    return render_template(
+                        "login/login-otp.html",
+                        otp_form=otp_form,
+                        resend_form=resend_form,
+                        userid=user.get_id(),
+                        message=message,
+                    )
 
-        return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, userid=otp_form.OTPUser.data)
+        return render_template(
+            "login/login-otp.html",
+            otp_form=otp_form,
+            resend_form=resend_form,
+            userid=otp_form.OTPUser.data,
+        )
 
     # Else GET request
     else:
@@ -518,14 +558,22 @@ def resend_otp():
             # Resend OTP
             message = send_otp(user)
             resend_form = ResendOTPForm(request.form)
-            return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, userid=user.get_id(), message=message)
+            return render_template(
+                "login/login-otp.html",
+                otp_form=otp_form,
+                resend_form=resend_form,
+                userid=user.get_id(),
+                message=message,
+            )
 
     # Unlikely to be shown as only POST requests are accepted
-    message = [
-        "Form is invalidated.",
-        "Please try again, or go back to Login."
-    ]
-    return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, message=message)
+    message = ["Form is invalidated.", "Please try again, or go back to Login."]
+    return render_template(
+        "login/login-otp.html",
+        otp_form=otp_form,
+        resend_form=resend_form,
+        message=message,
+    )
 
 
 @server.route("/logout", methods=["GET", "POST"])
@@ -560,14 +608,16 @@ def reset():
                 # Calculate time delta between current time and last sent email
                 try:
                     # If there is a timestamp in user.ResetDateTime
-                    email_token_delta = (datetime.utcnow() - user.ResetDateTime).total_seconds()
+                    email_token_delta = (
+                        datetime.utcnow() - user.ResetDateTime
+                    ).total_seconds()
                     delta_hour = email_token_delta // 3600
                 except:
                     # If there is no timestamp in user.ResetDateTime
                     delta_hour = 1
 
-                print("email_token_delta",email_token_delta)
-                print("delta_hour",delta_hour)
+                print("email_token_delta", email_token_delta)
+                print("delta_hour", delta_hour)
 
                 # If user has NOT sent a reset link in the last 1 hour
                 if delta_hour >= 1:
@@ -599,7 +649,9 @@ def reset():
                         user.ResetDateTime = datetime.utcnow().strftime(
                             "%Y-%m-%d %H:%M:%S"
                         )
-                        user.ResetFlag = 1  # 1 means reset token is STILL VALID & has not been used
+                        user.ResetFlag = (
+                            1  # 1 means reset token is STILL VALID & has not been used
+                        )
                         db.session.commit()
 
                         # Send email object
@@ -641,7 +693,9 @@ def newPassword(email_token):
         if user:
             if not user.ResetFlag:  # 0 means reset token is NOT VALID & has been used
                 return render_template("reset/reset-expired.html")
-            if user.AccountLocked:  # 1 means user account is locked (after 5 invalid attempts)
+            if (
+                user.AccountLocked
+            ):  # 1 means user account is locked (after 5 invalid attempts)
                 return render_template("login/login-locked.html")
 
     except:
@@ -669,7 +723,9 @@ def postPassword():
         if user:
             if not user.ResetFlag:  # 0 means reset token is NOT VALID & has been used
                 return render_template("reset/reset-expired.html")
-            if user.AccountLocked:  # 1 means user account is locked (after 5 invalid attempts)
+            if (
+                user.AccountLocked
+            ):  # 1 means user account is locked (after 5 invalid attempts)
                 return render_template("login/login-locked.html")
 
     except:
@@ -692,7 +748,7 @@ def postPassword():
                 if is_common_password:
                     message = [
                         "Password chosen is a commonly used password.",
-                        "Please choose another."
+                        "Please choose another.",
                     ]
                     return render_template(
                         "reset/new-password.html",
@@ -704,10 +760,10 @@ def postPassword():
                 user.Password = process_password(form.NewPassword.data, PasswordSalt)
                 user.PasswordSalt = PasswordSalt
                 user.ResetFlag = 0  # 0 means reset token is NOT VALID & has been used
-                
-                #user.ResetDateTime = datetime.utcnow().strftime(
+
+                # user.ResetDateTime = datetime.utcnow().strftime(
                 #    "%Y-%m-%d %H:%M:%S"
-                #)
+                # )
                 user.ResetDateTime = "1970-01-01 00:00:01"
                 user.LastLogin = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -912,20 +968,81 @@ def addEmployee():
     OTPDateTime = "1970-01-01 00:00:01"
     OTPCounter = 0
 
-    if request.method == "POST":
-        FullName = formEmployee.FullName.data
-        ContactNumber = formEmployee.ContactNumber.data
-        Email = formEmployee.Email.data
-        Role = formEmployee.Role.data
-        DOB = formEmployee.DOB.data
-        PasswordSalt = generate_csprng_token()  # 32-byte salt in hexadecimal
-        is_common_password = check_common_password(formEmployee.Password.data)
-        # If password chosen is a common password
-        if is_common_password:
-            flash(
-                "Password chosen is a commonly used password. Please choose another.",
-                "error",
+    if request.method == "POST" and formEmployee.validate_on_submit():
+        account = Employee.query
+        user = account.filter_by(Email=formEmployee.Email.data).first()
+
+        # If email does not exist in db
+        if not user:
+            FullName = formEmployee.FullName.data
+            ContactNumber = formEmployee.ContactNumber.data
+            Email = formEmployee.Email.data
+            Role = formEmployee.Role.data
+            DOB = formEmployee.DOB.data
+            PasswordSalt = generate_csprng_token()  # 32-byte salt in hexadecimal
+            is_common_password = check_common_password(formEmployee.Password.data)
+            # If password chosen is a common password
+            if is_common_password:
+                flash(
+                    "Password chosen is a commonly used password. Please choose another.",
+                    "error",
+                )
+                return redirect("/employees")
+
+            Password = process_password(formEmployee.Password.data, PasswordSalt)
+
+            formEmployee.FullName.data = ""
+            formEmployee.ContactNumber.data = ""
+            formEmployee.Email.data = ""
+            formEmployee.DOB.data = ""
+            formEmployee.Role.data = ""
+            formEmployee.Password.data = ""
+            formEmployee.Password.data = ""
+            emp_data = Employee(
+                FullName,
+                Email,
+                ContactNumber,
+                Role,
+                Password,
+                DOB,
+                PasswordSalt,
+                AccountLock,
+                LoginCounter,
+                LastLogin,
+                ResetDateTime,
+                ResetFlag,
+                OTP,
+                OTPDateTime,
+                OTPCounter,
             )
+            db.session.add(emp_data)
+            db.session.commit()
+            obj = (
+                db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
+            )
+            logger_crud.info(f"Employee (ID: {obj.EmployeeId}) inserted to Employee.")
+            if Role != "driver":
+                flash("Employee inserted sucessfully")
+                return redirect("/employees")
+            else:
+                obj = (
+                    db.session.query(Employee)
+                    .order_by(Employee.EmployeeId.desc())
+                    .first()
+                )
+                driver_data = Driver(obj.EmployeeId, 1, "Account Created")
+                emp_data.driver_child.append(driver_data)
+                db.session.commit()
+                obj = db.session.query(Driver).order_by(Driver.DriverId.desc()).first()
+                logger_crud.info(f"Driver (ID: {obj.DriverId}) inserted to Driver.")
+                # db.session.close()
+                # db.session.expire_all()
+
+                flash("Driver inserted sucessfully")
+                return redirect("/employees")
+
+        else:
+            flash("Email already exists. Please choose another.")
             return redirect("/employees")
 
         Password = process_password(formEmployee.Password.data, PasswordSalt)
