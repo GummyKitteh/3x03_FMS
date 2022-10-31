@@ -1126,10 +1126,12 @@ def employeeDelete(id):
         my_data = Employee.query.get(id)
         if my_data.Disabled == 1:
             my_data.Disabled = 0
+            my_data.AccountLocked = 0
             logger_crud.info(f"Employee (ID: {id}) ENABLED in Employee.")
             flash("Employee enabled sucessfully.")
         else:
             my_data.Disabled = 1
+            my_data.AccountLocked = 1
             logger_crud.info(f"Trip (ID: {id}) Disabled in Employee.")
             flash("Employee disabled sucessfully.")
         db.session.commit()
