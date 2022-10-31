@@ -81,7 +81,7 @@ server.config["RECAPTCHA_PRIVATE_KEY"] = recaptcha_prv
 
 # ----- LOGGGING ----------------------------------------------------------------------
 logging.basicConfig(
-    filename="./src/logs/generallog.log",
+    filename="./logs/generallog.log",
     encoding="utf-8",
     filemode="a",
     level=logging.INFO,
@@ -94,8 +94,8 @@ logger_auth = logging.getLogger("AUTH")
 logger_crud = logging.getLogger("CRUD")
 
 # Create FileHandler
-handler_auth = logging.FileHandler(strftime(f"./src/logs/authlog_%d%m%y.log"))
-handler_crud = logging.FileHandler(strftime(f"./src/logs/crudlog_%d%m%y.log"))
+handler_auth = logging.FileHandler(strftime(f"./logs/authlog_%d%m%y.log"))
+handler_crud = logging.FileHandler(strftime(f"./logs/crudlog_%d%m%y.log"))
 
 # Set Formatter for Logger
 formatter_auth = logging.Formatter(
