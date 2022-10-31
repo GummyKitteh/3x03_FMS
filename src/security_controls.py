@@ -24,7 +24,7 @@ SecList: https://raw.githubusercontent.com/danielmiessler/SecLists/master/Passwo
 
 
 def check_common_password(password):
-    filepath = os.getcwd() + "\\10-million-password-list-top-1000000.txt"
+    filepath = os.getcwd() + "\\src\\10-million-password-list-top-1000000.txt"
     with open(filepath, "r") as file:
         if password in file.read():
             return True
@@ -45,8 +45,7 @@ def process_password(password, hex_salt):
     salt = binascii.unhexlify(hex_salt)
 
     # Run through pbkdf2_hmac function
-    output = pbkdf2_hmac("sha256", password, salt, 64000, 32)
-    # replace with this: output = pbkdf2_hmac("sha256", password, salt, 310000, 32)
+    output = pbkdf2_hmac("sha256", password, salt, 310000, 32)
 
     # Convert to Hex data & decode
     derived_password = binascii.hexlify(output).decode("utf-8", "strict")
