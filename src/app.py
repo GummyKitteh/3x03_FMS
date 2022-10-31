@@ -81,8 +81,8 @@ logger_auth = logging.getLogger("AUTH")
 logger_crud = logging.getLogger("CRUD")
 
 # Create FileHandler
-handler_auth = logging.FileHandler(strftime(f"./src/logs/authlog_%d%m%y.log"))
-handler_crud = logging.FileHandler(strftime(f"./src/logs/crudlog_%d%m%y.log"))
+handler_auth = logging.FileHandler(strftime(f"./logs/authlog_%d%m%y.log"))
+handler_crud = logging.FileHandler(strftime(f"./logs/crudlog_%d%m%y.log"))
 
 # Set Formatter for Logger
 formatter_auth = logging.Formatter(
@@ -158,7 +158,7 @@ class Employee(db.Model, UserMixin, Base):
         self.LoginCounter = LoginCounter
         self.LastLogin = LastLogin
         self.ResetDateTime = ResetDateTime
-        self.ResetTokenFlag = ResetFlag
+        self.ResetFlag = ResetFlag
         self.OTP = OTP
         self.OTPDateTime = OTPDateTime
         self.OTPCounter = OTPCounter
@@ -275,10 +275,58 @@ def login():
 
                 # If authenticated credentials
                 if user.Password == derived_password:
-                    message = send_otp(user)
-                    otp_form = OTPForm(request.form)
-                    resend_form = ResendOTPForm(request.form)
-                    return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, userid=user.get_id(), message=message)
+
+                    if datetime.utcnow() > user.LastLogin:
+                        message = send_otp(user)
+                        otp_form = OTPForm(request.form)
+                        resend_form = ResendOTPForm(request.form)
+                        return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, userid=user.get_id(), message=message)
+                    
+                    # Else user has never logged in before (i.e. First login)
+                    else:
+
+                        # Calculate time delta between current time and last sent email
+                        try:
+                            # If there is a timestamp in user.ResetDateTime
+                            email_token_delta = (datetime.utcnow() - user.ResetDateTime).total_seconds()
+                            delta_hour = email_token_delta // 3600
+                        except:
+                            # If there is no timestamp in user.ResetDateTime
+                            delta_hour = 1
+
+                        if delta_hour >= 1:
+
+                            # Craft email object
+                            email = Message()
+                            email.subject = "Welcome To Bus FMS!"
+                            # email.recipients = [form.Email.data]
+                            email.recipients = ["b33p33p@gmail.com"]
+
+                            # Generate reset token (output in Base64) for password reset
+                            email_token = generate_reset_token(user.get_id())
+                            user.ResetDateTime = datetime.utcnow().strftime(
+                                "%Y-%m-%d %H:%M:%S"
+                            )
+                            user.ResetFlag = 1  # 1 means reset token is STILL VALID & has not been used
+                            db.session.commit()
+
+                            # Send email object
+                            reset_link = "http://localhost:5000/new-password/{}".format(
+                                email_token
+                            )
+                            email.body = "Dear {},\n\nAs our valued partner, you are requested to create your first password before you can access our features.\n\nKindly click on the link below, or copy it into your trusted Web Browser (i.e. Google Chrome), to do so.\nPlease note that the link is only valid for 1 hour.\n\nLink: {}\n\nThank you for your support in Bus FMS. We hope you will have a pleasant experience with us!\n\nBest regards,\nBus FMS".format(
+                                user.FullName, reset_link
+                            )
+                            # Thread(target=send_email, args=(server, email)).start()
+                            logger_auth.warning(
+                                f"{user.FullName} (ID: {user.EmployeeId}) logs in for the first time and has requested a password reset via Email."
+                            )
+                            print("Mimic: Email sent")
+
+                            # Print for testing
+                            print(reset_link)
+
+                        return render_template("reset/reset-message.html")
 
                 # Else unauthenticated credentials
                 else:
@@ -326,7 +374,6 @@ def login():
 
 
 def send_otp(user):
-
     if user.OTPCounter == 0:
         message = [
             "An OTP has been sent to your email.",
@@ -554,7 +601,7 @@ def reset():
                         reset_link = "http://localhost:5000/new-password/{}".format(
                             email_token
                         )
-                        email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nKindly click on the link below, or copy it into your trusted Web Browser (i.e. Google Chrome), to do so.\nPlease note that the link is only valid for 1 hour.\nLink: {}\n\nYou may ignore this email if you did not make this request.\nRest assure that your account has not been compromised, and your information is safe with us!\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
+                        email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nKindly click on the link below, or copy it into your trusted Web Browser (i.e. Google Chrome), to do so.\nPlease note that the link is only valid for 1 hour.\n\nLink: {}\n\nYou may ignore this email if you did not make this request.\nRest assure that your account has not been compromised, and your information is safe with us!\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
                             user.FullName, reset_link
                         )
                         # Thread(target=send_email, args=(server, email)).start()
@@ -657,6 +704,7 @@ def postPassword():
                 #    "%Y-%m-%d %H:%M:%S"
                 #)
                 user.ResetDateTime = "1970-01-01 00:00:01"
+                user.LastLogin = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
                 db.session.commit()
 
