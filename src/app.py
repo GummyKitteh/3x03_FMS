@@ -226,6 +226,7 @@ class Trip(db.Model):
     StartTime = db.Column(db.DateTime, nullable=False)
     EndTime = db.Column(db.DateTime, nullable=False)
     TripStatus = db.Column(db.Enum(TripStatusTypes), nullable=False)
+    Disabled = db.Column(db.Integer, nullable=False)
 
     def __init__(
         self,
@@ -236,6 +237,7 @@ class Trip(db.Model):
         StartTime,
         EndTime,
         TripStatus,
+        Disabled,
     ):
         self.DriverID = DriverID
         self.VehicleID = VehicleID
@@ -244,6 +246,7 @@ class Trip(db.Model):
         self.StartTime = StartTime
         self.EndTime = EndTime
         self.TripStatus = TripStatus
+        self.Disabled = Disabled
 
 
 # ----- END CLASSES -------------------------------------------------------------------
@@ -1055,9 +1058,6 @@ def addEmployee():
                 return redirect("/employees")
 
         else:
-            flash("Email already exists. Please choose another.")
-            return redirect("/employees")
-
             Password = process_password(formEmployee.Password.data, PasswordSalt)
 
             formEmployee.FullName.data = ""
@@ -1235,6 +1235,7 @@ def addTrip():
         StartTime = formTrip.StartTime.data
         EndTime = formTrip.EndTime.data
         TripStatus = formTrip.TripStatus.data
+        Disabled = 0
         driverIDForInsert = (
             Driver.query.filter(Driver.EmployeeId == EmployeeID).first().DriverId
         )
@@ -1247,6 +1248,7 @@ def addTrip():
             StartTime,
             EndTime,
             TripStatus,
+            Disabled,
         )
         db.session.add(trip_data)
         db.session.commit()
@@ -1313,11 +1315,16 @@ def tripUpdate():
 def tripDelete(id):
     if request.method == "GET":
         trip_data = Trip.query.get(id)
-        db.session.delete(trip_data)
+        if trip_data.Disabled == 1:
+            trip_data.Disabled = 0
+            logger_crud.info(f"Trip (ID: {id}) ENABLED in Trip.")
+            flash("Trip enabled sucessfully.")
+        else:
+            trip_data.Disabled = 1
+            logger_crud.info(f"Trip (ID: {id}) Disabled in Trip.")
+            flash("Trip disabled sucessfully.")
         db.session.commit()
-        logger_crud.info(f"Trip (ID: {id}) Deleted from Trip.")
 
-        flash("Trip deleted sucessfully.")
         return redirect(url_for("trip"))
 
 
