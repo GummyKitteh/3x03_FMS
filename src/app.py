@@ -135,6 +135,7 @@ class Employee(db.Model, UserMixin, Base):
     OTP = db.Column(db.Integer, nullable=False)
     OTPDateTime = db.Column(db.DateTime, nullable=False)
     OTPCounter = db.Column(db.Integer, nullable=False)
+    Disabled = db.Column(db.Integer, nullable=False)
 
     driver_child = relationship("Driver", cascade="all, delete", backref="Employee")
 
@@ -155,6 +156,7 @@ class Employee(db.Model, UserMixin, Base):
         OTP,
         OTPDateTime,
         OTPCounter,
+        Disabled,
     ):
         self.FullName = FullName
         self.Email = Email
@@ -171,6 +173,7 @@ class Employee(db.Model, UserMixin, Base):
         self.OTP = OTP
         self.OTPDateTime = OTPDateTime
         self.OTPCounter = OTPCounter
+        self.Disabled = Disabled
 
     def get_id(self):
         return self.EmployeeId
@@ -983,7 +986,7 @@ def addEmployee():
     OTP = 0
     OTPDateTime = "1970-01-01 00:00:01"
     OTPCounter = 0
-
+    Disabled = 0
     if request.method == "POST" and formEmployee.validate_on_submit():
         account = Employee.query
         user = account.filter_by(Email=formEmployee.Email.data).first()
@@ -1030,6 +1033,7 @@ def addEmployee():
                 OTP,
                 OTPDateTime,
                 OTPCounter,
+                Disabled,
             )
             db.session.add(emp_data)
             db.session.commit()
@@ -1120,12 +1124,17 @@ def addEmployee():
 def employeeDelete(id):
     if request.method == "GET":
         my_data = Employee.query.get(id)
-        db.session.delete(my_data)
+        if my_data.Disabled == 1:
+            my_data.Disabled = 0
+            logger_crud.info(f"Employee (ID: {id}) ENABLED in Employee.")
+            flash("Employee enabled sucessfully.")
+        else:
+            my_data.Disabled = 1
+            logger_crud.info(f"Trip (ID: {id}) Disabled in Employee.")
+            flash("Employee disabled sucessfully.")
         db.session.commit()
-        logger_crud.info(f"Driver (ID: {id}) Deleted from Driver.")
         db.session.close()
 
-        flash("Employee deleted sucessfully.")
         return redirect(url_for("employees"))
 
 

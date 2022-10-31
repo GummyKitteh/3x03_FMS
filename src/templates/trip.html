@@ -87,9 +87,10 @@ endblock %} {% block body %}
                 >
                 <a
                   href="/delete/{{post.TripID}}"
-                  class="btn btn-danger btn-xs"
-                  onclick="return confirm('Are You Sure To Delete?')"
-                  >Delete</a
+                  class="btn btn-secondary btn-xs"
+                  onclick="return confirm('Confirm?')"
+                  >{% if post.Disabled == 1 %} Enable {% else %} Disable{%
+                  endif%}</a
                 >
               </td>
             </tr>
@@ -114,9 +115,10 @@ endblock %} {% block body %}
                 >
                 <a
                   href="/trip/delete/{{row.TripID}}"
-                  class="btn btn-danger btn-xs"
-                  onclick="return confirm('Confirm Delete?')"
-                  >Delete</a
+                  class="btn btn-secondary btn-xs"
+                  onclick="return confirm('Confirm?')"
+                  >{% if row.Disabled == 1 %} Enable {% else %} Disable{%
+                  endif%}</a
                 >
               </td>
             </tr>
