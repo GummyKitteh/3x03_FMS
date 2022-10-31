@@ -1,31 +1,24 @@
 import pytest
-
+from flask.testing import FlaskClient
 from src.app import server, db
 
 
-@pytest.fixture()
-def app():
+@pytest.fixture(scope='module')
+def flask_app():
     app = server()
-    app.config.update({
-        "TESTING": True,
-    })
-    # other setup go here
-
-    yield app
-
-    # clean up / reset resources here
+    with app.app_context():
+        yield app
 
 
-@pytest.fixture()
-def client(app):
+@pytest.fixture(scope='module')
+def client(flask_app):
+    app = flask_app
+    ctx = flask_app.test_request_context()
+    ctx.push()
+    app.test_client_class = FlaskClient
     return app.test_client()
 
 
-@pytest.fixture()
-def runner(app):
-    return app.test_cli_runner()
-
-
-def test_index_page_logged_in(client):
+def test_index_page(client):
     res = client.get('/')
     assert res.status_code == 200
