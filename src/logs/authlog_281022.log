@@ -1,0 +1,6 @@
+2022-10-28 08:49:08,385 | AUTH | WARNING | admin@gmail.com (ID: 1) attempted to log in: 1 time(s).
+2022-10-28 08:49:13,878 | AUTH | WARNING | admin@gmail.com (ID: 1) attempted to log in: 2 time(s).
+2022-10-28 08:49:57,101 | AUTH | INFO | admin@gmail.com (ID: 1) has logged IN.
+2022-10-28 11:49:54,606 | AUTH | INFO | This fella has logged OUT.
+2022-10-28 11:50:12,290 | AUTH | WARNING | potato@gmail.com (ID: 25) attempted to log in: 1 time(s).
+2022-10-28 11:50:19,709 | AUTH | WARNING | potato@gmail.com (ID: 25) attempted to log in: 2 time(s).

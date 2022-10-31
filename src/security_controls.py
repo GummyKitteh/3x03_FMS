@@ -24,7 +24,7 @@ SecList: https://raw.githubusercontent.com/danielmiessler/SecLists/master/Passwo
 
 
 def check_common_password(password):
-    filepath = os.getcwd() + "\\src\\10-million-password-list-top-1000000.txt"
+    filepath = os.getcwd() + "\\10-million-password-list-top-1000000.txt"
     with open(filepath, "r") as file:
         if password in file.read():
             return True

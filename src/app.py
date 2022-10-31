@@ -80,13 +80,13 @@ server.config["RECAPTCHA_PRIVATE_KEY"] = recaptcha_prv
 # http://127.0.0.1:5000
 
 # ----- LOGGGING ----------------------------------------------------------------------
-logging.basicConfig(
-    filename="./src/logs/generallog.log",
-    encoding="utf-8",
-    filemode="a",
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(message)s",
-)
+# logging.basicConfig(
+#     filename="./logs/generallog.log",
+#     encoding="utf-8",
+#     filemode="a",
+#     level=logging.INFO,
+#     format="%(asctime)s | %(levelname)s | %(message)s",
+# )
 
 # Create Logger
 # logger = logging.getLogger(__name__)
@@ -94,8 +94,8 @@ logger_auth = logging.getLogger("AUTH")
 logger_crud = logging.getLogger("CRUD")
 
 # Create FileHandler
-handler_auth = logging.FileHandler(strftime(f"./src/logs/authlog_%d%m%y.log"))
-handler_crud = logging.FileHandler(strftime(f"./src/logs/crudlog_%d%m%y.log"))
+handler_auth = logging.FileHandler(strftime(f"./logs/authlog_%d%m%y.log"))
+handler_crud = logging.FileHandler(strftime(f"./logs/crudlog_%d%m%y.log"))
 
 # Set Formatter for Logger
 formatter_auth = logging.Formatter(
@@ -415,7 +415,7 @@ def send_otp(user):
     email = Message()
     email.subject = "Your Bus FMS OTP"
     # email.recipients = [form.Email.data]
-    email.recipients = ["b33p33p@gmail.com"]
+    # email.recipients = ["b33p33p@gmail.com"]
     email.body = "Dear {}, \n\nYour OTP is {}.\nPlease note that your OTP is only valid for 2 minutes.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
         user.FullName,
         user.OTP
@@ -787,6 +787,11 @@ def fleet():
     all_data = Fleet.query.all()
     return render_template("fleet.html", fleet=all_data)
 
+@server.route("/fleetview")
+@login_required
+def fleetview():
+    all_data = Fleet.query.all()
+    return render_template("fleetview.html", fleet=all_data)
 
 @server.context_processor
 def fleet():
@@ -935,7 +940,11 @@ def addEmployee():
             FullName = formEmployee.FullName.data
             ContactNumber = formEmployee.ContactNumber.data
             Email = formEmployee.Email.data
-            Role = formEmployee.Role.data
+            if (current_user.Role.value == "manager"):
+                Role = formEmployee.Role.data = "driver"
+            elif (current_user.Role.value == "admin"):
+                Role = formEmployee.Role.value = "manager"
+
             DOB = formEmployee.DOB.data
             PasswordSalt = generate_csprng_token()  # 32-byte salt in hexadecimal
             is_common_password = check_common_password(formEmployee.Password.data)
@@ -1058,6 +1067,14 @@ def trip():
         "trip.html", trip=trip_data, fleet=fleet_data, formTrip=formTrip
     )
 
+@server.route("/tripview")
+@login_required
+def tripview():
+    trip_data = Trip.query.all()
+    fleet_data = Fleet.query.all()
+    return render_template(
+        "tripview.html", trip=trip_data, fleet=fleet_data
+    )
 
 @server.context_processor
 def trip():
