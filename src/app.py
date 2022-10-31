@@ -1195,7 +1195,7 @@ def trip():
 
 def getFresh_Employee():
     employeeList = []
-    employee = Employee.query.filter(Employee.Role == "driver")
+    employee = Employee.query.filter(Employee.Role == "driver", Employee.Disabled == 0)
     for row in employee:
         employeeList.append((row.EmployeeId, row.FullName))
     return employeeList
@@ -1203,7 +1203,7 @@ def getFresh_Employee():
 
 def getFresh_Fleet():
     fleetList = []
-    fleet = Fleet.query.all()
+    fleet = Fleet.query.filter(Fleet.Disabled == 0)
     for a in fleet:
         # generate a new list of tuples
         fleetList.append((a.VehicleId, a.BusNumberPlate))
