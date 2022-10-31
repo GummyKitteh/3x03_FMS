@@ -6,3 +6,4 @@ FMS/__pycache__/form.cpython-310.pyc
 FMS/__pycache__/form.cpython-310.pyc
 .idea
 .pytest_cache
+.env
