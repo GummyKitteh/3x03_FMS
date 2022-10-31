@@ -25,11 +25,11 @@ from flask_login import (
     logout_user,
     current_user,
 )
-import logging, jwt
+import logging, jwt, random
 from time import strftime
 from datetime import datetime
 
-from form import LoginForm, ResetPasswordForm, NewPasswordForm
+from form import LoginForm, OTPForm, ResendOTPForm, ResetPasswordForm, NewPasswordForm
 from form import employeeInsert, employeeUpdate, fleetInsert
 from form import RoleTypes, TripStatusTypes
 from form import SearchFormEmployee, SearchFormFleet, SearchFormTrip
@@ -90,8 +90,8 @@ logger_auth = logging.getLogger("AUTH")
 logger_crud = logging.getLogger("CRUD")
 
 # Create FileHandler
-handler_auth = logging.FileHandler(strftime(f"./src/logs/authlog_%d%m%y.log"))
-handler_crud = logging.FileHandler(strftime(f"./src/logs/crudlog_%d%m%y.log"))
+handler_auth = logging.FileHandler(strftime(f"./logs/authlog_%d%m%y.log"))
+handler_crud = logging.FileHandler(strftime(f"./logs/crudlog_%d%m%y.log"))
 
 # Set Formatter for Logger
 formatter_auth = logging.Formatter(
@@ -127,9 +127,10 @@ class Employee(db.Model, UserMixin, Base):
     LoginCounter = db.Column(db.Integer, nullable=False)
     LastLogin = db.Column(db.DateTime, nullable=False)
     ResetDateTime = db.Column(db.DateTime, nullable=False)
-    Flag = db.Column(db.Integer, nullable=False)
-    # OTP = db.Column(db.Integer, nullable=False)
-    # OTPDateTime = db.Column(db.DateTime, nullable=False)
+    ResetFlag = db.Column(db.Integer, nullable=False)
+    OTP = db.Column(db.Integer, nullable=False)
+    OTPDateTime = db.Column(db.DateTime, nullable=False)
+    OTPCounter = db.Column(db.Integer, nullable=False)
 
     driver_child = relationship("Driver", cascade="all, delete", backref="Employee")
 
@@ -146,9 +147,10 @@ class Employee(db.Model, UserMixin, Base):
         LoginCounter,
         LastLogin,
         ResetDateTime,
-        Flag
-        # OTP,
-        # OTPDateTime
+        ResetFlag,
+        OTP,
+        OTPDateTime,
+        OTPCounter
     ):
         self.FullName = FullName
         self.Email = Email
@@ -161,9 +163,10 @@ class Employee(db.Model, UserMixin, Base):
         self.LoginCounter = LoginCounter
         self.LastLogin = LastLogin
         self.ResetDateTime = ResetDateTime
-        self.ResetTokenFlag = Flag
-        # self.OTP = OTP
-        # self.OTPDateTime = OTPDateTime
+        self.ResetFlag = ResetFlag
+        self.OTP = OTP
+        self.OTPDateTime = OTPDateTime
+        self.OTPCounter = OTPCounter
 
     def get_id(self):
         return self.EmployeeId
@@ -278,19 +281,57 @@ def login():
                 # If authenticated credentials
                 if user.Password == derived_password:
 
-                    # Reset LoginCounter
-                    user.LoginCounter = 0
-                    user.LastLogin = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")[
-                        :-3
-                    ]
-                    db.session.commit()
+                    if datetime.utcnow() > user.LastLogin:
+                        message = send_otp(user)
+                        otp_form = OTPForm(request.form)
+                        resend_form = ResendOTPForm(request.form)
+                        return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, userid=user.get_id(), message=message)
+                    
+                    # Else user has never logged in before (i.e. First login)
+                    else:
 
-                    # Authorise login
-                    login_user(user)
-                    logger_auth.info(
-                        f"{user.Email} (ID: {user.EmployeeId}) has logged IN."
-                    )
-                    return redirect(url_for("employees"))
+                        # Calculate time delta between current time and last sent email
+                        try:
+                            # If there is a timestamp in user.ResetDateTime
+                            email_token_delta = (datetime.utcnow() - user.ResetDateTime).total_seconds()
+                            delta_hour = email_token_delta // 3600
+                        except:
+                            # If there is no timestamp in user.ResetDateTime
+                            delta_hour = 1
+
+                        if delta_hour >= 1:
+
+                            # Craft email object
+                            email = Message()
+                            email.subject = "Welcome To Bus FMS!"
+                            # email.recipients = [form.Email.data]
+                            email.recipients = ["b33p33p@gmail.com"]
+
+                            # Generate reset token (output in Base64) for password reset
+                            email_token = generate_reset_token(user.get_id())
+                            user.ResetDateTime = datetime.utcnow().strftime(
+                                "%Y-%m-%d %H:%M:%S"
+                            )
+                            user.ResetFlag = 1  # 1 means reset token is STILL VALID & has not been used
+                            db.session.commit()
+
+                            # Send email object
+                            reset_link = "http://localhost:5000/new-password/{}".format(
+                                email_token
+                            )
+                            email.body = "Dear {},\n\nAs our valued partner, you are requested to create your first password before you can access our features.\n\nKindly click on the link below, or copy it into your trusted Web Browser (i.e. Google Chrome), to do so.\nPlease note that the link is only valid for 1 hour.\n\nLink: {}\n\nThank you for your support in Bus FMS. We hope you will have a pleasant experience with us!\n\nBest regards,\nBus FMS".format(
+                                user.FullName, reset_link
+                            )
+                            # Thread(target=send_email, args=(server, email)).start()
+                            logger_auth.warning(
+                                f"{user.FullName} (ID: {user.EmployeeId}) logs in for the first time and has requested a password reset via Email."
+                            )
+                            print("Mimic: Email sent")
+
+                            # Print for testing
+                            print(reset_link)
+
+                        return render_template("reset/reset-message.html")
 
                 # Else unauthenticated credentials
                 else:
@@ -318,20 +359,173 @@ def login():
                         email.body = "Dear {},\n\nWe note that you have attempted to log in to your Bus FMS account multiple times without success.\nUnfortunately, your account has been locked after too many invalid login attempts.\n\nPlease contact your Manager or IT Administrator for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
                             user.FullName
                         )
-                        # Thread(target=send_email, args=(app, email)).start()
+                        # Thread(target=send_email, args=(server, email)).start()
+                        logger_auth.warning(
+                            f"{user.FullName} (ID: {user.EmployeeId}) (Account Locked) attempted to log in."
+                        )
                         print("Mimic: Email sent")
 
-                        return render_template("login-locked.html")
+                        return render_template("login/login-locked.html")
 
         # Else Form is invalidated OR User does not exist in db
         message = [
             "You have entered an invalid Email and/or Password.",
-            "Please try again.",
+            "Please try again."
         ]
-        return render_template("login.html", form=form, message=message)
+        return render_template("login/login.html", form=form, message=message)
 
     # Else GET request
-    return render_template("login.html", form=form)
+    return render_template("login/login.html", form=form)
+
+
+def send_otp(user):
+    if user.OTPCounter == 0:
+        message = [
+            "An OTP has been sent to your email.",
+            "Please submit the correct OTP."
+        ]
+    else:
+        message = [
+            "A new OTP has been sent to your email.",
+            "Please submit the latest OTP."
+        ]
+
+    # Generate OTP
+    random.seed(generate_csprng_token())  # Set random.seed() with 32-byte hexadecimal salt
+    user.OTP = random.randint(100000,999999)
+    user.OTPDateTime = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    user.OTPCounter = 0
+    db.session.commit()
+
+    # Send email to notify user
+    email = Message()
+    email.subject = "Your Bus FMS OTP"
+    # email.recipients = [form.Email.data]
+    email.recipients = ["b33p33p@gmail.com"]
+    email.body = "Dear {}, \n\nYour OTP is {}.\nPlease note that your OTP is only valid for 2 minutes.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
+        user.FullName,
+        user.OTP
+    )
+    # Thread(target=send_email, args=(server, email)).start()
+    logger_auth.warning(
+        f"{user.FullName} (ID: {user.EmployeeId}) requested an OTP via Email."
+    )
+    print("Mimic: Email sent")
+
+    # Print for testing
+    print(user.OTP)
+
+    return message
+
+
+@server.route("/otp", methods=["GET", "POST"])
+def validate_otp():
+    otp_form = OTPForm(request.form)
+    resend_form = ResendOTPForm(request.form)
+
+    # If POST request
+    if request.method == "POST":
+
+        # If Form is validated
+        if otp_form.validate_on_submit():
+            account = Employee.query
+            user = account.filter_by(EmployeeId=otp_form.OTPUser.data).first()
+
+            # If user exists in db
+            if user:
+
+                # If OTP has been attempted 5 times, invalidate the OTP
+                if user.OTPCounter == 5:
+                    message = [
+                        "Your OTP has expired.",
+                        "Please request for a new OTP."
+                    ]
+                    return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, userid=user.get_id(), message=message)
+
+                # Calculate time delta between current time and time of OTP creation
+                otp_delta = (datetime.utcnow() - user.OTPDateTime).total_seconds()
+                if otp_delta <= 120:    # If OTP validity is within 120 seconds
+                
+                    # If OTP same, then login
+                    if int(otp_form.OTP.data) == user.OTP:
+
+                        # Reset LoginCounter
+                        user.LoginCounter = 0
+                        user.LastLogin = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+                        user.OTP = 0
+                        db.session.commit()
+
+                        # Authorise login
+                        login_user(user)
+                        logger_auth.info(
+                            f"{user.FullName} (ID: {user.EmployeeId}) has logged IN."
+                        )
+                        return redirect(url_for("employees"))
+                    
+                    # Else GET OTP page
+                    else:
+                        user.OTPCounter += 1
+                        db.session.commit()
+                        message = [
+                            "You have entered an invalid OTP.",
+                            "Please try again."
+                        ]
+
+                        if user.OTPCounter == 5:
+                            message = [
+                                "Your OTP has expired.",
+                                "Please request for a new OTP."
+                            ]
+
+                        logger_auth.warning(
+                            f"{user.FullName} (ID: {user.EmployeeId}) attempted to log in: {user.LoginCounter} time(s)."
+                        )
+                        return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, userid=user.get_id(), message=message)
+
+                # Else OTP exceeds the 120 seconds valiity
+                else:
+                    message = [
+                        "Your OTP has expired.",
+                        "Please request for a new OTP."
+                    ]
+                    return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, userid=user.get_id(), message=message)
+
+        return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, userid=otp_form.OTPUser.data)
+
+    # Else GET request
+    else:
+        return redirect(url_for("notFound"))
+
+
+@server.route("/resend-otp", methods=["GET", "POST"])
+def resend_otp():
+
+    # If GET request, return 404
+    if request.method == "GET":
+        return redirect(url_for("notFound"))
+
+    otp_form = OTPForm(request.form)
+    resend_form = ResendOTPForm(request.form)
+
+    # If Form is validated
+    if resend_form.validate_on_submit():
+        account = Employee.query
+        user = account.filter_by(EmployeeId=resend_form.OTPUser.data).first()
+
+        # If user exists in db
+        if user:
+
+            # Resend OTP
+            message = send_otp(user)
+            resend_form = ResendOTPForm(request.form)
+            return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, userid=user.get_id(), message=message)
+
+    # Unlikely to be shown as only POST requests are accepted
+    message = [
+        "Form is invalidated.",
+        "Please try again, or go back to Login."
+    ]
+    return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, message=message)
 
 
 @server.route("/logout", methods=["GET", "POST"])
@@ -366,14 +560,17 @@ def reset():
                 # Calculate time delta between current time and last sent email
                 try:
                     # If there is a timestamp in user.ResetDateTime
-                    email_token_delta = datetime.utcnow() - user.ResetDateTime
-                    delta_hour = email_token_delta.seconds // 3600
+                    email_token_delta = (datetime.utcnow() - user.ResetDateTime).total_seconds()
+                    delta_hour = email_token_delta // 3600
                 except:
                     # If there is no timestamp in user.ResetDateTime
                     delta_hour = 1
 
+                print("email_token_delta",email_token_delta)
+                print("delta_hour",delta_hour)
+
                 # If user has NOT sent a reset link in the last 1 hour
-                if delta_hour > 0:
+                if delta_hour >= 1:
 
                     # Craft email object
                     email = Message()
@@ -388,12 +585,11 @@ def reset():
                         email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nUnfortunately, your account has been locked after too many invalid attempts.\nPlease contact your Manager or IT Administrator for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
                             user.FullName
                         )
-                        # Thread(target=send_email, args=(app, email)).start()
+                        # Thread(target=send_email, args=(server, email)).start()
+                        logger_auth.warning(
+                            f"{user.FullName} (ID: {user.EmployeeId}) (Account Locked) requested a password reset via Email."
+                        )
                         print("Mimic: Email sent")
-
-                        # TODO: Commit email timestamp to db
-                        # user.AccountLockedDateTime = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                        # db.session.commit()
 
                     # If user account is NOT locked, send email with reset token
                     else:
@@ -401,21 +597,22 @@ def reset():
                         # Generate reset token (output in Base64) for password reset
                         email_token = generate_reset_token(user.get_id())
                         user.ResetDateTime = datetime.utcnow().strftime(
-                            "%Y-%m-%d %H:%M:%S.%f"
-                        )[:-3]
-                        user.Flag = (
-                            1  # 1 means reset token is STILL VALID & has not been used
+                            "%Y-%m-%d %H:%M:%S"
                         )
+                        user.ResetFlag = 1  # 1 means reset token is STILL VALID & has not been used
                         db.session.commit()
 
                         # Send email object
                         reset_link = "http://localhost:5000/new-password/{}".format(
                             email_token
                         )
-                        email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nKindly click on the link below, or copy it into your trusted Web Browser (i.e. Google Chrome), to do so.\nPlease note that the link is only valid for 1 hour.\nLink: {}\n\nYou may ignore this email if you did not make this request.\nReset assure that your account has not been compromised, and your information is safe with us!\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
+                        email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nKindly click on the link below, or copy it into your trusted Web Browser (i.e. Google Chrome), to do so.\nPlease note that the link is only valid for 1 hour.\n\nLink: {}\n\nYou may ignore this email if you did not make this request.\nRest assure that your account has not been compromised, and your information is safe with us!\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
                             user.FullName, reset_link
                         )
-                        # Thread(target=send_email, args=(app, email)).start()
+                        # Thread(target=send_email, args=(server, email)).start()
+                        logger_auth.warning(
+                            f"{user.FullName} (ID: {user.EmployeeId}) requested a password reset via Email."
+                        )
                         print("Mimic: Email sent")
 
                         # Print for testing
@@ -442,12 +639,10 @@ def newPassword(email_token):
 
         # If user exists in db
         if user:
-            if not user.Flag:  # 0 means reset token is NOT VALID & has been used
+            if not user.ResetFlag:  # 0 means reset token is NOT VALID & has been used
                 return render_template("reset/reset-expired.html")
-            if (
-                user.AccountLocked
-            ):  # 1 means user account is locked (after 5 invalid attempts)
-                return render_template("login-locked.html")
+            if user.AccountLocked:  # 1 means user account is locked (after 5 invalid attempts)
+                return render_template("login/login-locked.html")
 
     except:
         return render_template("reset/reset-expired.html")
@@ -472,12 +667,10 @@ def postPassword():
 
         # If user exists in db
         if user:
-            if not user.Flag:  # 0 means reset token is NOT VALID & has been used
+            if not user.ResetFlag:  # 0 means reset token is NOT VALID & has been used
                 return render_template("reset/reset-expired.html")
-            if (
-                user.AccountLocked
-            ):  # 1 means user account is locked (after 5 invalid attempts)
-                return render_template("login-locked.html")
+            if user.AccountLocked:  # 1 means user account is locked (after 5 invalid attempts)
+                return render_template("login/login-locked.html")
 
     except:
         return render_template("reset/reset-expired.html")
@@ -499,7 +692,7 @@ def postPassword():
                 if is_common_password:
                     message = [
                         "Password chosen is a commonly used password.",
-                        "Please choose another.",
+                        "Please choose another."
                     ]
                     return render_template(
                         "reset/new-password.html",
@@ -510,12 +703,21 @@ def postPassword():
 
                 user.Password = process_password(form.NewPassword.data, PasswordSalt)
                 user.PasswordSalt = PasswordSalt
-                user.Flag = 0  # 0 means reset token is NOT VALID & has been used
+                user.ResetFlag = 0  # 0 means reset token is NOT VALID & has been used
+                
+                #user.ResetDateTime = datetime.utcnow().strftime(
+                #    "%Y-%m-%d %H:%M:%S"
+                #)
+                user.ResetDateTime = "1970-01-01 00:00:01"
+                user.LastLogin = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
                 db.session.commit()
 
                 # Log user out of all logged-in sessions.
                 logout_user()
-                logger_auth.info("This fella has changed password and logged OUT.")
+                logger_auth.info(
+                    f"{user.FullName} (ID: {user.EmployeeId}) has performed a password reset."
+                )
 
                 return render_template("reset/reset-success.html")
 
@@ -547,6 +749,13 @@ def index():
     # server.logger.error("error")
     # server.logger.critical("critical")
     return render_template("index.html")
+
+
+@server.errorhandler(404)
+@server.errorhandler(405)
+@server.errorhandler(500)
+def notFound(error):
+    return render_template("404.html"), 404
 
 
 @server.route("/404")
@@ -697,8 +906,11 @@ def addEmployee():
     AccountLock = 0
     LoginCounter = 0
     LastLogin = "2999-12-31 23:59:59"
-    ResetDateTime = "2999-12-31 23:59:59"
-    Flag = 0
+    ResetDateTime = "1970-01-01 00:00:01"
+    ResetFlag = 0
+    OTP = 0
+    OTPDateTime = "1970-01-01 00:00:01"
+    OTPCounter = 0
 
     if request.method == "POST":
         FullName = formEmployee.FullName.data
@@ -737,7 +949,10 @@ def addEmployee():
             LoginCounter,
             LastLogin,
             ResetDateTime,
-            Flag,
+            ResetFlag,
+            OTP,
+            OTPDateTime,
+            OTPCounter,
         )
         db.session.add(emp_data)
         db.session.commit()
@@ -1042,7 +1257,7 @@ def profile():
 
 
 def send_email(app, email):
-    with app.app_context():
+    with server.app_context():
         email_service.send(email)
 
 
