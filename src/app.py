@@ -320,7 +320,7 @@ def login():
                         )
 
                         """ UNDO this for OTP.
-                        message = send_otp(user)
+                        message = send_otp(user, form)
                         otp_form = OTPForm(request.form)
                         resend_form = ResendOTPForm(request.form)
                         return render_template(
@@ -443,7 +443,7 @@ def login():
     return render_template("login/login.html", form=form)
 
 
-def send_otp(user):
+def send_otp(user, form):
     if user.OTPCounter == 0:
         message = [
             "An OTP has been sent to your email.",
@@ -599,7 +599,7 @@ def resend_otp():
         if user:
 
             # Resend OTP
-            message = send_otp(user)
+            message = send_otp(user, resend_form)
             resend_form = ResendOTPForm(request.form)
             return render_template(
                 "login/login-otp.html",
