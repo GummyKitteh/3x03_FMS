@@ -29,7 +29,7 @@ Employees {% endblock %} {% block body %}
               {{searchFormEmployee.submit(class="btn btn-sm btn-success")}}
             </div>
           </form>
-          
+
           <button
             type="button"
             class="btn btn-sm btn-secondary m-2"
@@ -63,6 +63,7 @@ Employees {% endblock %} {% block body %}
               <th scope="col">Email</th>
               <th scope="col">Contact Number</th>
               <th scope="col">Role</th>
+              <th scope="col">Disabled</th>
               <th scope="col"></th>
             </tr>
           </thead>
@@ -74,6 +75,7 @@ Employees {% endblock %} {% block body %}
               <td>{{post.Email}}</td>
               <td>{{post.ContactNumber}}</td>
               <td>{{post.Role.value}}</td>
+              <td>{{post.Disabled}}</td>
               <td>
                 <a
                   href="/update/{{post.id}}"
@@ -97,6 +99,7 @@ Employees {% endblock %} {% block body %}
               <td>{{row.Email}}</td>
               <td>{{row.ContactNumber}}</td>
               <td>{{row.Role.value}}</td>
+              <td>{{row.Disabled}}</td>
               <td>
                 <a
                   href="/employees/view/{{row.EmployeeId}}"
@@ -107,9 +110,10 @@ Employees {% endblock %} {% block body %}
                 >
                 <a
                   href="/employees/delete/{{row.EmployeeId}}"
-                  class="btn btn-danger btn-xs"
-                  onclick="return confirm('Confirm Delete?')"
-                  >Delete</a
+                  class="btn btn-secondary btn-xs"
+                  onclick="return confirm('Confirm?')"
+                  >{% if row.Disabled == 1 %} Enable {% else %} Disable{%
+                  endif%}</a
                 >
               </td>
             </tr>

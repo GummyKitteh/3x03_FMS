@@ -53,6 +53,12 @@ Base = declarative_base()
 server = Flask(__name__)
 server.secret_key = "abcd"
 server.config["SECRET_KEY"] = "I really hope fking this work if never idk what to do :("
+server.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=1)
+server.config["SESSION_COOKIE_DOMAIN"] = None  # Might set to busfms.tk?
+server.config["SESSION_COOKIE_HTTPONLY"] = True
+server.config["SESSION_COOKIE_SECURE"] = True
+server.config["SESSION_COOKIE_SAMESITE"] = "Strict"
+
 
 # Db configuration
 # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
@@ -135,6 +141,7 @@ class Employee(db.Model, UserMixin, Base):
     OTP = db.Column(db.Integer, nullable=False)
     OTPDateTime = db.Column(db.DateTime, nullable=False)
     OTPCounter = db.Column(db.Integer, nullable=False)
+    Disabled = db.Column(db.Integer, nullable=False)
 
     driver_child = relationship("Driver", cascade="all, delete", backref="Employee")
 
@@ -154,7 +161,8 @@ class Employee(db.Model, UserMixin, Base):
         ResetFlag,
         OTP,
         OTPDateTime,
-        OTPCounter
+        OTPCounter,
+        Disabled,
     ):
         self.FullName = FullName
         self.Email = Email
@@ -171,6 +179,7 @@ class Employee(db.Model, UserMixin, Base):
         self.OTP = OTP
         self.OTPDateTime = OTPDateTime
         self.OTPCounter = OTPCounter
+        self.Disabled = Disabled
 
     def get_id(self):
         return self.EmployeeId
@@ -198,6 +207,7 @@ class Fleet(db.Model):
     BusNumberPlate = db.Column(db.String(8), nullable=False)
     VehicleCapacity = db.Column(db.Integer, nullable=False)
     VehicleStatus = db.Column(db.String(45), nullable=False)
+    Disabled = db.Column(db.Integer, nullable=False)
 
     trip_childFleet = relationship(
         "Trip",
@@ -205,10 +215,11 @@ class Fleet(db.Model):
         backref="Fleet",
     )
 
-    def __init__(self, BusNumberPlate, VehicleCapacity, VehicleStatus):
+    def __init__(self, BusNumberPlate, VehicleCapacity, VehicleStatus, Disabled):
         self.BusNumberPlate = BusNumberPlate
         self.VehicleCapacity = VehicleCapacity
         self.VehicleStatus = VehicleStatus
+        self.Disabled = Disabled
 
 
 class Trip(db.Model):
@@ -224,6 +235,7 @@ class Trip(db.Model):
     StartTime = db.Column(db.DateTime, nullable=False)
     EndTime = db.Column(db.DateTime, nullable=False)
     TripStatus = db.Column(db.Enum(TripStatusTypes), nullable=False)
+    Disabled = db.Column(db.Integer, nullable=False)
 
     def __init__(
         self,
@@ -234,6 +246,7 @@ class Trip(db.Model):
         StartTime,
         EndTime,
         TripStatus,
+        Disabled,
     ):
         self.DriverID = DriverID
         self.VehicleID = VehicleID
@@ -242,6 +255,7 @@ class Trip(db.Model):
         self.StartTime = StartTime
         self.EndTime = EndTime
         self.TripStatus = TripStatus
+        self.Disabled = Disabled
 
 
 # ----- END CLASSES -------------------------------------------------------------------
@@ -252,6 +266,7 @@ class Trip(db.Model):
 login_manager = LoginManager()
 login_manager.init_app(server)
 login_manager.login_view = "login"
+login_manager.session_protection = "strong"
 
 
 @login_manager.user_loader
@@ -264,6 +279,9 @@ def load_user(EmployeeId):
 
 @server.route("/login", methods=["GET", "POST"])
 def login():
+    if current_user.is_authenticated:
+        return redirect(url_for("index"))
+
     form = LoginForm(request.form)
 
     # If POST request
@@ -286,18 +304,46 @@ def login():
                 if user.Password == derived_password:
 
                     if datetime.utcnow() > user.LastLogin:
-                        message = send_otp(user)
+
+                        """Temporarily Bypass OTP"""
+                        # Reset LoginCounter
+                        user.LoginCounter = 0
+                        user.LastLogin = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+                        user.OTP = 0
+                        db.session.commit()
+
+                        # Authorise login
+                        login_user(user)  # , duration=timedelta(seconds=3))
+
+                        logger_auth.info(
+                            f"{user.FullName} (ID: {user.EmployeeId}) has logged IN."
+                        )
+
+                        """ UNDO this for OTP.
+                        message = send_otp(user, form)
                         otp_form = OTPForm(request.form)
                         resend_form = ResendOTPForm(request.form)
+                        return render_template(
+                            "login/login-otp.html",
+                            otp_form=otp_form,
+                            resend_form=resend_form,
+                            userid=user.get_id(),
+                            message=message,
+                        )
+
                         return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, userid=user.get_id(), message=message)
-                    
+                        """
+                        return redirect(url_for("employees"))
+
                     # Else user has never logged in before (i.e. First login)
                     else:
 
                         # Calculate time delta between current time and last sent email
                         try:
                             # If there is a timestamp in user.ResetDateTime
-                            email_token_delta = (datetime.utcnow() - user.ResetDateTime).total_seconds()
+                            email_token_delta = (
+                                datetime.utcnow() - user.ResetDateTime
+                            ).total_seconds()
                             delta_hour = email_token_delta // 3600
                         except:
                             # If there is no timestamp in user.ResetDateTime
@@ -308,8 +354,8 @@ def login():
                             # Craft email object
                             email = Message()
                             email.subject = "Welcome To Bus FMS!"
-                            # email.recipients = [form.Email.data]
-                            email.recipients = ["b33p33p@gmail.com"]
+                            email.recipients = [form.Email.data]
+                            ##email.recipients = ["b33p33p@gmail.com"]
 
                             # Generate reset token (output in Base64) for password reset
                             email_token = generate_reset_token(user.get_id())
@@ -323,6 +369,7 @@ def login():
                             reset_link = "http://localhost:5000/new-password/{}".format(
                                 email_token
                             )
+                            # reset_link = "http://busfms.tk/new-password/{}".format(email_token)
                             email.body = "Dear {},\n\nAs our valued partner, you are requested to create your first password before you can access our features.\n\nKindly click on the link below, or copy it into your trusted Web Browser (i.e. Google Chrome), to do so.\nPlease note that the link is only valid for 1 hour.\n\nLink: {}\n\nThank you for your support in Bus FMS. We hope you will have a pleasant experience with us!\n\nBest regards,\nBus FMS".format(
                                 user.FullName, reset_link
                             )
@@ -358,8 +405,8 @@ def login():
                         # Send email to notify user
                         email = Message()
                         email.subject = "You Account Has Been Locked"
-                        # email.recipients = [form.Email.data]
-                        email.recipients = ["b33p33p@gmail.com"]
+                        email.recipients = [form.Email.data]
+                        # email.recipients = ["b33p33p@gmail.com"]
                         email.body = "Dear {},\n\nWe note that you have attempted to log in to your Bus FMS account multiple times without success.\nUnfortunately, your account has been locked after too many invalid login attempts.\n\nPlease contact your Manager or IT Administrator for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
                             user.FullName
                         )
@@ -371,20 +418,24 @@ def login():
 
                         # Send email to notify Administrator
                         email = Message()
-                        email.subject = "Employee ID {}: Account Has Been Locked".format(user.EmployeeId)
+                        email.subject = (
+                            "Employee ID {}: Account Has Been Locked".format(
+                                user.EmployeeId
+                            )
+                        )
                         email.recipients = [mail_user]
                         email.body = "Dear IT Administrator,\n\nAn account has been locked followinng 5 invalid login attempts.\n\nEmployee ID: {}\n\nYou may wish to contact the user to assist.\nThank you.\n\nBest regards,\nBus FMS".format(
                             user.EmployeeId
                         )
                         Thread(target=send_email, args=(server, email)).start()
-                        print("Mimic: Email sent to Admin (Account Locked)")                        
+                        print("Mimic: Email sent to Admin (Account Locked)")
 
                         return render_template("login/login-locked.html")
 
         # Else Form is invalidated OR User does not exist in db
         message = [
             "You have entered an invalid Email and/or Password.",
-            "Please try again."
+            "Please try again.",
         ]
         return render_template("login/login.html", form=form, message=message)
 
@@ -392,21 +443,23 @@ def login():
     return render_template("login/login.html", form=form)
 
 
-def send_otp(user):
+def send_otp(user, form):
     if user.OTPCounter == 0:
         message = [
             "An OTP has been sent to your email.",
-            "Please submit the correct OTP."
+            "Please submit the correct OTP.",
         ]
     else:
         message = [
             "A new OTP has been sent to your email.",
-            "Please submit the latest OTP."
+            "Please submit the latest OTP.",
         ]
 
     # Generate OTP
-    random.seed(generate_csprng_token())  # Set random.seed() with 32-byte hexadecimal salt
-    user.OTP = random.randint(100000,999999)
+    random.seed(
+        generate_csprng_token()
+    )  # Set random.seed() with 32-byte hexadecimal salt
+    user.OTP = random.randint(100000, 999999)
     user.OTPDateTime = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     user.OTPCounter = 0
     db.session.commit()
@@ -417,8 +470,7 @@ def send_otp(user):
     # email.recipients = [form.Email.data]
     # email.recipients = ["b33p33p@gmail.com"]
     email.body = "Dear {}, \n\nYour OTP is {}.\nPlease note that your OTP is only valid for 2 minutes.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
-        user.FullName,
-        user.OTP
+        user.FullName, user.OTP
     )
     Thread(target=send_email, args=(server, email)).start()
     logger_auth.warning(
@@ -450,16 +502,19 @@ def validate_otp():
 
                 # If OTP has been attempted 5 times, invalidate the OTP
                 if user.OTPCounter == 5:
-                    message = [
-                        "Your OTP has expired.",
-                        "Please request for a new OTP."
-                    ]
-                    return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, userid=user.get_id(), message=message)
+                    message = ["Your OTP has expired.", "Please request for a new OTP."]
+                    return render_template(
+                        "login/login-otp.html",
+                        otp_form=otp_form,
+                        resend_form=resend_form,
+                        userid=user.get_id(),
+                        message=message,
+                    )
 
                 # Calculate time delta between current time and time of OTP creation
                 otp_delta = (datetime.utcnow() - user.OTPDateTime).total_seconds()
-                if otp_delta <= 120:    # If OTP validity is within 120 seconds
-                
+                if otp_delta <= 120:  # If OTP validity is within 120 seconds
+
                     # If OTP same, then login
                     if int(otp_form.OTP.data) == user.OTP:
 
@@ -475,36 +530,50 @@ def validate_otp():
                             f"{user.FullName} (ID: {user.EmployeeId}) has logged IN."
                         )
                         return redirect(url_for("employees"))
-                    
+
                     # Else GET OTP page
                     else:
                         user.OTPCounter += 1
                         db.session.commit()
                         message = [
                             "You have entered an invalid OTP.",
-                            "Please try again."
+                            "Please try again.",
                         ]
 
                         if user.OTPCounter == 5:
                             message = [
                                 "Your OTP has expired.",
-                                "Please request for a new OTP."
+                                "Please request for a new OTP.",
                             ]
 
                         logger_auth.warning(
                             f"{user.FullName} (ID: {user.EmployeeId}) attempted to log in: {user.LoginCounter} time(s)."
                         )
-                        return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, userid=user.get_id(), message=message)
+                        return render_template(
+                            "login/login-otp.html",
+                            otp_form=otp_form,
+                            resend_form=resend_form,
+                            userid=user.get_id(),
+                            message=message,
+                        )
 
                 # Else OTP exceeds the 120 seconds valiity
                 else:
-                    message = [
-                        "Your OTP has expired.",
-                        "Please request for a new OTP."
-                    ]
-                    return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, userid=user.get_id(), message=message)
+                    message = ["Your OTP has expired.", "Please request for a new OTP."]
+                    return render_template(
+                        "login/login-otp.html",
+                        otp_form=otp_form,
+                        resend_form=resend_form,
+                        userid=user.get_id(),
+                        message=message,
+                    )
 
-        return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, userid=otp_form.OTPUser.data)
+        return render_template(
+            "login/login-otp.html",
+            otp_form=otp_form,
+            resend_form=resend_form,
+            userid=otp_form.OTPUser.data,
+        )
 
     # Else GET request
     else:
@@ -530,16 +599,24 @@ def resend_otp():
         if user:
 
             # Resend OTP
-            message = send_otp(user)
+            message = send_otp(user, resend_form)
             resend_form = ResendOTPForm(request.form)
-            return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, userid=user.get_id(), message=message)
+            return render_template(
+                "login/login-otp.html",
+                otp_form=otp_form,
+                resend_form=resend_form,
+                userid=user.get_id(),
+                message=message,
+            )
 
     # Unlikely to be shown as only POST requests are accepted
-    message = [
-        "Form is invalidated.",
-        "Please try again, or go back to Login."
-    ]
-    return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, message=message)
+    message = ["Form is invalidated.", "Please try again, or go back to Login."]
+    return render_template(
+        "login/login-otp.html",
+        otp_form=otp_form,
+        resend_form=resend_form,
+        message=message,
+    )
 
 
 @server.route("/logout", methods=["GET", "POST"])
@@ -574,14 +651,16 @@ def reset():
                 # Calculate time delta between current time and last sent email
                 try:
                     # If there is a timestamp in user.ResetDateTime
-                    email_token_delta = (datetime.utcnow() - user.ResetDateTime).total_seconds()
+                    email_token_delta = (
+                        datetime.utcnow() - user.ResetDateTime
+                    ).total_seconds()
                     delta_hour = email_token_delta // 3600
                 except:
                     # If there is no timestamp in user.ResetDateTime
                     delta_hour = 1
 
-                print("email_token_delta",email_token_delta)
-                print("delta_hour",delta_hour)
+                print("email_token_delta", email_token_delta)
+                print("delta_hour", delta_hour)
 
                 # If user has NOT sent a reset link in the last 1 hour
                 if delta_hour >= 1:
@@ -589,8 +668,8 @@ def reset():
                     # Craft email object
                     email = Message()
                     email.subject = "Password Reset Link"
-                    # email.recipients = [form.Email.data]
-                    email.recipients = ["b33p33p@gmail.com"]
+                    email.recipients = [form.Email.data]
+                    # email.recipients = ["b33p33p@gmail.com"]
 
                     # If user account is locked (after 5 invalid attempts), send email without reset token
                     if user.AccountLocked:
@@ -613,13 +692,16 @@ def reset():
                         user.ResetDateTime = datetime.utcnow().strftime(
                             "%Y-%m-%d %H:%M:%S"
                         )
-                        user.ResetFlag = 1  # 1 means reset token is STILL VALID & has not been used
+                        user.ResetFlag = (
+                            1  # 1 means reset token is STILL VALID & has not been used
+                        )
                         db.session.commit()
 
                         # Send email object
                         reset_link = "http://localhost:5000/new-password/{}".format(
                             email_token
                         )
+                        # reset_link = "http://busfms.tk/new-password/{}".format(email_token)
                         email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nKindly click on the link below, or copy it into your trusted Web Browser (i.e. Google Chrome), to do so.\nPlease note that the link is only valid for 1 hour.\n\nLink: {}\n\nYou may ignore this email if you did not make this request.\nRest assure that your account has not been compromised, and your information is safe with us!\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
                             user.FullName, reset_link
                         )
@@ -655,7 +737,9 @@ def newPassword(email_token):
         if user:
             if not user.ResetFlag:  # 0 means reset token is NOT VALID & has been used
                 return render_template("reset/reset-expired.html")
-            if user.AccountLocked:  # 1 means user account is locked (after 5 invalid attempts)
+            if (
+                user.AccountLocked
+            ):  # 1 means user account is locked (after 5 invalid attempts)
                 return render_template("login/login-locked.html")
 
     except:
@@ -683,7 +767,9 @@ def postPassword():
         if user:
             if not user.ResetFlag:  # 0 means reset token is NOT VALID & has been used
                 return render_template("reset/reset-expired.html")
-            if user.AccountLocked:  # 1 means user account is locked (after 5 invalid attempts)
+            if (
+                user.AccountLocked
+            ):  # 1 means user account is locked (after 5 invalid attempts)
                 return render_template("login/login-locked.html")
 
     except:
@@ -706,7 +792,7 @@ def postPassword():
                 if is_common_password:
                     message = [
                         "Password chosen is a commonly used password.",
-                        "Please choose another."
+                        "Please choose another.",
                     ]
                     return render_template(
                         "reset/new-password.html",
@@ -718,10 +804,10 @@ def postPassword():
                 user.Password = process_password(form.NewPassword.data, PasswordSalt)
                 user.PasswordSalt = PasswordSalt
                 user.ResetFlag = 0  # 0 means reset token is NOT VALID & has been used
-                
-                #user.ResetDateTime = datetime.utcnow().strftime(
+
+                # user.ResetDateTime = datetime.utcnow().strftime(
                 #    "%Y-%m-%d %H:%M:%S"
-                #)
+                # )
                 user.ResetDateTime = "1970-01-01 00:00:01"
                 user.LastLogin = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -812,7 +898,8 @@ def addFleet():
         BusNumberPlate = formFleet.BusNumberPlate.data
         VehicleCapacity = formFleet.VehicleCapacity.data
         VehicleStatus = formFleet.VehicleStatus.data
-        fleet_data = Fleet(BusNumberPlate, VehicleCapacity, VehicleStatus)
+        Disabled = 0
+        fleet_data = Fleet(BusNumberPlate, VehicleCapacity, VehicleStatus, Disabled)
         db.session.add(fleet_data)
         db.session.commit()
         flash("Vehicle inserted sucessfully")
@@ -852,10 +939,16 @@ def fleetUpdate():
 def delete(id):
     if request.method == "GET":
         fleet_data = Fleet.query.get(id)
-        db.session.delete(fleet_data)
+        if fleet_data.Disabled == 1:
+            fleet_data.Disabled = 0
+            logger_crud.info(f"Vechicle (ID: {id}) ENABLED in Fleet.")
+            flash("Vehicle enabled sucessfully.")
+        else:
+            fleet_data.Disabled = 1
+            logger_crud.info(f"Vechicle (ID: {id}) Disabled in Fleet.")
+            flash("Vehicle disabled sucessfully.")
         db.session.commit()
-        logger_crud.info(f"Vechicle (ID: {id}) Deleted from fleet.")
-        flash("Vehicle deleted sucessfully.")
+
         return redirect(url_for("fleet"))
 
 
@@ -930,11 +1023,11 @@ def addEmployee():
     OTP = 0
     OTPDateTime = "1970-01-01 00:00:01"
     OTPCounter = 0
-
+    Disabled = 0
     if request.method == "POST" and formEmployee.validate_on_submit():
         account = Employee.query
         user = account.filter_by(Email=formEmployee.Email.data).first()
-        
+
         # If email does not exist in db
         if not user:
             FullName = formEmployee.FullName.data
@@ -964,7 +1057,6 @@ def addEmployee():
             formEmployee.DOB.data = ""
             formEmployee.Role.data = ""
             formEmployee.Password.data = ""
-            formEmployee.Password.data = ""
             emp_data = Employee(
                 FullName,
                 Email,
@@ -981,17 +1073,22 @@ def addEmployee():
                 OTP,
                 OTPDateTime,
                 OTPCounter,
+                Disabled,
             )
             db.session.add(emp_data)
             db.session.commit()
-            obj = db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
+            obj = (
+                db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
+            )
             logger_crud.info(f"Employee (ID: {obj.EmployeeId}) inserted to Employee.")
             if Role != "driver":
                 flash("Employee inserted sucessfully")
                 return redirect("/employees")
             else:
                 obj = (
-                    db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
+                    db.session.query(Employee)
+                    .order_by(Employee.EmployeeId.desc())
+                    .first()
                 )
                 driver_data = Driver(obj.EmployeeId, 1, "Account Created")
                 emp_data.driver_child.append(driver_data)
@@ -1003,7 +1100,6 @@ def addEmployee():
 
                 flash("Driver inserted sucessfully")
                 return redirect("/employees")
-        
         else:
             flash("Email already exists. Please choose another.")
             return redirect("/employees")
@@ -1018,12 +1114,24 @@ def addEmployee():
 def employeeDelete(id):
     if request.method == "GET":
         my_data = Employee.query.get(id)
-        db.session.delete(my_data)
+        if my_data.Disabled == 1:
+            my_data.Disabled = 0
+            my_data.AccountLocked = 0
+            my_data.LoginCount = 0
+            my_data.ResetCount = 0
+            my_data.OTPCount = 0
+            my_data.OTP = 0
+
+            logger_crud.info(f"Employee (ID: {id}) ENABLED in Employee.")
+            flash("Employee enabled sucessfully.")
+        else:
+            my_data.Disabled = 1
+            my_data.AccountLocked = 1
+            logger_crud.info(f"Trip (ID: {id}) Disabled in Employee.")
+            flash("Employee disabled sucessfully.")
         db.session.commit()
-        logger_crud.info(f"Driver (ID: {id}) Deleted from Driver.")
         db.session.close()
 
-        flash("Employee deleted sucessfully.")
         return redirect(url_for("employees"))
 
 
@@ -1090,7 +1198,7 @@ def trip():
 
 def getFresh_Employee():
     employeeList = []
-    employee = Employee.query.filter(Employee.Role == "driver")
+    employee = Employee.query.filter(Employee.Role == "driver", Employee.Disabled == 0)
     for row in employee:
         employeeList.append((row.EmployeeId, row.FullName))
     return employeeList
@@ -1098,7 +1206,7 @@ def getFresh_Employee():
 
 def getFresh_Fleet():
     fleetList = []
-    fleet = Fleet.query.all()
+    fleet = Fleet.query.filter(Fleet.Disabled == 0)
     for a in fleet:
         # generate a new list of tuples
         fleetList.append((a.VehicleId, a.BusNumberPlate))
@@ -1141,6 +1249,7 @@ def addTrip():
         StartTime = formTrip.StartTime.data
         EndTime = formTrip.EndTime.data
         TripStatus = formTrip.TripStatus.data
+        Disabled = 0
         driverIDForInsert = (
             Driver.query.filter(Driver.EmployeeId == EmployeeID).first().DriverId
         )
@@ -1153,6 +1262,7 @@ def addTrip():
             StartTime,
             EndTime,
             TripStatus,
+            Disabled,
         )
         db.session.add(trip_data)
         db.session.commit()
@@ -1219,11 +1329,16 @@ def tripUpdate():
 def tripDelete(id):
     if request.method == "GET":
         trip_data = Trip.query.get(id)
-        db.session.delete(trip_data)
+        if trip_data.Disabled == 1:
+            trip_data.Disabled = 0
+            logger_crud.info(f"Trip (ID: {id}) ENABLED in Trip.")
+            flash("Trip enabled sucessfully.")
+        else:
+            trip_data.Disabled = 1
+            logger_crud.info(f"Trip (ID: {id}) Disabled in Trip.")
+            flash("Trip disabled sucessfully.")
         db.session.commit()
-        logger_crud.info(f"Trip (ID: {id}) Deleted from Trip.")
 
-        flash("Trip deleted sucessfully.")
         return redirect(url_for("trip"))
 
 
