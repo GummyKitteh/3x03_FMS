@@ -36,6 +36,7 @@ def test_login_failure(client):
         'password': 'wrongPass',
         'submit': 'Login'
     })
+    html = response.data.decode()   # Prints HTML that you are supposed to receive
     assert response.status_code == 200
 
 
@@ -45,11 +46,33 @@ def test_login_success(client):
         'password': 'admin@123',
         'submit': 'Login'
     })
+    html = response.data.decode()   # Prints HTML that you are supposed to receive
+    assert response.status_code == 302
+
+
+def test_register(client):
+    response = client.post('/employees/insert', data={
+        'FullName': 'Just Test',
+        'Email': 'JustTest@gmail.com',
+        'ContactNumber': '81234567',
+        'DOB': '2000-01-01',
+        'Role': 'driver',
+        'Password': 'JustForTesting',
+        'submit': 'Submit'
+    })
     assert response.status_code == 302
 
 
 def test_logout(client):
     response = client.get('/logout')
+    html = response.data.decode()   # Prints HTML that you are supposed to receive
     assert response.status_code == 302
 
 
+def test_reset_pass(client):
+    response = client.post('/reset', data={
+        'Phone': '81234567',
+        'Email': '2000524@sit.singaporetech.edu.sg',
+        'submit': 'Reset'
+    })
+    assert response.status_code == 200
