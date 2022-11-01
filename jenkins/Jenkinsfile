@@ -22,6 +22,12 @@ pipeline {
 				dependencyCheck additionalArguments: '--scan "src/" --format HTML --format XML', odcInstallation: '3x03_FMS'
 			}
 		}
+		stage('Login, Registration, Logout, Reset Test'){
+			withPythonEnv('python3'){
+				sh 'pip install pytest'
+				sh 'pytest jenkins/scripts/loginTest.py'
+			}
+		}
     }
 	post {
 		success {
