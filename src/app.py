@@ -1048,7 +1048,6 @@ def addEmployee():
             formEmployee.DOB.data = ""
             formEmployee.Role.data = ""
             formEmployee.Password.data = ""
-            formEmployee.Password.data = ""
             emp_data = Employee(
                 FullName,
                 Email,
