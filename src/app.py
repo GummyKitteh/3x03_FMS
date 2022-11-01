@@ -61,11 +61,11 @@ server.config["SESSION_COOKIE_SAMESITE"] = "Strict"
 
 
 # Db configuration
-server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
+# server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
 # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwerty1234@localhost/fmssql"
-# server.config[
-#     "SQLALCHEMY_DATABASE_URI"
-# ] = f"mysql+pymysql://{db_user}:{db_pwd}@{db_add}/{db_db}"
+server.config[
+    "SQLALCHEMY_DATABASE_URI"
+] = f"mysql+pymysql://{db_user}:{db_pwd}@{db_add}/{db_db}"
 # # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwert54321@localhost/fmssql"
 # server.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(server)
@@ -86,13 +86,13 @@ server.config["RECAPTCHA_PRIVATE_KEY"] = recaptcha_prv
 # http://127.0.0.1:5000
 
 # ----- LOGGGING ----------------------------------------------------------------------
-# logging.basicConfig(
-#     filename="./logs/generallog.log",
-#     encoding="utf-8",
-#     filemode="a",
-#     level=logging.INFO,
-#     format="%(asctime)s | %(levelname)s | %(message)s",
-# )
+logging.basicConfig(
+    filename="./src/logs/generallog.log",
+    encoding="utf-8",
+    filemode="a",
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s",
+)
 
 # Create Logger
 # logger = logging.getLogger(__name__)
@@ -100,14 +100,14 @@ logger_auth = logging.getLogger("AUTH")
 logger_crud = logging.getLogger("CRUD")
 
 # Create FileHandler
-handler_auth = logging.FileHandler(strftime(f"./logs/authlog_%d%m%y.log"))
-handler_crud = logging.FileHandler(strftime(f"./logs/crudlog_%d%m%y.log"))
+handler_auth = logging.FileHandler(strftime(f"./src/logs/authlog_%d%m%y.log"))
+handler_crud = logging.FileHandler(strftime(f"./src/logs/crudlog_%d%m%y.log"))
 
 # Set Formatter for Logger
 formatter_auth = logging.Formatter(
     "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
 )
-formatter_crud = logging.Formatter( 
+formatter_crud = logging.Formatter(
     "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
 )
 
@@ -388,7 +388,7 @@ def login():
                 else:
                     user.LoginCounter += 1
                     logger_auth.warning(
-                        f"{user.Email} (ID: {user.EmployeeId}) attempted to log in: {user.LoginCounter} time(s)."
+                        f"{user.FullName} (ID: {user.EmployeeId}) attempted to log in: {user.LoginCounter} time(s)."
                     )
 
                     # If accumulated 5 invalid attempts, lock user account
@@ -623,7 +623,7 @@ def resend_otp():
 @login_required
 def logout():
     logout_user()
-    logger_auth.info("This fella has logged OUT.")
+    logger_auth.info(f"User has logged OUT.")
     return redirect(url_for("index"))
 
 
@@ -843,11 +843,6 @@ def resetSuccess():
 
 @server.route("/")
 def index():
-    # server.logger.debug("debug")
-    # server.logger.info("info")
-    # server.logger.warning("warning")
-    # server.logger.error("error")
-    # server.logger.critical("critical")
     return render_template("index.html")
 
 
@@ -862,9 +857,11 @@ def notFound(error):
 def notFound():
     return render_template("404.html")
 
+
 @server.route("/notauthorized")
 def notAuthorized():
     return render_template("notauthorized.html")
+
 
 # ----- END ROUTES -------------------------------------------------------------------
 # ----- FLEET-------------------------------------------------------------------------
@@ -879,6 +876,7 @@ def fleet():
         all_data = Fleet.query.all()
         return render_template("fleet.html", fleet=all_data)
 
+
 @server.route("/fleetview")
 @login_required
 def fleetview():
@@ -887,6 +885,7 @@ def fleetview():
         return render_template("fleetview.html", fleet=all_data)
     else:
         return redirect("/notauthorized")
+
 
 @server.context_processor
 def fleet():
@@ -932,8 +931,9 @@ def fleet():
 
 @server.route("/fleetUpdate", methods=["GET", "POST"])
 def fleetUpdate():
+    fleetupdate = fleetInsert()
     if current_user.Role.value == "manager":
-        fleetupdate = fleetInsert()
+        # fleetupdate = fleetInsert()
         if request.method == "POST" and fleetupdate.validate_on_submit:
             vID = request.form.get("VehicleId")
             fleet_data = Fleet.query.get(request.form.get("VehicleId"))
@@ -947,7 +947,10 @@ def fleetUpdate():
 
             return redirect(url_for("fleet", fleetupdate=fleetupdate))
     else:
+        vID = request.form.get("VehicleId")
+        logger_crud.error(f"Vechicle (ID: {vID}) update failed.")
         return redirect("/notauthorized")
+
 
 @server.route("/fleet/delete/<id>", methods=["GET", "POST"])
 def delete(id):
@@ -960,7 +963,7 @@ def delete(id):
                 flash("Vehicle enabled sucessfully.")
             else:
                 fleet_data.Disabled = 1
-                logger_crud.info(f"Vechicle (ID: {id}) Disabled in Fleet.")
+                logger_crud.info(f"Vechicle (ID: {id}) DISABLED in Fleet.")
                 flash("Vehicle disabled sucessfully.")
             db.session.commit()
 
@@ -1053,9 +1056,9 @@ def addEmployee():
                 FullName = formEmployee.FullName.data
                 ContactNumber = formEmployee.ContactNumber.data
                 Email = formEmployee.Email.data
-                if (current_user.Role.value == "manager"):
+                if current_user.Role.value == "manager":
                     Role = "driver"
-                elif (current_user.Role.value == "admin"):
+                elif current_user.Role.value == "admin":
                     Role = "manager"
 
                 DOB = formEmployee.DOB.data
@@ -1097,9 +1100,13 @@ def addEmployee():
                 db.session.add(emp_data)
                 db.session.commit()
                 obj = (
-                    db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
+                    db.session.query(Employee)
+                    .order_by(Employee.EmployeeId.desc())
+                    .first()
                 )
-                logger_crud.info(f"Employee (ID: {obj.EmployeeId}) inserted to Employee.")
+                logger_crud.info(
+                    f"Employee (ID: {obj.EmployeeId}) inserted to Employee."
+                )
                 if Role != "driver":
                     flash("Employee inserted sucessfully")
                     return redirect("/employees")
@@ -1112,7 +1119,11 @@ def addEmployee():
                     driver_data = Driver(obj.EmployeeId, 1, "Account Created")
                     emp_data.driver_child.append(driver_data)
                     db.session.commit()
-                    obj = db.session.query(Driver).order_by(Driver.DriverId.desc()).first()
+                    obj = (
+                        db.session.query(Driver)
+                        .order_by(Driver.DriverId.desc())
+                        .first()
+                    )
                     logger_crud.info(f"Driver (ID: {obj.DriverId}) inserted to Driver.")
                     # db.session.close()
                     # db.session.expire_all()
@@ -1129,7 +1140,6 @@ def addEmployee():
             return redirect("/employees")
     else:
         return redirect("/notauthorized")
-        
 
 
 @server.route("/employees/delete/<id>", methods=["GET", "POST"])
@@ -1170,11 +1180,17 @@ def employeesearch():
             searchFormEmployee.searched.data = ""
             print(Employee.Role)
             if current_user.Role.value == "admin":
-                posts = posts.filter(Employee.FullName.like("%" + postsearched + "%"), Employee.Role == "manager")
+                posts = posts.filter(
+                    Employee.FullName.like("%" + postsearched + "%"),
+                    Employee.Role == "manager",
+                )
                 posts = posts.order_by(Employee.EmployeeId).all()
                 logger_crud.info(f"[{postsearched}] searched.")
             elif current_user.Role.value == "manager":
-                posts = posts.filter(Employee.FullName.like("%" + postsearched + "%"), Employee.Role == "driver")
+                posts = posts.filter(
+                    Employee.FullName.like("%" + postsearched + "%"),
+                    Employee.Role == "driver",
+                )
                 posts = posts.order_by(Employee.EmployeeId).all()
                 logger_crud.info(f"[{postsearched}] searched.")
             if posts != 0:
@@ -1211,17 +1227,21 @@ def trip():
     else:
         return redirect("/notauthorized")
 
+
 @server.route("/tripview")
 @login_required
 def tripview():
     if current_user.Role.value == "driver":
-        driver_data = Driver.query.filter(Driver.EmployeeId == current_user.EmployeeId).first().DriverId
-        trip_data = Trip.query.filter(Trip.DriverID == driver_data)   
-        return render_template(
-            "trip.html", trip=trip_data
+        driver_data = (
+            Driver.query.filter(Driver.EmployeeId == current_user.EmployeeId)
+            .first()
+            .DriverId
         )
+        trip_data = Trip.query.filter(Trip.DriverID == driver_data)
+        return render_template("trip.html", trip=trip_data)
     else:
         return redirect("/notauthorized")
+
 
 @server.context_processor
 def trip():
@@ -1321,7 +1341,7 @@ def addTrip():
 def tripSearch():
     searchformTrip = SearchFormTrip()
     posts = Trip.query
-    if current_user.Role.value == "manager": 
+    if current_user.Role.value == "manager":
         if request.method == "POST" and searchformTrip.validate_on_submit():
             postsearched = searchformTrip.searched.data
             searchformTrip.searched.data = ""
@@ -1342,8 +1362,14 @@ def tripSearch():
         if request.method == "POST" and searchformTrip.validate_on_submit():
             postsearched = searchformTrip.searched.data
             searchformTrip.searched.data = ""
-            driver_data = Driver.query.filter(Driver.EmployeeId == current_user.EmployeeId).first().DriverId
-            posts = posts.filter(Trip.TripID.like("%" + postsearched + "%"), Trip.DriverID == driver_data)
+            driver_data = (
+                Driver.query.filter(Driver.EmployeeId == current_user.EmployeeId)
+                .first()
+                .DriverId
+            )
+            posts = posts.filter(
+                Trip.TripID.like("%" + postsearched + "%"), Trip.DriverID == driver_data
+            )
             posts = posts.order_by(Trip.TripID).all()
             logger_crud.info(f"[{postsearched}] searched.")
 
@@ -1408,7 +1434,6 @@ def tripDelete(id):
             return redirect(url_for("trip"))
     else:
         return redirect("/notauthorized")
-            
 
 
 # ----- TRIPS END -----------------------------------------------------------------------
