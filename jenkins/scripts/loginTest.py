@@ -30,17 +30,26 @@ def test_login_page(client):
     assert res.status_code == 200
 
 
+def test_login_failure(client):
+    response = client.post('/login', data={
+        'Email': 'wrong@gmail.com',
+        'password': 'wrongPass',
+        'submit': 'Login'
+    })
+    assert response.status_code == 200
+
+
 def test_login_success(client):
-    response = client.post(
-        "/login",
-        data=dict(Email="b33p33p@gmail.com", password="admin@123", submit="Login"),
-        follow_redirects=True)
+    response = client.post('/login', data={
+        'Email': 'b33p33p@gmail.com',
+        'password': 'admin@123',
+        'submit': 'Login'
+    })
     assert response.status_code == 302
 
 
-def test_login_failure(client):
-    response = client.post(
-        "/login",
-        data=dict(Email="wrong@gmail.com", password="wrong", submit="Login"),
-        follow_redirects=True)
-    assert response.status_code == 200
+def test_logout(client):
+    response = client.get('/logout')
+    assert response.status_code == 302
+
+
