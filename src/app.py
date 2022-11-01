@@ -54,7 +54,7 @@ server = Flask(__name__)
 server.secret_key = "abcd"
 server.config["SECRET_KEY"] = "I really hope fking this work if never idk what to do :("
 server.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=1)
-server.config["SESSION_COOKIE_DOMAIN"] = None  # Might set to helik1pter.tk?
+server.config["SESSION_COOKIE_DOMAIN"] = None  # Might set to busfms.tk?
 server.config["SESSION_COOKIE_HTTPONLY"] = True
 server.config["SESSION_COOKIE_SECURE"] = True
 server.config["SESSION_COOKIE_SAMESITE"] = "Strict"
@@ -1091,59 +1091,9 @@ def addEmployee():
 
                 flash("Driver inserted sucessfully")
                 return redirect("/employees")
-
         else:
-            Password = process_password(formEmployee.Password.data, PasswordSalt)
-
-            formEmployee.FullName.data = ""
-            formEmployee.ContactNumber.data = ""
-            formEmployee.Email.data = ""
-            formEmployee.DOB.data = ""
-            formEmployee.Role.data = ""
-            formEmployee.Password.data = ""
-            formEmployee.Password.data = ""
-            emp_data = Employee(
-                FullName,
-                Email,
-                ContactNumber,
-                Role,
-                Password,
-                DOB,
-                PasswordSalt,
-                AccountLock,
-                LoginCounter,
-                LastLogin,
-                ResetDateTime,
-                ResetFlag,
-                OTP,
-                OTPDateTime,
-                OTPCounter,
-            )
-            db.session.add(emp_data)
-            db.session.commit()
-            obj = (
-                db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
-            )
-            logger_crud.info(f"Employee (ID: {obj.EmployeeId}) inserted to Employee.")
-            if Role != "driver":
-                flash("Employee inserted sucessfully")
-                return redirect("/employees")
-            else:
-                obj = (
-                    db.session.query(Employee)
-                    .order_by(Employee.EmployeeId.desc())
-                    .first()
-                )
-                driver_data = Driver(obj.EmployeeId, 1, "Account Created")
-                emp_data.driver_child.append(driver_data)
-                db.session.commit()
-                obj = db.session.query(Driver).order_by(Driver.DriverId.desc()).first()
-                logger_crud.info(f"Driver (ID: {obj.DriverId}) inserted to Driver.")
-                # db.session.close()
-                # db.session.expire_all()
-
-                flash("Driver inserted sucessfully")
-                return redirect("/employees")
+            flash("Email already exists. Please choose another.")
+            return redirect("/employees")
 
     else:
         flash("Employee insert failed. Please check your fields again.")

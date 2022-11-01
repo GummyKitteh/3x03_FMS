@@ -5,7 +5,7 @@ from src.app import server, db
 
 @pytest.fixture(scope='module')
 def flask_app():
-    app = server()
+    app = server
     with app.app_context():
         yield app
 
@@ -22,3 +22,6 @@ def client(flask_app):
 def test_index_page(client):
     res = client.get('/')
     assert res.status_code == 200
+
+
+#def test_login_page(client):
