@@ -8,11 +8,6 @@ pipeline {
 			}
 		}
         stage('Build') { 
-			agent { 
-				docker {
-					image 'python:3'
-				}
-			}
             steps {
                 sh 'pip install --no-cache-dir -r src/requirements.txt' 
             }
