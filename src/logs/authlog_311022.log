@@ -1,0 +1,38 @@
+2022-10-31 15:29:04,283 | AUTH | INFO | This fella has logged OUT.
+2022-10-31 15:29:19,429 | AUTH | INFO | admin1 (ID: 1) has logged IN.
+2022-10-31 15:32:45,552 | AUTH | INFO | This fella has logged OUT.
+2022-10-31 15:33:54,745 | AUTH | WARNING | potato1234 (ID: 25) attempted to log in: 3 time(s).
+2022-10-31 15:34:01,022 | AUTH | WARNING | potato1234 (ID: 25) attempted to log in: 4 time(s).
+2022-10-31 15:34:17,679 | AUTH | WARNING | potato1234 (ID: 25) attempted to log in: 5 time(s).
+2022-10-31 15:34:17,680 | AUTH | WARNING | potato1234 (ID: 25) account has been locked after 5 incorrect login attempts.
+2022-10-31 15:34:33,254 | AUTH | INFO | admin1 (ID: 1) has logged IN.
+2022-10-31 15:41:15,619 | AUTH | INFO | This fella has logged OUT.
+2022-10-31 15:49:07,039 | AUTH | INFO | testing (ID: 34) has logged IN.
+2022-10-31 16:06:03,677 | AUTH | INFO | This fella has logged OUT.
+2022-10-31 16:06:18,666 | AUTH | INFO | manager (ID: 35) has logged IN.
+2022-10-31 16:27:26,725 | AUTH | INFO | This fella has logged OUT.
+2022-10-31 16:27:39,568 | AUTH | INFO | manager (ID: 35) has logged IN.
+2022-10-31 19:56:16,192 | AUTH | INFO | This fella has logged OUT.
+2022-10-31 19:56:29,219 | AUTH | WARNING | testing@gmail.com (ID: 34) attempted to log in: 1 time(s).
+2022-10-31 19:56:45,064 | AUTH | WARNING | admin@gmail.com (ID: 1) attempted to log in: 1 time(s).
+2022-10-31 20:09:09,222 | AUTH | WARNING | admin@gmail.com (ID: 1) attempted to log in: 2 time(s).
+2022-10-31 20:09:28,356 | AUTH | WARNING | admin@gmail.com (ID: 1) attempted to log in: 3 time(s).
+2022-10-31 20:09:51,737 | AUTH | WARNING | manager@gmail.com (ID: 35) attempted to log in: 1 time(s).
+2022-10-31 20:10:25,169 | AUTH | WARNING | manager@gmail.com (ID: 35) attempted to log in: 2 time(s).
+2022-10-31 20:11:19,488 | AUTH | WARNING | potato@gmail.com (ID: 25) attempted to log in: 6 time(s).
+2022-10-31 20:41:30,037 | AUTH | WARNING | admin@gmail.com (ID: 1) attempted to log in: 4 time(s).
+2022-10-31 20:41:39,388 | AUTH | WARNING | admin@gmail.com (ID: 1) attempted to log in: 5 time(s).
+2022-10-31 20:41:39,388 | AUTH | WARNING | admin@gmail.com (ID: 1) account has been locked after 5 incorrect login attempts.
+2022-10-31 20:41:39,397 | AUTH | WARNING | admin1 (ID: 1) (Account Locked) attempted to log in.
+2022-10-31 20:43:01,890 | AUTH | WARNING | admin@gmail.com (ID: 1) attempted to log in: 6 time(s).
+2022-10-31 20:43:13,812 | AUTH | WARNING | admin@gmail.com (ID: 1) attempted to log in: 7 time(s).
+2022-10-31 20:43:34,628 | AUTH | WARNING | manager@gmail.com (ID: 35) attempted to log in: 3 time(s).
+2022-10-31 21:10:23,891 | AUTH | WARNING | Xu Min (ID: 3) logs in for the first time and has requested a password reset via Email.
+2022-10-31 21:55:29,162 | AUTH | WARNING | IT Administrator (ID: 1) requested an OTP via Email.
+2022-10-31 21:55:56,365 | AUTH | WARNING | IT Administrator (ID: 1) requested an OTP via Email.
+2022-10-31 22:01:53,580 | AUTH | WARNING | 2000823@sit.singaporetech.edu.sg (ID: 2) attempted to log in: 1 time(s).
+2022-10-31 22:02:51,466 | AUTH | WARNING | Jas Pang (ID: 2) requested an OTP via Email.
+2022-10-31 22:05:27,032 | AUTH | WARNING | Jas Pang (ID: 2) requested an OTP via Email.
+2022-10-31 22:12:01,990 | AUTH | WARNING | Xu Min (ID: 3) logs in for the first time and has requested a password reset via Email.
+2022-10-31 22:13:44,997 | AUTH | WARNING | 2001390@sit.singaporetech.edu.sg (ID: 3) attempted to log in: 2 time(s).
+2022-10-31 22:13:56,553 | AUTH | WARNING | Xu Min (ID: 3) requested an OTP via Email.

@@ -1,0 +1,8 @@
+2022-11-01 14:20:40,085 | AUTH | WARNING | Xu Min (ID: 3) requested an OTP via Email.
+2022-11-01 14:27:10,307 | AUTH | WARNING | Xu Min (ID: 3) logs in for the first time and has requested a password reset via Email.
+2022-11-01 15:17:10,364 | AUTH | WARNING | b33p33p@gmail.com (ID: 1) attempted to log in: 1 time(s).
+2022-11-01 15:19:18,297 | AUTH | WARNING | xmin23@gmail.com (ID: 30) attempted to log in: 1 time(s).
+2022-11-01 15:19:27,227 | AUTH | WARNING | Xu Min (ID: 30) logs in for the first time and has requested a password reset via Email.
+2022-11-01 16:33:33,915 | AUTH | WARNING | xmin23@gmail.com (ID: 30) attempted to log in: 1 time(s).
+2022-11-01 16:33:41,452 | AUTH | WARNING | xmin23@gmail.com (ID: 30) attempted to log in: 2 time(s).
+2022-11-01 22:20:04,787 | AUTH | WARNING | 2001390@sit.singaporetech.edu.sg (ID: 3) attempted to log in: 1 time(s).
