@@ -23,9 +23,11 @@ pipeline {
 			}
 		}
 		stage('Login, Registration, Logout, Reset Test'){
-			withPythonEnv('python3'){
-				sh 'pip install pytest'
-				sh 'pytest jenkins/scripts/loginTest.py'
+			steps {
+				withPythonEnv('python3'){
+					sh 'pip install pytest'
+					sh 'pytest jenkins/scripts/loginTest.py'
+				}
 			}
 		}
     }
