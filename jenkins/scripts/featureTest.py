@@ -3,7 +3,7 @@ import os, sys
 from flask.testing import FlaskClient
 pythonpath = os.environ['WORKSPACE'] + "/src"
 sys.path.append(pythonpath)
-from src.app import server, db
+from app import server, db
 
 
 @pytest.fixture(scope='module')
