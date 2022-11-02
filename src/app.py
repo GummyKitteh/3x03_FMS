@@ -1007,10 +1007,7 @@ def fleetsearch():
 def employees():
     userrole = current_user.Role
     if userrole == RoleTypes.admin:
-        manager_data = Employee.query.filter(Employee.Role == "manager")
-        # accLocked_data = Employee.query.filter(
-        #     Employee.AccountLocked == 1 and Employee.Disabled == 1
-        # )
+        manager_data = Employee.query.all()
         accLocked_data = Employee.query.filter(
             or_(Employee.AccountLocked == 1, Employee.Disabled == 1)
         )
