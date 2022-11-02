@@ -25,6 +25,16 @@ pipeline {
 				dependencyCheck additionalArguments: '--scan "src/" --format HTML --format XML', odcInstallation: '3x03_FMS'
 			}
 		}
+		stage('Feature Test') {
+			agent {
+				docker {
+					image 'python:3.11.0-slim-buster'
+				}
+			}
+			steps {
+				sh 'pytest jenkins/scripts/loginTest.py'
+			}
+		}
     }
 	post {
 		success {
