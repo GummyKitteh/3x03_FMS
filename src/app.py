@@ -1,9 +1,10 @@
+from tkinter import E
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_mail import Mail, Message
 from threading import Thread
 
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import true, ForeignKey
+from sqlalchemy import true, ForeignKey, or_
 from sqlalchemy.orm import declarative_base, relationship, backref
 
 from flask_wtf import FlaskForm
@@ -61,11 +62,11 @@ server.config["SESSION_COOKIE_SAMESITE"] = "Strict"
 
 
 # Db configuration
-server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
+# server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
 # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwerty1234@localhost/fmssql"
-# server.config[
-#     "SQLALCHEMY_DATABASE_URI"
-# ] = f"mysql+pymysql://{db_user}:{db_pwd}@{db_add}/{db_db}"
+server.config[
+    "SQLALCHEMY_DATABASE_URI"
+] = f"mysql+pymysql://{db_user}:{db_pwd}@{db_add}/{db_db}"
 # # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwert54321@localhost/fmssql"
 # server.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(server)
@@ -122,7 +123,7 @@ handler_crud = logging.FileHandler(strftime(location + f"/crudlog_%d%m%y.log"))
 formatter_auth = logging.Formatter(
     "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
 )
-formatter_crud = logging.Formatter( 
+formatter_crud = logging.Formatter(
     "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
 )
 
@@ -145,10 +146,11 @@ class Employee(db.Model, UserMixin, Base):
     Email = db.Column(db.String(100), nullable=False, unique=True)
     ContactNumber = db.Column(db.Integer, nullable=False)
     Role = db.Column(db.Enum(RoleTypes), nullable=False)
-    Password = db.Column(db.String(64), nullable=False)
     DOB = db.Column(db.DateTime, nullable=False)
+    Password = db.Column(db.String(64), nullable=False)
     PasswordSalt = db.Column(db.String(64), nullable=False)
     AccountLocked = db.Column(db.Integer, nullable=False)
+    AccountLockedDateTime = db.Column(db.Integer, nullable=False)
     LoginCounter = db.Column(db.Integer, nullable=False)
     LastLogin = db.Column(db.DateTime, nullable=False)
     ResetDateTime = db.Column(db.DateTime, nullable=False)
@@ -170,6 +172,7 @@ class Employee(db.Model, UserMixin, Base):
         DOB,
         PasswordSalt,
         AccountLocked,
+        AccountLockedDateTime,
         LoginCounter,
         LastLogin,
         ResetDateTime,
@@ -187,6 +190,7 @@ class Employee(db.Model, UserMixin, Base):
         self.DOB = DOB
         self.PasswordSalt = PasswordSalt
         self.AccountLocked = AccountLocked
+        self.AccountLockedDateTime = AccountLockedDateTime
         self.LoginCounter = LoginCounter
         self.LastLogin = LastLogin
         self.ResetDateTime = ResetDateTime
@@ -333,6 +337,7 @@ def login():
                         logger_auth.info(
                             f"{user.FullName} (ID: {user.EmployeeId}) has logged IN."
                         )
+                        return redirect(url_for("employees"))
 
                         """ UNDO this for OTP.
                         message = send_otp(user, form)
@@ -348,7 +353,6 @@ def login():
 
                         return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, userid=user.get_id(), message=message)
                         """
-                        return redirect(url_for("employees"))
 
                     # Else user has never logged in before (i.e. First login)
                     else:
@@ -403,12 +407,16 @@ def login():
                 else:
                     user.LoginCounter += 1
                     logger_auth.warning(
-                        f"{user.Email} (ID: {user.EmployeeId}) attempted to log in: {user.LoginCounter} time(s)."
+                        f"{user.FullName} (ID: {user.EmployeeId}) attempted to log in: {user.LoginCounter} time(s)."
                     )
 
                     # If accumulated 5 invalid attempts, lock user account
                     if user.LoginCounter == 5:
                         user.AccountLocked = 1
+                        user.AccountLockedDateTime = datetime.utcnow().strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        )
+
                         logger_auth.warning(
                             f"{user.Email} (ID: {user.EmployeeId}) account has been locked after 5 incorrect login attempts."
                         )
@@ -445,7 +453,61 @@ def login():
                         Thread(target=send_email, args=(server, email)).start()
                         print("Mimic: Email sent to Admin (Account Locked)")
 
-                        return render_template("login/login-locked.html")
+                    db.session.commit()
+
+                    # If user account is locked, render Account Locked page ONLY ONCE to prevent account guessing
+                    if user.LoginCounter == 5:
+                        return render_template("login/account-locked.html")
+
+                    # If user account is Locked or Disabled
+                    if user.AccountLocked or user.Disabled:
+
+                        # Calculate time delta between current time and account locked time
+                        try:
+                            # If there is a timestamp in user.AccountLockedDateTime
+                            email_token_delta = (
+                                datetime.utcnow() - user.AccountLockedDateTime
+                            ).total_seconds()
+                            delta_minute = email_token_delta // 60
+                        except:
+                            # If there is no timestamp in user.AccountLockedDateTime
+                            delta_minute = 10
+
+                        # If user has NOT been notified of account lock or disable in the last 10 minutes
+                        if delta_minute >= 10:
+
+                            # Update AccountLockedDateTime to prevent user email spam
+                            user.AccountLockedDateTime = datetime.utcnow().strftime(
+                                "%Y-%m-%d %H:%M:%S"
+                            )
+                            db.session.commit()
+
+                            logger_auth.warning(
+                                f"{user.FullName} (ID: {user.EmployeeId}) (Account Locked) attempted to log in."
+                            )
+
+                            if user.Role == "driver":
+                                administrator = "the IT Administrator"
+                                supervisor = "your Manager or IT Administrator"
+                            elif user.Role == "manager":
+                                administrator = "the IT Administrator"
+                                supervisor = "the IT Administrator"
+                            else:
+                                administrator = "an IT Administrator"
+                                supervisor = "an IT Administrator"
+
+                            # Send email to notify User
+                            email = Message()
+                            email.subject = "You Account Has Been Locked or Disabled"
+                            email.recipients = [form.Email.data]
+                            # email.recipients = ["b33p33p@gmail.com"]
+                            email.body = "Dear {},\n\nWe note that you have attempted to log in to your Bus FMS account without success.\nUnfortunately, your account has either been locked after too many invalid login attempts, or it has been disabled by {}.\n\nPlease contact {} for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
+                                user.FullName,
+                                administrator,
+                                supervisor
+                            )
+                            Thread(target=send_email, args=(server, email)).start()
+                            print("Mimic: Email sent (Account Locked)")
 
         # Else Form is invalidated OR User does not exist in db
         message = [
@@ -482,7 +544,7 @@ def send_otp(user, form):
     # Send email to notify user
     email = Message()
     email.subject = "Your Bus FMS OTP"
-    # email.recipients = [form.Email.data]
+    email.recipients = [user.Email]
     # email.recipients = ["b33p33p@gmail.com"]
     email.body = "Dear {}, \n\nYour OTP is {}.\nPlease note that your OTP is only valid for 2 minutes.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
         user.FullName, user.OTP
@@ -595,13 +657,8 @@ def validate_otp():
         return redirect(url_for("notFound"))
 
 
-@server.route("/resend-otp", methods=["GET", "POST"])
+@server.route("/resend-otp", methods=["POST"])
 def resend_otp():
-
-    # If GET request, return 404
-    if request.method == "GET":
-        return redirect(url_for("notFound"))
-
     otp_form = OTPForm(request.form)
     resend_form = ResendOTPForm(request.form)
 
@@ -624,7 +681,7 @@ def resend_otp():
                 message=message,
             )
 
-    # Unlikely to be shown as only POST requests are accepted
+    # Unlikely to be shown as only OTP field would have been validated
     message = ["Form is invalidated.", "Please try again, or go back to Login."]
     return render_template(
         "login/login-otp.html",
@@ -638,7 +695,7 @@ def resend_otp():
 @login_required
 def logout():
     logout_user()
-    logger_auth.info("This fella has logged OUT.")
+    logger_auth.info(f"User has logged OUT.")
     return redirect(url_for("index"))
 
 
@@ -670,12 +727,12 @@ def reset():
                         datetime.utcnow() - user.ResetDateTime
                     ).total_seconds()
                     delta_hour = email_token_delta // 3600
+                    print("email_token_delta", email_token_delta, "seconds")
                 except:
                     # If there is no timestamp in user.ResetDateTime
                     delta_hour = 1
 
-                print("email_token_delta", email_token_delta)
-                print("delta_hour", delta_hour)
+                print("delta_hour", delta_hour, "hour")
 
                 # If user has NOT sent a reset link in the last 1 hour
                 if delta_hour >= 1:
@@ -686,12 +743,31 @@ def reset():
                     email.recipients = [form.Email.data]
                     # email.recipients = ["b33p33p@gmail.com"]
 
-                    # If user account is locked (after 5 invalid attempts), send email without reset token
-                    if user.AccountLocked:
+                    # Update ResetDateTime to prevent user email spam
+                    user.ResetDateTime = datetime.utcnow().strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    )
+
+                    # If user account is locked (after 5 invalid attempts) but NOT disabled (by IT Admin), send email without reset token
+                    if user.AccountLocked and not user.Disabled:
+
+                        ## Update ResetDateTime to prevent user email spam
+                        #user.ResetDateTime = datetime.utcnow().strftime(
+                        #    "%Y-%m-%d %H:%M:%S"
+                        #)
+                        db.session.commit()
+
+                        if user.Role == "driver":
+                            supervisor = "your Manager or IT Administrator"
+                        elif user.Role == "manager":
+                            supervisor = "the IT Administrator"
+                        else:
+                            supervisor = "an IT Administrator"
 
                         # Send email object
-                        email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nUnfortunately, your account has been locked after too many invalid attempts.\nPlease contact your Manager or IT Administrator for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
-                            user.FullName
+                        email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nUnfortunately, your account has been locked after too many invalid attempts.\nPlease contact {} for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
+                            user.FullName,
+                            supervisor
                         )
                         Thread(target=send_email, args=(server, email)).start()
                         logger_auth.warning(
@@ -699,14 +775,21 @@ def reset():
                         )
                         print("Mimic: Email sent")
 
+                    # If user account is disabled (by IT Admin), don't do anything
+                    elif user.Disabled:
+                        logger_auth.warning(
+                            f"{user.FullName} (ID: {user.EmployeeId}) (Account Disabled) attempted to request for a password reset."
+                        )
+                        pass
+
                     # If user account is NOT locked, send email with reset token
                     else:
 
                         # Generate reset token (output in Base64) for password reset
                         email_token = generate_reset_token(user.get_id())
-                        user.ResetDateTime = datetime.utcnow().strftime(
-                            "%Y-%m-%d %H:%M:%S"
-                        )
+                        #user.ResetDateTime = datetime.utcnow().strftime(
+                        #    "%Y-%m-%d %H:%M:%S"
+                        #)
                         user.ResetFlag = (
                             1  # 1 means reset token is STILL VALID & has not been used
                         )
@@ -755,7 +838,9 @@ def newPassword(email_token):
             if (
                 user.AccountLocked
             ):  # 1 means user account is locked (after 5 invalid attempts)
-                return render_template("login/login-locked.html")
+                return render_template("login/account-locked.html")
+            if (user.Disabled): # 1 means user account is disabled (by IT Admin)
+                return render_template("login/account-disabled.html")
 
     except:
         return render_template("reset/reset-expired.html")
@@ -785,7 +870,9 @@ def postPassword():
             if (
                 user.AccountLocked
             ):  # 1 means user account is locked (after 5 invalid attempts)
-                return render_template("login/login-locked.html")
+                return render_template("login/account-locked.html")
+            if (user.Disabled): # 1 means user account is disabled (by IT Admin)
+                return render_template("login/account-disabled.html")
 
     except:
         return render_template("reset/reset-expired.html")
@@ -795,8 +882,8 @@ def postPassword():
 
         # If Form is validated
         if form.validate_on_submit():
-            account = Employee.query
-            user = account.filter_by(EmployeeId=token_payload["reset_token"]).first()
+            #account = Employee.query
+            #user = account.filter_by(EmployeeId=token_payload["reset_token"]).first()
 
             # If user exists in db
             if user:
@@ -819,19 +906,38 @@ def postPassword():
                 user.Password = process_password(form.NewPassword.data, PasswordSalt)
                 user.PasswordSalt = PasswordSalt
                 user.ResetFlag = 0  # 0 means reset token is NOT VALID & has been used
-
-                # user.ResetDateTime = datetime.utcnow().strftime(
+                #user.ResetDateTime = datetime.utcnow().strftime(
                 #    "%Y-%m-%d %H:%M:%S"
-                # )
-                user.ResetDateTime = "1970-01-01 00:00:01"
+                #)
                 user.LastLogin = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
                 db.session.commit()
 
+                # Send Email to notify user that Password has been changed
+                if user.Role == "driver":
+                    supervisor = "your Manager or IT Administrator"
+                elif user.Role == "manager":
+                    supervisor = "the IT Administrator"
+                else:
+                    supervisor = "an IT Administrator"
+
+                # Craft email object
+                email = Message()
+                email.subject = "Your Bus FMS Password Has Been Changed"
+                email.recipients = [form.Email.data]
+                # email.recipients = ["b33p33p@gmail.com"]
+
+                email.body = "Dear {},\n\nYour Bus FMS password has just been changed.\n\nIf you did not perform this request, please contact {} as soon as possible.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
+                    user.FullName,
+                    supervisor
+                )
+                Thread(target=send_email, args=(server, email)).start()
+                print("Mimic: Email sent")
+
                 # Log user out of all logged-in sessions.
                 logout_user()
                 logger_auth.info(
-                    f"{user.FullName} (ID: {user.EmployeeId}) has performed a password reset."
+                    f"{user.FullName} (ID: {user.EmployeeId}) has performed a password reset. Notification email has been sent to the User."
                 )
 
                 return render_template("reset/reset-success.html")
@@ -858,11 +964,6 @@ def resetSuccess():
 
 @server.route("/")
 def index():
-    # server.logger.debug("debug")
-    # server.logger.info("info")
-    # server.logger.warning("warning")
-    # server.logger.error("error")
-    # server.logger.critical("critical")
     return render_template("index.html")
 
 
@@ -877,9 +978,11 @@ def notFound(error):
 def notFound():
     return render_template("404.html")
 
+
 @server.route("/notauthorized")
 def notAuthorized():
     return render_template("notauthorized.html")
+
 
 # ----- END ROUTES -------------------------------------------------------------------
 # ----- FLEET-------------------------------------------------------------------------
@@ -894,6 +997,7 @@ def fleet():
         all_data = Fleet.query.all()
         return render_template("fleet.html", fleet=all_data)
 
+
 @server.route("/fleetview")
 @login_required
 def fleetview():
@@ -902,6 +1006,7 @@ def fleetview():
         return render_template("fleetview.html", fleet=all_data)
     else:
         return redirect("/notauthorized")
+
 
 @server.context_processor
 def fleet():
@@ -917,6 +1022,21 @@ def fleet():
 
 @server.route("/fleet/fleetinsert", methods=["POST"])
 def addFleet():
+    """ JM: Unsure whether to merge this?
+    formFleet = fleetInsert()
+    if request.method == "POST" and formFleet.validate_on_submit():
+        BusNumberPlate = formFleet.BusNumberPlate.data
+        VehicleCapacity = formFleet.VehicleCapacity.data
+        VehicleStatus = formFleet.VehicleStatus.data
+        Disabled = 0
+        fleet_data = Fleet(BusNumberPlate, VehicleCapacity, VehicleStatus, Disabled)
+        db.session.add(fleet_data)
+        db.session.commit()
+        flash("Vehicle inserted sucessfully")
+        obj = db.session.query(Fleet).order_by(Fleet.VehicleId.desc()).first()
+        logger_crud.info(f"Vechicle (ID: {obj.VehicleId}) inserted to Fleet.")
+        return redirect("/fleet")
+    """
     if current_user.Role.value == "manager":
         formFleet = fleetInsert()
         if request.method == "POST" and formFleet.validate_on_submit():
@@ -947,8 +1067,9 @@ def fleet():
 
 @server.route("/fleetUpdate", methods=["GET", "POST"])
 def fleetUpdate():
+    fleetupdate = fleetInsert()
     if current_user.Role.value == "manager":
-        fleetupdate = fleetInsert()
+        # fleetupdate = fleetInsert()
         if request.method == "POST" and fleetupdate.validate_on_submit:
             vID = request.form.get("VehicleId")
             fleet_data = Fleet.query.get(request.form.get("VehicleId"))
@@ -962,22 +1083,45 @@ def fleetUpdate():
 
             return redirect(url_for("fleet", fleetupdate=fleetupdate))
     else:
+        vID = request.form.get("VehicleId")
+        logger_crud.error(f"Vechicle (ID: {vID}) update failed.")
         return redirect("/notauthorized")
+
 
 @server.route("/fleet/delete/<id>", methods=["GET", "POST"])
 def delete(id):
+    """ JM: Unsure whether to merge this?
+    if request.method == "GET":
+        fleet_data = Fleet.query.get(id)
+        if fleet_data.Disabled == 1:
+            fleet_data.Disabled = 0
+            logger_crud.info(f"Vechicle (ID: {id}) ENABLED in Fleet.")
+            flash("Vehicle enabled sucessfully.")
+        else:
+            fleet_data.Disabled = 1
+            logger_crud.info(f"Vechicle (ID: {id}) Disabled in Fleet.")
+            flash("Vehicle disabled sucessfully.")
+        db.session.commit()
+
+        return redirect(url_for("fleet"))
+    """
     if current_user.Role.value == "manager":
         if request.method == "GET":
             fleet_data = Fleet.query.get(id)
-            if fleet_data.Disabled == 1:
-                fleet_data.Disabled = 0
-                logger_crud.info(f"Vechicle (ID: {id}) ENABLED in Fleet.")
-                flash("Vehicle enabled sucessfully.")
-            else:
-                fleet_data.Disabled = 1
-                logger_crud.info(f"Vechicle (ID: {id}) Disabled in Fleet.")
-                flash("Vehicle disabled sucessfully.")
+            # if fleet_data.Disabled == 1:
+            #     fleet_data.Disabled = 0
+            #     logger_crud.info(f"Vechicle (ID: {id}) ENABLED in Fleet.")
+            #     flash("Vehicle enabled sucessfully.")
+            # else:
+            #     fleet_data.Disabled = 1
+            #     logger_crud.info(f"Vechicle (ID: {id}) DISABLED in Fleet.")
+            #     flash("Vehicle disabled sucessfully.")
+            # db.session.commit()
+
+            db.session.delete(fleet_data)
             db.session.commit()
+            logger_crud.info(f"Vechicle (ID: {id}) Deleted from fleet.")
+            flash("Vehicle deleted sucessfully.")
 
             return redirect(url_for("fleet"))
     else:
@@ -1018,14 +1162,25 @@ def fleetsearch():
 def employees():
     userrole = current_user.Role
     if userrole == RoleTypes.admin:
-        all_data = Employee.query.filter(Employee.Role == "manager")
-        return render_template("employees.html", employees=all_data)
+        manager_data = Employee.query.all()
+        accLocked_data = Employee.query.filter(
+            or_(Employee.AccountLocked == 1, Employee.Disabled == 1)
+        )
+        return render_template(
+            "employees.html", employees=manager_data, lockedAcc=accLocked_data
+        )
     elif userrole == RoleTypes.manager:
         all_data = Employee.query.filter(Employee.Role == "driver")
         return render_template("employees.html", employees=all_data)
     elif userrole == RoleTypes.driver:
         # all_data = Employee.query.filter(Employee.Email == current_user.Email)
         return redirect("/tripview")
+
+
+@server.context_processor
+def employees():
+    accLocked_data = Employee.query.filter(Employee.AccountLocked == 1)
+    return dict(lockedAcc=accLocked_data)
 
 
 @server.context_processor
@@ -1051,12 +1206,13 @@ def addEmployee():
         Role = None
         Password = None
         AccountLock = 0
+        AccountLockedDateTime = None
         LoginCounter = 0
         LastLogin = "2999-12-31 23:59:59"
-        ResetDateTime = "1970-01-01 00:00:01"
+        ResetDateTime = None
         ResetFlag = 0
         OTP = 0
-        OTPDateTime = "1970-01-01 00:00:01"
+        OTPDateTime = None
         OTPCounter = 0
         Disabled = 0
         if request.method == "POST" and formEmployee.validate_on_submit():
@@ -1068,9 +1224,9 @@ def addEmployee():
                 FullName = formEmployee.FullName.data
                 ContactNumber = formEmployee.ContactNumber.data
                 Email = formEmployee.Email.data
-                if (current_user.Role.value == "manager"):
+                if current_user.Role.value == "manager":
                     Role = "driver"
-                elif (current_user.Role.value == "admin"):
+                elif current_user.Role.value == "admin":
                     Role = "manager"
 
                 DOB = formEmployee.DOB.data
@@ -1100,6 +1256,7 @@ def addEmployee():
                     DOB,
                     PasswordSalt,
                     AccountLock,
+                    AccountLockedDateTime,
                     LoginCounter,
                     LastLogin,
                     ResetDateTime,
@@ -1112,9 +1269,13 @@ def addEmployee():
                 db.session.add(emp_data)
                 db.session.commit()
                 obj = (
-                    db.session.query(Employee).order_by(Employee.EmployeeId.desc()).first()
+                    db.session.query(Employee)
+                    .order_by(Employee.EmployeeId.desc())
+                    .first()
                 )
-                logger_crud.info(f"Employee (ID: {obj.EmployeeId}) inserted to Employee.")
+                logger_crud.info(
+                    f"Employee (ID: {obj.EmployeeId}) inserted to Employee."
+                )
                 if Role != "driver":
                     flash("Employee inserted sucessfully")
                     return redirect("/employees")
@@ -1127,7 +1288,11 @@ def addEmployee():
                     driver_data = Driver(obj.EmployeeId, 1, "Account Created")
                     emp_data.driver_child.append(driver_data)
                     db.session.commit()
-                    obj = db.session.query(Driver).order_by(Driver.DriverId.desc()).first()
+                    obj = (
+                        db.session.query(Driver)
+                        .order_by(Driver.DriverId.desc())
+                        .first()
+                    )
                     logger_crud.info(f"Driver (ID: {obj.DriverId}) inserted to Driver.")
                     # db.session.close()
                     # db.session.expire_all()
@@ -1139,12 +1304,13 @@ def addEmployee():
                 return redirect("/employees")
 
         else:
+            # Choose 1 messsage
+            #flash("Email already exists. Please choose another.")
             flash("Employee insert failed. Please check your fields again.")
             logger_crud.error(f"Employee insert failed.")
             return redirect("/employees")
     else:
         return redirect("/notauthorized")
-        
 
 
 @server.route("/employees/delete/<id>", methods=["GET", "POST"])
@@ -1175,6 +1341,28 @@ def employeeDelete(id):
         return redirect("/notauthorized")
 
 
+@server.route("/employees/unlock/<id>", methods=["GET", "POST"])
+def employeeUnlock(id):
+    if current_user.Role.value == "admin":
+        if request.method == "GET":
+            my_data = Employee.query.get(id)
+            # my_data.Disabled = 0
+            my_data.AccountLocked = 0
+            my_data.LoginCount = 0
+            # my_data.ResetCount = 0
+            # my_data.OTPCount = 0
+            # my_data.OTP = 0
+
+            logger_crud.info(f"Employee (ID: {id}) UNLOCKED in Employee.")
+            flash("Employee UNLOCKED sucessfully.")
+            db.session.commit()
+            db.session.close()
+
+            return redirect(url_for("employees"))
+    else:
+        return redirect("/notauthorized")
+
+
 @server.route("/employees/employeesearch", methods=["POST"])
 def employeesearch():
     if current_user.Role.value == "manager" or current_user.Role.value == "admin":
@@ -1183,13 +1371,18 @@ def employeesearch():
         if request.method == "POST" and searchFormEmployee.validate_on_submit():
             postsearched = searchFormEmployee.searched.data
             searchFormEmployee.searched.data = ""
-            print(Employee.Role)
             if current_user.Role.value == "admin":
-                posts = posts.filter(Employee.FullName.like("%" + postsearched + "%"), Employee.Role == "manager")
+                posts = posts.filter(
+                    Employee.FullName.like("%" + postsearched + "%"),
+                    Employee.Role == "manager",
+                )
                 posts = posts.order_by(Employee.EmployeeId).all()
                 logger_crud.info(f"[{postsearched}] searched.")
             elif current_user.Role.value == "manager":
-                posts = posts.filter(Employee.FullName.like("%" + postsearched + "%"), Employee.Role == "driver")
+                posts = posts.filter(
+                    Employee.FullName.like("%" + postsearched + "%"),
+                    Employee.Role == "driver",
+                )
                 posts = posts.order_by(Employee.EmployeeId).all()
                 logger_crud.info(f"[{postsearched}] searched.")
             if posts != 0:
@@ -1226,17 +1419,21 @@ def trip():
     else:
         return redirect("/notauthorized")
 
+
 @server.route("/tripview")
 @login_required
 def tripview():
     if current_user.Role.value == "driver":
-        driver_data = Driver.query.filter(Driver.EmployeeId == current_user.EmployeeId).first().DriverId
-        trip_data = Trip.query.filter(Trip.DriverID == driver_data)   
-        return render_template(
-            "trip.html", trip=trip_data
+        driver_data = (
+            Driver.query.filter(Driver.EmployeeId == current_user.EmployeeId)
+            .first()
+            .DriverId
         )
+        trip_data = Trip.query.filter(Trip.DriverID == driver_data)
+        return render_template("trip.html", trip=trip_data)
     else:
         return redirect("/notauthorized")
+
 
 @server.context_processor
 def trip():
@@ -1336,7 +1533,7 @@ def addTrip():
 def tripSearch():
     searchformTrip = SearchFormTrip()
     posts = Trip.query
-    if current_user.Role.value == "manager": 
+    if current_user.Role.value == "manager":
         if request.method == "POST" and searchformTrip.validate_on_submit():
             postsearched = searchformTrip.searched.data
             searchformTrip.searched.data = ""
@@ -1357,8 +1554,14 @@ def tripSearch():
         if request.method == "POST" and searchformTrip.validate_on_submit():
             postsearched = searchformTrip.searched.data
             searchformTrip.searched.data = ""
-            driver_data = Driver.query.filter(Driver.EmployeeId == current_user.EmployeeId).first().DriverId
-            posts = posts.filter(Trip.TripID.like("%" + postsearched + "%"), Trip.DriverID == driver_data)
+            driver_data = (
+                Driver.query.filter(Driver.EmployeeId == current_user.EmployeeId)
+                .first()
+                .DriverId
+            )
+            posts = posts.filter(
+                Trip.TripID.like("%" + postsearched + "%"), Trip.DriverID == driver_data
+            )
             posts = posts.order_by(Trip.TripID).all()
             logger_crud.info(f"[{postsearched}] searched.")
 
@@ -1410,20 +1613,23 @@ def tripDelete(id):
     if current_user.Role.value == "manager":
         if request.method == "GET":
             trip_data = Trip.query.get(id)
-            if trip_data.Disabled == 1:
-                trip_data.Disabled = 0
-                logger_crud.info(f"Trip (ID: {id}) ENABLED in Trip.")
-                flash("Trip enabled sucessfully.")
-            else:
-                trip_data.Disabled = 1
-                logger_crud.info(f"Trip (ID: {id}) Disabled in Trip.")
-                flash("Trip disabled sucessfully.")
+            # if trip_data.Disabled == 1:
+            #     trip_data.Disabled = 0
+            #     logger_crud.info(f"Trip (ID: {id}) ENABLED in Trip.")
+            #     flash("Trip enabled sucessfully.")
+            # else:
+            #     trip_data.Disabled = 1
+            #     logger_crud.info(f"Trip (ID: {id}) Disabled in Trip.")
+            #     flash("Trip disabled sucessfully.")
+            db.session.delete(trip_data)
+            logger_crud.info(f"Trip (ID: {id}) Deleted from Trip.")
+            flash("Trip deleted sucessfully.")
+
             db.session.commit()
 
             return redirect(url_for("trip"))
     else:
         return redirect("/notauthorized")
-            
 
 
 # ----- TRIPS END -----------------------------------------------------------------------
