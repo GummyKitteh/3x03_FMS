@@ -23,7 +23,7 @@ Employees {% endblock %} {% block body %}
       <div
         class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-1 pb-2 mt-3 mb-3 border-bottom"
       >
-        <h1 class="h2 fw-bold">Locked Accounts</h1>
+        <h1 class="h2 fw-bold">Locked & Disabled Accounts</h1>
       </div>
       <div class="table-responsive">
         <table
@@ -33,9 +33,10 @@ Employees {% endblock %} {% block body %}
             <tr>
               <th scope="col">ID</th>
               <th scope="col">Full Name</th>
+              <th scope="col">Email</th>
               <th scope="col">Contact Number</th>
               <th scope="col">Role</th>
-              <th scope="col">Account Locked</th>
+              <th scope="col">Account Status</th>
               <th></th>
             </tr>
           </thead>
@@ -44,9 +45,10 @@ Employees {% endblock %} {% block body %}
             <tr>
               <td>{{post.EmployeeId}}</td>
               <td>{{post.FullName}}</td>
+              <td>{{post.Email}}</td>
               <td>{{post.ContactNumber}}</td>
               <td>{{post.Role.value}}</td>
-              <td>{{post.AccountLocked}}</td>
+              <td>{{post.Disabled}}, {{post.AccountLocked}}</td>
               <td>
                 <a
                   href="/unlock/{{post.id}}"
@@ -54,33 +56,67 @@ Employees {% endblock %} {% block body %}
                   onclick="return confirm('Confirm Unlock?')"
                   >Delete</a
                 >
+                <a
+                  href="/delete/{{post.id}}"
+                  class="btn btn-danger btn-xs"
+                  onclick="return confirm('Confirm?')"
+                  >Delete</a
+                >
               </td>
             </tr>
-            {% endfor %} {% endif %} {% for row in lockedAcc %} {% if
-            row.AccountLocked == 1 %}
+            {% endfor %} {% endif %} {% for row in lockedAcc %}
             <tr>
               <td>{{row.EmployeeId}}</td>
               <td>{{row.FullName}}</td>
+              <td>{{row.Email}}</td>
               <td>{{row.ContactNumber}}</td>
               <td>{{row.Role.value}}</td>
-              <td>{{row.AccountLocked}}</td>
               <td>
+                {% if row.Disabled == 1 %}
+                <span style="color: red; font-weight: bold">Disabled</span> {%
+                else %} Locked
+                <!-- {% if row.AccountLocked == 1 and row.Disabled == 0 %}
+                Locked {% elif row.AccountLocked == 1 %}Locked, {% endif%}  -->
+                {%endif%}
+              </td>
+              <td>
+                {% if row.Disabled == 1 %}
+                <a
+                  href="/employees/delete/{{row.EmployeeId}}"
+                  class="btn btn-danger btn-xs"
+                  onclick="return confirm('Confirm?')"
+                  >Enable</a
+                >
+                {% else %}<a
+                  href="/employees/unlock/{{row.EmployeeId}}"
+                  class="btn btn-success btn-xs"
+                  onclick="return confirm('Confirm Unlock?')"
+                  >Unlock</a
+                >{% endif%}
+                <!-- {% if row.AccountLocked == 1 %}
                 <a
                   href="/employees/unlock/{{row.EmployeeId}}"
                   class="btn btn-success btn-xs"
                   onclick="return confirm('Confirm Unlock?')"
                   >Unlock</a
-                >
+                >{% else %}{% endif%} -->
+                <!-- <a
+                  href="/employees/delete/{{row.EmployeeId}}"
+                  class="btn btn-secondary btn-xs"
+                  onclick="return confirm('Confirm?')"
+                  >{% if row.Disabled == 1 %} Enable {% else %} Disable{%
+                  endif%}</a
+                > -->
               </td>
             </tr>
-            {% else %} {% endif%} {% endfor %}
+            {% endfor %}
           </tbody>
         </table>
       </div>
       {% if lockedAcc.count() == 0 %}
       <div class="card">
         <div class="card-body text-bg-secondary">
-          There is currently no locked accounts.
+          There are currently no locked or disabled accounts.
         </div>
       </div>
       {% else %} {% endif%} {% else %} {% endif%}
@@ -155,7 +191,7 @@ Employees {% endblock %} {% block body %}
               <td>{{post.Email}}</td>
               <td>{{post.ContactNumber}}</td>
               <td>{{post.Role.value}}</td>
-              <td>{{post.Disabled}}</td>
+              <td>{{post.Disabled}}, {{post.AccountLocked}}</td>
               <td>
                 <a
                   href="/update/{{post.id}}"
@@ -164,12 +200,13 @@ Employees {% endblock %} {% block body %}
                   data-bs-target="#modaledit{{post.id}}"
                   >Edit</a
                 >
+                {% if current_user.Role.value == "admin" %}
                 <a
                   href="/delete/{{post.id}}"
                   class="btn btn-danger btn-xs"
-                  onclick="return confirm('Are You Sure To Delete?')"
+                  onclick="return confirm('Confirm?')"
                   >Delete</a
-                >
+                >{% endif %}
               </td>
             </tr>
             {% endfor %} {% endif %} {% for row in employees %}
@@ -180,8 +217,12 @@ Employees {% endblock %} {% block body %}
               <td>{{row.ContactNumber}}</td>
               <td>{{row.Role.value}}</td>
               <td>
-                {% if row.Disabled == 1 %} Disabled {% else %} {% endif %}
+                {% if row.Disabled == 1 %}
+                <span style="color: red; font-weight: bold">Disabled</span>{%
+                else %} {% if row.AccountLocked == 1 %} Locked {% else %} {%
+                endif %}{% endif %}
               </td>
+              <!-- <td>{{row.Disabled}}, {{row.AccountLocked}}</td> -->
               <td>
                 <a
                   href="/employees/view/{{row.EmployeeId}}"
@@ -190,13 +231,15 @@ Employees {% endblock %} {% block body %}
                   data-bs-target="#modaledit{{row.EmployeeId}}"
                   >View</a
                 >
+                {% if current_user.Role.value == "admin" and row.Disabled == 0
+                %}
                 <a
                   href="/employees/delete/{{row.EmployeeId}}"
                   class="btn btn-secondary btn-xs"
                   onclick="return confirm('Confirm?')"
-                  >{% if row.Disabled == 1 %} Enable {% else %} Disable{%
-                  endif%}</a
+                  >Disable</a
                 >
+                {% endif %}
               </td>
             </tr>
             <!-- Modal Edit Employees -->

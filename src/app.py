@@ -1,9 +1,10 @@
+from tkinter import E
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_mail import Mail, Message
 from threading import Thread
 
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import true, ForeignKey
+from sqlalchemy import true, ForeignKey, or_
 from sqlalchemy.orm import declarative_base, relationship, backref
 
 from flask_wtf import FlaskForm
@@ -1007,7 +1008,12 @@ def employees():
     userrole = current_user.Role
     if userrole == RoleTypes.admin:
         manager_data = Employee.query.filter(Employee.Role == "manager")
-        accLocked_data = Employee.query.filter(Employee.AccountLocked == 1)
+        # accLocked_data = Employee.query.filter(
+        #     Employee.AccountLocked == 1 and Employee.Disabled == 1
+        # )
+        accLocked_data = Employee.query.filter(
+            or_(Employee.AccountLocked == 1, Employee.Disabled == 1)
+        )
         return render_template(
             "employees.html", employees=manager_data, lockedAcc=accLocked_data
         )
