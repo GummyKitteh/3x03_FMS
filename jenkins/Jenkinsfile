@@ -25,6 +25,7 @@ pipeline {
 		stage('Login, Registration, Logout, Reset Test'){
 			steps {
 				withPythonEnv('python3'){
+					sh 'pip install --no-cache-dir -r src/requirements.txt'
 					sh 'pip install pytest'
 					sh 'pytest jenkins/scripts/loginTest.py'
 				}
