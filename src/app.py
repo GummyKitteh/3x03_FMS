@@ -98,6 +98,8 @@ elif filename == "featureTest.py" and folder != "scripts":
     location = path + "/scripts/logs"
 elif filename == "app.py" and folder != "src":
     location = path + "/src/logs"
+elif filename == "app.py" and folder == "flaskapp":
+    location = path + "/logs"
 else:
     location = "ggwp"
     print("UNABLE TO FIND LOG FOLDER", full_path)
