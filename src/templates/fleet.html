@@ -57,7 +57,7 @@ endblock %} {% block body %}
               <th>Number Plate</th>
               <th>Capacity</th>
               <th>Vehicle Status</th>
-              <th>Disabled</th>
+              <!-- <th>Disabled</th> -->
               <th></th>
             </tr>
           </thead>
@@ -92,7 +92,7 @@ endblock %} {% block body %}
               <td>{{row.BusNumberPlate}}</td>
               <td>{{row.VehicleCapacity}}</td>
               <td>{{row.VehicleStatus}}</td>
-              <td>{{row.Disabled}}</td>
+              <!-- <td>{{row.Disabled}}</td> -->
               <td>
                 <a
                   href="/fleet/update/{{row.VehicleId}}"
