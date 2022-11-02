@@ -41,30 +41,7 @@ Employees {% endblock %} {% block body %}
             </tr>
           </thead>
           <tbody>
-            {% if posts != 0 %} {% for post in posts %}
-            <tr>
-              <td>{{post.EmployeeId}}</td>
-              <td>{{post.FullName}}</td>
-              <td>{{post.Email}}</td>
-              <td>{{post.ContactNumber}}</td>
-              <td>{{post.Role.value}}</td>
-              <td>{{post.Disabled}}, {{post.AccountLocked}}</td>
-              <td>
-                <a
-                  href="/unlock/{{post.id}}"
-                  class="btn btn-success btn-xs"
-                  onclick="return confirm('Confirm Unlock?')"
-                  >Delete</a
-                >
-                <a
-                  href="/delete/{{post.id}}"
-                  class="btn btn-danger btn-xs"
-                  onclick="return confirm('Confirm?')"
-                  >Delete</a
-                >
-              </td>
-            </tr>
-            {% endfor %} {% endif %} {% for row in lockedAcc %}
+            {% for row in lockedAcc %}
             <tr>
               <td>{{row.EmployeeId}}</td>
               <td>{{row.FullName}}</td>

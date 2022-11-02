@@ -1215,7 +1215,6 @@ def employeesearch():
         if request.method == "POST" and searchFormEmployee.validate_on_submit():
             postsearched = searchFormEmployee.searched.data
             searchFormEmployee.searched.data = ""
-            print(Employee.Role)
             if current_user.Role.value == "admin":
                 posts = posts.filter(
                     Employee.FullName.like("%" + postsearched + "%"),
