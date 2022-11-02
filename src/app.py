@@ -87,12 +87,27 @@ server.config["RECAPTCHA_PRIVATE_KEY"] = recaptcha_prv
 # http://127.0.0.1:5000
 
 # ----- LOGGGING ----------------------------------------------------------------------
+full_path = os.path.realpath(__file__)
+path, filename = os.path.split(full_path)
+directory, folder = os.path.split(path)
+
+# If as intended location
+if (filename == "featureTest.py" and folder == "scripts") or (filename == "app.py" and folder == "src"):
+    location = path + "/logs"
+elif filename == "featureTest.py" and folder != "scripts":
+    location = path + "/scripts/logs"
+elif filename == "app.py" and folder != "src":
+    location = path + "/src/logs"
+else:
+    location = "ggwp"
+    print("UNABLE TO FIND LOG FOLDER", full_path)
+
 logging.basicConfig(
-    filename="./logs/generallog.log",
-    encoding="utf-8",
-    filemode="a",
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(message)s",
+     filename=location + "/generallog.log",
+     encoding="utf-8",
+     filemode="a",
+     level=logging.INFO,
+     format="%(asctime)s | %(levelname)s | %(message)s",
 )
 
 # Create Logger
@@ -101,8 +116,8 @@ logger_auth = logging.getLogger("AUTH")
 logger_crud = logging.getLogger("CRUD")
 
 # Create FileHandler
-handler_auth = logging.FileHandler(strftime(f"./logs/authlog_%d%m%y.log"))
-handler_crud = logging.FileHandler(strftime(f"./logs/crudlog_%d%m%y.log"))
+handler_auth = logging.FileHandler(strftime(location + f"/authlog_%d%m%y.log"))
+handler_crud = logging.FileHandler(strftime(location + f"/crudlog_%d%m%y.log"))
 
 # Set Formatter for Logger
 formatter_auth = logging.Formatter(

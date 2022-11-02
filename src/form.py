@@ -1,5 +1,4 @@
 from logging import PlaceHolder
-from tkinter import DISABLED
 from flask_wtf import FlaskForm, RecaptchaField
 from wtforms import (
     StringField,
