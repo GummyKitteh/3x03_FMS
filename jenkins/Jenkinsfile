@@ -8,6 +8,11 @@ pipeline {
 			}
 		}
         stage('Build') { 
+			agent { 
+				docker {
+					image 'python:3'
+				}
+			}
             steps {
                 sh 'pip install --no-cache-dir -r src/requirements.txt' 
             }
@@ -17,10 +22,13 @@ pipeline {
 				dependencyCheck additionalArguments: '--scan "src/" --format HTML --format XML', odcInstallation: '3x03_FMS'
 			}
 		}
-		stage('Base Feature Test'){
+		stage('Login, Registration, Logout, Reset Test'){
 			steps {
-				sh 'pip install pytest'
-				sh 'pytest jenkins/scripts/loginTest.py'
+				withPythonEnv('python3'){
+					sh 'pip install --no-cache-dir -r src/requirements.txt'
+					sh 'pip install pytest'
+					sh 'pytest jenkins/scripts/loginTest.py'
+				}
 			}
 		}
     }
