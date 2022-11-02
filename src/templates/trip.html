@@ -54,8 +54,8 @@ endblock %} {% block body %}
           <thead>
             <tr>
               <th>Trip ID</th>
-              <th>Driver ID</th>
-              <th>Vehicle ID</th>
+              <th>Driver Name</th>
+              <th>Bus Plate Number</th>
               <th>Origin</th>
               <th>Destination</th>
               <th>Start Time</th>
@@ -66,7 +66,7 @@ endblock %} {% block body %}
             </tr>
           </thead>
           <tbody>
-            {% if posts != 0 %} {% for post in posts %}
+            {% if posts != 0 %} {% for post in posts %} 
             <tr>
               <td>{{post.TripID}}</td>
               <td>{{post.DriverID}}</td>
@@ -94,11 +94,13 @@ endblock %} {% block body %}
                 >
               </td>
             </tr>
-            {% endfor %} {% endif %} {% for row in trip %}
+            {% endfor %} {% endif %} {% for row in trip %} {% for name in drivername %} {% for plate in vehicleplate %} 
             <tr>
+              {% if row.DriverID == name.Driver.DriverId %}
+              {% if row.VehicleID == plate.Fleet.VehicleId  %}
               <td>{{row.TripID}}</td>
-              <td>{{row.DriverID}}</td>
-              <td>{{row.VehicleID}}</td>
+              <td>{{name.Driver.Employee.FullName}}</td>
+              <td>{{plate.Fleet.BusNumberPlate}}</td>
               <td>{{row.Origin}}</td>
               <td>{{row.Destination}}</td>
               <td>{{row.StartTime}}</td>
@@ -168,71 +170,16 @@ endblock %} {% block body %}
                         value=row.TripStatus)}}
                         <br />
                         {{tripupdate.submit(class="btn btn-primary")}}
-                        <!-- <label class="form-label mt-3">Driver ID</label>
-                        <input
-                          type="hidden"
-                          class="form-control"
-                          name="TripID"
-                          value="{{row.TripID}}"
-                        />
-                        <input
-                          type="number"
-                          class="form-control"
-                          name="DriverID"
-                          value="{{row.DriverID}}"
-                        />
-                        <label class="form-label mt-3">Vehicle ID</label>
-                        <input
-                          type="number"
-                          class="form-control"
-                          name="VehicleID"
-                          value="{{row.VehicleID}}"
-                        />
-                        <label class="form-label mt-3">Origin</label>
-                        <input
-                          type="text"
-                          class="form-control"
-                          name="Origin"
-                          value="{{row.Origin}}"
-                        />
-                        <label class="form-label mt-3">Destination</label>
-                        <input
-                          type="text"
-                          class="form-control"
-                          name="Destination"
-                          value="{{row.Destination}}"
-                        />
-                        <label class="form-label mt-3">Start Time</label>
-                        <input
-                          type="datetime"
-                          class="form-control"
-                          name="Start Time"
-                          value="{{row.StartTime}}"
-                        />
-                        <label class="form-label mt-3">End Time</label>
-                        <input
-                          type="datetime"
-                          class="form-control"
-                          name="End Time"
-                          value="{{row.EndTime}}"
-                        />
-                        <label class="form-label mt-3">Trip Status</label>
-                        <input
-                          type="select"
-                          class="form-control"
-                          name="TripStatus"
-                          value="{{row.TripStatus.value}}"
-                        />
-                        <br />
-                        <button class="btn btn-primary" type="submit">
-                          Update Trip
-                        </button> -->
                       </div>
                     </form>
                   </div>
                 </div>
               </div>
             </div>
+            {% endif %}
+            {% endif %}
+            {% endfor %}
+            {% endfor %}
             {% endfor %}
           </tbody>
         </table>
