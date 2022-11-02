@@ -13,4 +13,3 @@ cryptography
 pymysql
 python-dotenv
 gunicorn
-tkinter
