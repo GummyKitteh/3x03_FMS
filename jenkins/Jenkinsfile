@@ -24,7 +24,7 @@ pipeline {
 				}
 				stage('Feature Test') {
 					steps {
-						sh 'pytest jenkins/scripts/featureTest.py'
+						sh 'python jenkins/scripts/featureTest.py'
 					}
 				}
 			}
