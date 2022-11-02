@@ -14,7 +14,7 @@ pipeline {
 				}
 			}
             steps {
-				sh 'apt install libmariadb-dev -y'
+				sh 'apt update && apt install libmariadb-dev -y'
                 sh 'pip install --no-cache-dir -r src/requirements.txt' 
 				sh 'pip install pytest'
 				sh 'pytest jenkins/scripts/loginTest.py'
