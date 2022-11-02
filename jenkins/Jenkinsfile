@@ -20,6 +20,12 @@ pipeline {
 						sh 'apt update && apt install libmariadb-dev build-essential -y'
 						sh 'pip install --no-cache-dir -r src/requirements.txt' 
 						sh 'pip install pytest'
+						sh 'pip install pip-audit'
+					}
+				}
+				stage('Version Check'){
+					steps{
+						sh 'pip-audit -r src/requirements.txt'
 					}
 				}
 				stage('Feature Test') {
