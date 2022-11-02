@@ -1,4 +1,5 @@
 from logging import PlaceHolder
+from tkinter import DISABLED
 from flask_wtf import FlaskForm, RecaptchaField
 from wtforms import (
     StringField,
@@ -9,6 +10,7 @@ from wtforms import (
     TimeField,
     PasswordField,
 )
+from flask_login import current_user
 from wtforms.validators import DataRequired, Length, Email, EqualTo, Regexp
 from enum import Enum
 
@@ -41,7 +43,7 @@ class SearchFormFleet(FlaskForm):
 
 class SearchFormTrip(FlaskForm):
     searched = StringField(
-        "Search Trip:", [DataRequired()], render_kw={"placeholder": "Search"}
+        "Search Trip:", [DataRequired()], render_kw={"placeholder": "Search by TripID"}
     )
     submit = SubmitField("Submit")
 
@@ -53,10 +55,6 @@ class employeeInsert(FlaskForm):
         "Contact Number", [DataRequired(), Length(min=8, max=8)]
     )
     DOB = DateField("DOB", format="%Y-%m-%d")
-    Role = SelectField(
-        "Role", choices=[(choice.name, choice.value) for choice in RoleTypes]
-    )
-
     Password = PasswordField("Password", [DataRequired(), Length(min=8)])
     submit = SubmitField("Submit", [DataRequired()])
 
@@ -69,7 +67,7 @@ class employeeUpdate(FlaskForm):
     )
     DOB = DateField("DOB", format="%Y-%m-%d")
     Role = SelectField(
-        "Role", choices=[(choice.name, choice.value) for choice in RoleTypes]
+    "Role", choices=[(choice.name, choice.value) for choice in RoleTypes]
     )
 
     Password = PasswordField("Password", [DataRequired(), Length(min=8)])
