@@ -1,9 +1,9 @@
 import pytest
 import os, sys
 from flask.testing import FlaskClient
-#sys.path.append(os.environ['WORKSPACE'])
+sys.path.append(os.environ['WORKSPACE'])
 from src.app import server, db
-
+print("HELLO "+ sys.path.append(os.environ['WORKSPACE']))
 
 @pytest.fixture(scope='module')
 def flask_app():

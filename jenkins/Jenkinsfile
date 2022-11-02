@@ -19,10 +19,7 @@ pipeline {
 					steps {
 						sh 'apt update && apt install libmariadb-dev build-essential -y'
 						sh 'pip install --no-cache-dir -r src/requirements.txt' 
-						sh 'pip install pytest'  
-						echo 'WORKSPACE ${WORKSPACE}'
-						sh 'export PYTHONPATH=$WORKSPACE:$PYTHONPATH'
-						echo 'PYTHONPATH ${PYTHONPATH}'
+						sh 'pip install pytest'
 					}
 				}
 				stage('Feature Test') {
