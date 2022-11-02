@@ -19,6 +19,7 @@ pipeline {
 		}
 		stage('Base Feature Test'){
 			steps {
+				sh 'pip install --no-cache-dir -r src/requirements.txt'
 				sh 'pip install pytest'
 				sh 'pytest jenkins/scripts/loginTest.py'
 			}
