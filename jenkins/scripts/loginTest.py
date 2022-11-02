@@ -2,7 +2,8 @@ import pytest
 import os, sys
 from flask.testing import FlaskClient
 sys.path.append(os.environ['WORKSPACE'])
-import src.app
+from src.app import server, db
+import src.form
 
 @pytest.fixture(scope='module')
 def flask_app():
