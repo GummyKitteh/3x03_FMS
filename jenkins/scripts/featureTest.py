@@ -1,7 +1,7 @@
 import pytest
 import os, sys
 from flask.testing import FlaskClient
-sys.path.append(os.environ['WORKSPACE'])
+#sys.path.append(os.environ['WORKSPACE'])
 from src.app import server, db
 
 
