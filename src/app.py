@@ -343,7 +343,7 @@ def login():
                         login_user(user)  # , duration=timedelta(seconds=3))
 
                         # Session
-                        session["value"] = user
+                        #session["value"] = user
 
                         logger_auth.info(
                             f"{user.FullName} (ID: {user.EmployeeId}) has logged IN."
@@ -686,7 +686,7 @@ def resend_otp():
 def logout():
     logout_user()
     logger_auth.info(f"User has logged OUT.")
-    session.pop("value", None)
+    #session.pop("value", None)
     return redirect(url_for("index"))
 
 
