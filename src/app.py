@@ -970,7 +970,7 @@ def delete(id):
 
 @server.route("/fleet/fleetsearch", methods=["POST"])
 def fleetsearch():
-    if current_user.Role.value == "manager":
+    if current_user.Role.value != "admin":
         searchform = SearchFormFleet()
         posts = Fleet.query
         if request.method == "POST" and searchform.validate_on_submit():
@@ -981,14 +981,23 @@ def fleetsearch():
             logger_crud.info(f"[{postsearched}] searched.")
 
             if posts != 0:
-                return render_template(
-                    "fleet.html",
-                    searchform=searchform,
-                    searched=postsearched,
-                    posts=posts,
-                )
+                if current_user.Role.value == "manager":
+                    return render_template(
+                        "fleet.html",
+                        searchform=searchform,
+                        searched=postsearched,
+                        posts=posts,
+                    )
+                else:
+                    return render_template(
+                        "fleetview.html",
+                        searchform=searchform,
+                        searched=postsearched,
+                        posts=posts,
+                    )
             else:
                 flash("Cannot find Vehicle")
+    
     else:
         return redirect("/notauthorized")
 
@@ -1349,15 +1358,17 @@ def tripSearch():
             searchformTrip.searched.data = ""
             driver_data = Driver.query.filter(Driver.EmployeeId == current_user.EmployeeId).first().DriverId
             posts = posts.filter(Trip.TripID.like("%" + postsearched + "%"), Trip.DriverID == driver_data)
+            drivername_data = Trip.query.join(Driver).join(Employee).all()
+            fleet_vehicleplate = Trip.query.join(Fleet).all()
             posts = posts.order_by(Trip.TripID).all()
             logger_crud.info(f"[{postsearched}] searched.")
 
             if posts != 0:
                 return render_template(
-                    "trip.html",
+                    "tripview.html",
                     searchformTrip=searchformTrip,
                     searched=postsearched,
-                    posts=posts
+                    posts=posts, drivername = drivername_data, vehicleplate= fleet_vehicleplate
                 )
             else:
                 flash("Cannot find Trip")

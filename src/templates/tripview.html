@@ -64,9 +64,11 @@
               </tr>
             </thead>
             <tbody>
-              {% if posts != 0 %} {% for post in posts %} {% for name in drivername %} {% for plate in vehicleplate %}
+              <!-- Search -->
+              {% if posts != 0 %} {% for post in posts %} {% for name in drivername %} {% for plate in vehicleplate %} 
               <tr>
-                
+                {% if post.DriverID == name.Driver.DriverId %}
+                {% if post.VehicleID == plate.Fleet.VehicleId  %}
                 <td>{{post.TripID}}</td>
                 <td>{{name.Driver.Employee.FullName}}</td>
                 <td>{{plate.Fleet.BusNumberPlate}}</td>
@@ -75,8 +77,14 @@
                 <td>{{post.StartTime}}</td>
                 <td>{{post.EndTime}}</td>
                 <td>{{post.TripStatus.value}}</td>
-              </tr>
-              {% endfor %} {% endfor %} {% endfor %} {% endif %} {% for row in trip %} {% for name in drivername %} {% for plate in vehicleplate %} 
+                  {% endif %}
+                  {% endif %}
+                  {% endfor %}
+                  {% endfor %}
+                  {% endfor %}
+                  {% endif %}
+              <!-- View Table -->
+              {% for row in trip %} {% for name in drivername %} {% for plate in vehicleplate %} 
               <tr>
                 {% if row.DriverID == name.Driver.DriverId %}
                 {% if row.VehicleID == plate.Fleet.VehicleId  %}
