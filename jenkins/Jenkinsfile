@@ -19,12 +19,12 @@ pipeline {
 					steps {
 						sh 'apt update && apt install libmariadb-dev build-essential -y'
 						sh 'pip install --no-cache-dir -r src/requirements.txt' 
-						sh 'pip install pytest'  
+						sh 'pip install pytest'
 					}
 				}
 				stage('Feature Test') {
 					steps {
-						sh 'pytest jenkins/scripts/featureTest.py'
+						sh 'pytest -rA jenkins/scripts/featureTest.py'
 					}
 				}
 			}
