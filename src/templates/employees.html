@@ -4,6 +4,99 @@ Employees {% endblock %} {% block body %}
 <div class="container">
   <div class="row">
     <main class="col-md-12 ms-sm-auto col-lg-12 px-md-4">
+      {% with messages = get_flashed_messages() %} {% if messages %} {% for
+      message in messages %}
+      <div
+        class="alert alert-success alert-dismissible fade show mt-3"
+        role="alert"
+      >
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+        ></button>
+        {{message}}
+      </div>
+      {% endfor %} {% endif %} {% endwith %} {% if current_user.Role.value ==
+      "admin" %}
+      <div
+        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-1 pb-2 mt-3 mb-3 border-bottom"
+      >
+        <h1 class="h2 fw-bold">Locked & Disabled Accounts</h1>
+      </div>
+      <div class="table-responsive">
+        <table
+          class="table table-striped table-sm table-hover table-dark text-center"
+        >
+          <thead>
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Full Name</th>
+              <th scope="col">Email</th>
+              <th scope="col">Contact Number</th>
+              <th scope="col">Role</th>
+              <th scope="col">Account Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in lockedAcc %}
+            <tr>
+              <td>{{row.EmployeeId}}</td>
+              <td>{{row.FullName}}</td>
+              <td>{{row.Email}}</td>
+              <td>{{row.ContactNumber}}</td>
+              <td>{{row.Role.value}}</td>
+              <td>
+                {% if row.Disabled == 1 %}
+                <span style="color: red; font-weight: bold">Disabled</span> {%
+                else %} Locked
+                <!-- {% if row.AccountLocked == 1 and row.Disabled == 0 %}
+                Locked {% elif row.AccountLocked == 1 %}Locked, {% endif%}  -->
+                {%endif%}
+              </td>
+              <td>
+                {% if row.Disabled == 1 %}
+                <a
+                  href="/employees/delete/{{row.EmployeeId}}"
+                  class="btn btn-danger btn-xs"
+                  onclick="return confirm('Confirm?')"
+                  >Enable</a
+                >
+                {% else %}<a
+                  href="/employees/unlock/{{row.EmployeeId}}"
+                  class="btn btn-success btn-xs"
+                  onclick="return confirm('Confirm Unlock?')"
+                  >Unlock</a
+                >{% endif%}
+                <!-- {% if row.AccountLocked == 1 %}
+                <a
+                  href="/employees/unlock/{{row.EmployeeId}}"
+                  class="btn btn-success btn-xs"
+                  onclick="return confirm('Confirm Unlock?')"
+                  >Unlock</a
+                >{% else %}{% endif%} -->
+                <!-- <a
+                  href="/employees/delete/{{row.EmployeeId}}"
+                  class="btn btn-secondary btn-xs"
+                  onclick="return confirm('Confirm?')"
+                  >{% if row.Disabled == 1 %} Enable {% else %} Disable{%
+                  endif%}</a
+                > -->
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if lockedAcc.count() == 0 %}
+      <div class="card">
+        <div class="card-body text-bg-secondary">
+          There are currently no locked or disabled accounts.
+        </div>
+      </div>
+      {% else %} {% endif%} {% else %} {% endif%}
       <div
         class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-1 pb-2 mt-5 mb-3 border-bottom"
       >
@@ -29,7 +122,7 @@ Employees {% endblock %} {% block body %}
               {{searchFormEmployee.submit(class="btn btn-sm btn-success")}}
             </div>
           </form>
-          
+
           <button
             type="button"
             class="btn btn-sm btn-secondary m-2"
@@ -40,7 +133,7 @@ Employees {% endblock %} {% block body %}
           </button>
         </div>
       </div>
-      {% with messages = get_flashed_messages() %} {% if messages %} {% for
+      <!-- {% with messages = get_flashed_messages() %} {% if messages %} {% for
       message in messages %}
       <div class="alert alert-success alert-dismissible fade show" role="alert">
         <button
@@ -51,7 +144,7 @@ Employees {% endblock %} {% block body %}
         ></button>
         {{message}}
       </div>
-      {% endfor %} {% endif %} {% endwith %}
+      {% endfor %} {% endif %} {% endwith %} -->
       <div class="table-responsive">
         <table
           class="table table-striped table-sm table-hover table-dark text-center"
@@ -63,7 +156,8 @@ Employees {% endblock %} {% block body %}
               <th scope="col">Email</th>
               <th scope="col">Contact Number</th>
               <th scope="col">Role</th>
-              <th scope="col"></th>
+              <th scope="col">Account Status</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -74,6 +168,7 @@ Employees {% endblock %} {% block body %}
               <td>{{post.Email}}</td>
               <td>{{post.ContactNumber}}</td>
               <td>{{post.Role.value}}</td>
+              <td>{{post.Disabled}}, {{post.AccountLocked}}</td>
               <td>
                 <a
                   href="/update/{{post.id}}"
@@ -82,12 +177,13 @@ Employees {% endblock %} {% block body %}
                   data-bs-target="#modaledit{{post.id}}"
                   >Edit</a
                 >
+                {% if current_user.Role.value == "admin" %}
                 <a
                   href="/delete/{{post.id}}"
                   class="btn btn-danger btn-xs"
-                  onclick="return confirm('Are You Sure To Delete?')"
+                  onclick="return confirm('Confirm?')"
                   >Delete</a
-                >
+                >{% endif %}
               </td>
             </tr>
             {% endfor %} {% endif %} {% for row in employees %}
@@ -98,6 +194,13 @@ Employees {% endblock %} {% block body %}
               <td>{{row.ContactNumber}}</td>
               <td>{{row.Role.value}}</td>
               <td>
+                {% if row.Disabled == 1 %}
+                <span style="color: red; font-weight: bold">Disabled</span>{%
+                else %} {% if row.AccountLocked == 1 %} Locked {% else %} {%
+                endif %}{% endif %}
+              </td>
+              <!-- <td>{{row.Disabled}}, {{row.AccountLocked}}</td> -->
+              <td>
                 <a
                   href="/employees/view/{{row.EmployeeId}}"
                   class="btn btn-warning btn-xs"
@@ -105,12 +208,15 @@ Employees {% endblock %} {% block body %}
                   data-bs-target="#modaledit{{row.EmployeeId}}"
                   >View</a
                 >
+                {% if current_user.Role.value == "admin" and row.Disabled == 0
+                %}
                 <a
                   href="/employees/delete/{{row.EmployeeId}}"
-                  class="btn btn-danger btn-xs"
-                  onclick="return confirm('Confirm Delete?')"
-                  >Delete</a
+                  class="btn btn-secondary btn-xs"
+                  onclick="return confirm('Confirm?')"
+                  >Disable</a
                 >
+                {% endif %}
               </td>
             </tr>
             <!-- Modal Edit Employees -->
@@ -162,8 +268,6 @@ Employees {% endblock %} {% block body %}
               formEmployee.ContactNumber(class="form-control ")}} {{
               formEmployee.DOB.label(class="form-label mt-3") }} {{
               formEmployee.DOB(class="form-control ")}} {{
-              formEmployee.Role.label(class="form-label mt-3") }} {{
-              formEmployee.Role(class="form-control ")}} {{
               formEmployee.Password.label(class="form-label mt-3") }} {{
               formEmployee.Password(class="form-control ")}}
               <br />

@@ -57,6 +57,7 @@ endblock %} {% block body %}
               <th>Number Plate</th>
               <th>Capacity</th>
               <th>Vehicle Status</th>
+              <!-- <th>Disabled</th> -->
               <th></th>
             </tr>
           </thead>
@@ -78,9 +79,9 @@ endblock %} {% block body %}
                 <a
                   href="/delete/{{post.id}}"
                   class="btn btn-danger btn-xs"
-                  onclick="return confirm('Are You Sure To Delete?')"
-                  >Delete</a
-                >
+                  onclick="return confirm('Warning!\nDeleting a Vehicle will delete its corresponding trips.\n\nConfirm Delete?')"
+                  >Delete
+                </a>
               </td>
             </tr>
             {% endfor %} {% endif %} {% for row in fleet %}
@@ -89,6 +90,7 @@ endblock %} {% block body %}
               <td>{{row.BusNumberPlate}}</td>
               <td>{{row.VehicleCapacity}}</td>
               <td>{{row.VehicleStatus}}</td>
+              <!-- <td>{{row.Disabled}}</td> -->
               <td>
                 <a
                   href="/fleet/update/{{row.VehicleId}}"
@@ -99,10 +101,12 @@ endblock %} {% block body %}
                 >
                 <a
                   href="/fleet/delete/{{row.VehicleId}}"
-                  class="btn btn-danger btn-xs"
+                  class="btn btn-secondary btn-xs"
                   onclick="return confirm('Warning!\nDeleting a Vehicle will delete its corresponding trips.\n\nConfirm Delete?')"
-                  >Delete</a
-                >
+                  >Delete
+                  <!-- {% if row.Disabled == 1 %} Enable {% else %} Disable{%
+                  endif%} -->
+                </a>
               </td>
             </tr>
             <!-- Modal Edit Fleet -->
