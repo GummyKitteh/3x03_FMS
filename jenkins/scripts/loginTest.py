@@ -1,6 +1,6 @@
 import pytest
 from flask.testing import FlaskClient
-from ..src.app import server, db
+from ...src.app import server, db
 
 @pytest.fixture(scope='module')
 def flask_app():
