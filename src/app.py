@@ -468,9 +468,7 @@ def login():
                             email.recipients = [form.Email.data]
                             # email.recipients = ["b33p33p@gmail.com"]
                             email.body = "Dear {},\n\nWe note that you have attempted to log in to your Bus FMS account without success.\nUnfortunately, your account has either been locked after too many invalid login attempts, or it has been disabled by {}.\n\nPlease contact {} for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
-                                user.FullName,
-                                administrator,
-                                supervisor
+                                user.FullName, administrator, supervisor
                             )
                             Thread(target=send_email, args=(server, email)).start()
                             print("Mimic: Email sent (Account Locked)")
@@ -710,17 +708,15 @@ def reset():
                     # email.recipients = ["b33p33p@gmail.com"]
 
                     # Update ResetDateTime to prevent user email spam
-                    user.ResetDateTime = datetime.utcnow().strftime(
-                        "%Y-%m-%d %H:%M:%S"
-                    )
+                    user.ResetDateTime = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
                     # If user account is locked (after 5 invalid attempts) but NOT disabled (by IT Admin), send email without reset token
                     if user.AccountLocked and not user.Disabled:
 
                         ## Update ResetDateTime to prevent user email spam
-                        #user.ResetDateTime = datetime.utcnow().strftime(
+                        # user.ResetDateTime = datetime.utcnow().strftime(
                         #    "%Y-%m-%d %H:%M:%S"
-                        #)
+                        # )
                         db.session.commit()
 
                         if user.Role == "driver":
@@ -732,8 +728,7 @@ def reset():
 
                         # Send email object
                         email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nUnfortunately, your account has been locked after too many invalid attempts.\nPlease contact {} for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
-                            user.FullName,
-                            supervisor
+                            user.FullName, supervisor
                         )
                         Thread(target=send_email, args=(server, email)).start()
                         logger_auth.warning(
@@ -753,9 +748,9 @@ def reset():
 
                         # Generate reset token (output in Base64) for password reset
                         email_token = generate_reset_token(user.get_id())
-                        #user.ResetDateTime = datetime.utcnow().strftime(
+                        # user.ResetDateTime = datetime.utcnow().strftime(
                         #    "%Y-%m-%d %H:%M:%S"
-                        #)
+                        # )
                         user.ResetFlag = (
                             1  # 1 means reset token is STILL VALID & has not been used
                         )
@@ -805,7 +800,7 @@ def newPassword(email_token):
                 user.AccountLocked
             ):  # 1 means user account is locked (after 5 invalid attempts)
                 return render_template("login/account-locked.html")
-            if (user.Disabled): # 1 means user account is disabled (by IT Admin)
+            if user.Disabled:  # 1 means user account is disabled (by IT Admin)
                 return render_template("login/account-disabled.html")
 
     except:
@@ -837,7 +832,7 @@ def postPassword():
                 user.AccountLocked
             ):  # 1 means user account is locked (after 5 invalid attempts)
                 return render_template("login/account-locked.html")
-            if (user.Disabled): # 1 means user account is disabled (by IT Admin)
+            if user.Disabled:  # 1 means user account is disabled (by IT Admin)
                 return render_template("login/account-disabled.html")
 
     except:
@@ -848,8 +843,8 @@ def postPassword():
 
         # If Form is validated
         if form.validate_on_submit():
-            #account = Employee.query
-            #user = account.filter_by(EmployeeId=token_payload["reset_token"]).first()
+            # account = Employee.query
+            # user = account.filter_by(EmployeeId=token_payload["reset_token"]).first()
 
             # If user exists in db
             if user:
@@ -872,9 +867,9 @@ def postPassword():
                 user.Password = process_password(form.NewPassword.data, PasswordSalt)
                 user.PasswordSalt = PasswordSalt
                 user.ResetFlag = 0  # 0 means reset token is NOT VALID & has been used
-                #user.ResetDateTime = datetime.utcnow().strftime(
+                # user.ResetDateTime = datetime.utcnow().strftime(
                 #    "%Y-%m-%d %H:%M:%S"
-                #)
+                # )
                 user.LastLogin = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
                 db.session.commit()
@@ -894,8 +889,7 @@ def postPassword():
                 # email.recipients = ["b33p33p@gmail.com"]
 
                 email.body = "Dear {},\n\nYour Bus FMS password has just been changed.\n\nIf you did not perform this request, please contact {} as soon as possible.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
-                    user.FullName,
-                    supervisor
+                    user.FullName, supervisor
                 )
                 Thread(target=send_email, args=(server, email)).start()
                 print("Mimic: Email sent")
@@ -988,7 +982,7 @@ def fleet():
 
 @server.route("/fleet/fleetinsert", methods=["POST"])
 def addFleet():
-    """ JM: Unsure whether to merge this?
+    """JM: Unsure whether to merge this?
     formFleet = fleetInsert()
     if request.method == "POST" and formFleet.validate_on_submit():
         BusNumberPlate = formFleet.BusNumberPlate.data
@@ -1056,7 +1050,7 @@ def fleetUpdate():
 
 @server.route("/fleet/delete/<id>", methods=["GET", "POST"])
 def delete(id):
-    """ JM: Unsure whether to merge this?
+    """JM: Unsure whether to merge this?
     if request.method == "GET":
         fleet_data = Fleet.query.get(id)
         if fleet_data.Disabled == 1:
@@ -1271,7 +1265,7 @@ def addEmployee():
 
         else:
             # Choose 1 messsage
-            #flash("Email already exists. Please choose another.")
+            # flash("Email already exists. Please choose another.")
             flash("Employee insert failed. Please check your fields again.")
             logger_crud.error(f"Employee insert failed.")
             return redirect("/employees")
