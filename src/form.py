@@ -29,14 +29,18 @@ class TripStatusTypes(Enum):
 
 class SearchFormEmployee(FlaskForm):
     searched = StringField(
-        "Search:", [DataRequired()], render_kw={"placeholder": "employee name"}
+        "Search:",
+        [DataRequired()],
+        render_kw={"placeholder": "Search by Employee Name"},
     )
     submit = SubmitField("Submit")
 
 
 class SearchFormFleet(FlaskForm):
     searched = StringField(
-        "Search Vehicle:", [DataRequired()], render_kw={"placeholder": "Search"}
+        "Search Vehicle:",
+        [DataRequired()],
+        render_kw={"placeholder": "Search by Number Plate"},
     )
     submit = SubmitField("Submit")
 
@@ -67,7 +71,7 @@ class employeeUpdate(FlaskForm):
     )
     DOB = DateField("DOB", format="%Y-%m-%d")
     Role = SelectField(
-    "Role", choices=[(choice.name, choice.value) for choice in RoleTypes]
+        "Role", choices=[(choice.name, choice.value) for choice in RoleTypes]
     )
 
     Password = PasswordField("Password", [DataRequired(), Length(min=8)])

@@ -61,7 +61,7 @@ endblock %} {% block body %}
               <th>Start Time</th>
               <th>End Time</th>
               <th>Trip Status</th>
-              <th>Disabled</th>
+              <!-- <th>Disabled</th> -->
               <th></th>
             </tr>
           </thead>
@@ -76,7 +76,7 @@ endblock %} {% block body %}
               <td>{{post.StartTime}}</td>
               <td>{{post.EndTime}}</td>
               <td>{{post.TripStatus}}</td>
-              <td>{{post.Disabled}}</td>
+              <!-- <td>{{post.Disabled}}</td> -->
               <td>
                 <a
                   href="/update/{{post.TripID}}"
@@ -89,22 +89,23 @@ endblock %} {% block body %}
                   href="/delete/{{post.TripID}}"
                   class="btn btn-secondary btn-xs"
                   onclick="return confirm('Confirm?')"
-                  >{% if post.Disabled == 1 %} Enable {% else %} Disable{%
-                  endif%}</a
-                >
+                  >Delete
+                  <!-- {% if post.Disabled == 1 %} Enable {% else %} Disable{%
+                  endif%} -->
+                </a>
               </td>
             </tr>
             {% endfor %} {% endif %} {% for row in trip %}
             <tr>
               <td>{{row.TripID}}</td>
-              <td>{{row.DriverID}}</td>
+              <td>{{row.dname}}</td>
               <td>{{row.VehicleID}}</td>
               <td>{{row.Origin}}</td>
               <td>{{row.Destination}}</td>
               <td>{{row.StartTime}}</td>
               <td>{{row.EndTime}}</td>
               <td>{{row.TripStatus.value}}</td>
-              <td>{{row.Disabled}}</td>
+              <!-- <td>{{row.Disabled}}</td> -->
               <td>
                 <a
                   href="/trip/update/{{row.TripID}}"
@@ -117,9 +118,10 @@ endblock %} {% block body %}
                   href="/trip/delete/{{row.TripID}}"
                   class="btn btn-secondary btn-xs"
                   onclick="return confirm('Confirm?')"
-                  >{% if row.Disabled == 1 %} Enable {% else %} Disable{%
-                  endif%}</a
-                >
+                  >Delete
+                  <!-- {% if row.Disabled == 1 %} Enable {% else %} Disable{%
+                  endif%} -->
+                </a>
               </td>
             </tr>
             <!-- Modal Edit Trip -->
