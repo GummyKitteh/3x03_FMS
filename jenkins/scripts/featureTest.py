@@ -43,8 +43,8 @@ def test_login_failure(client):
 
 def test_login_success(client):
     response = client.post('/login', data={
-        'Email': 'b33p33p@gmail.com',
-        'password': 'admin@123',
+        'Email': os.environ['USER_TEST'],
+        'password': os.environ['PWD_TEST'],
         'submit': 'Login'
     })
     html = response.data.decode()   # Prints HTML that you are supposed to receive
