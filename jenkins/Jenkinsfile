@@ -1,9 +1,5 @@
 pipeline {
-	agent {
-		docker {
-			image 'python:3.11.0-slim-buster'
-		}
-	}
+	agent any
 	stages {
 		stage('Checkout') {
 			steps {
@@ -12,21 +8,21 @@ pipeline {
 			}
 		}
         stage('Build') { 
+			agent { 
+				docker {
+					image 'python:3.11.0-slim-buster'
+				}
+			}
             steps {
 				sh 'apt update && apt install libmariadb-dev build-essential -y'
                 sh 'pip install --no-cache-dir -r src/requirements.txt' 
 				sh 'pip install pytest'
+				sh 'pytest jenkins/scripts/loginTest.py'
             }
         }
 		stage('OWASP Dependency-Check'){
-			agent any
 			steps {
 				dependencyCheck additionalArguments: '--scan "src/" --format HTML --format XML', odcInstallation: '3x03_FMS'
-			}
-		}
-		stage('Base Feature Test'){
-			steps {
-				sh 'pytest jenkins/scripts/loginTest.py'
 			}
 		}
     }
