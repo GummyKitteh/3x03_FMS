@@ -1006,14 +1006,23 @@ def fleetsearch():
 def employees():
     userrole = current_user.Role
     if userrole == RoleTypes.admin:
-        all_data = Employee.query.filter(Employee.Role == "manager")
-        return render_template("employees.html", employees=all_data)
+        manager_data = Employee.query.filter(Employee.Role == "manager")
+        accLocked_data = Employee.query.filter(Employee.AccountLocked == 1)
+        return render_template(
+            "employees.html", employees=manager_data, lockedAcc=accLocked_data
+        )
     elif userrole == RoleTypes.manager:
         all_data = Employee.query.filter(Employee.Role == "driver")
         return render_template("employees.html", employees=all_data)
     elif userrole == RoleTypes.driver:
         # all_data = Employee.query.filter(Employee.Email == current_user.Email)
         return redirect("/tripview")
+
+
+@server.context_processor
+def employees():
+    accLocked_data = Employee.query.filter(Employee.AccountLocked == 1)
+    return dict(lockedAcc=accLocked_data)
 
 
 @server.context_processor
@@ -1162,6 +1171,28 @@ def employeeDelete(id):
                 my_data.AccountLocked = 1
                 logger_crud.info(f"Trip (ID: {id}) Disabled in Employee.")
                 flash("Employee disabled sucessfully.")
+            db.session.commit()
+            db.session.close()
+
+            return redirect(url_for("employees"))
+    else:
+        return redirect("/notauthorized")
+
+
+@server.route("/employees/unlock/<id>", methods=["GET", "POST"])
+def employeeUnlock(id):
+    if current_user.Role.value == "admin":
+        if request.method == "GET":
+            my_data = Employee.query.get(id)
+            # my_data.Disabled = 0
+            my_data.AccountLocked = 0
+            my_data.LoginCount = 0
+            # my_data.ResetCount = 0
+            # my_data.OTPCount = 0
+            # my_data.OTP = 0
+
+            logger_crud.info(f"Employee (ID: {id}) UNLOCKED in Employee.")
+            flash("Employee UNLOCKED sucessfully.")
             db.session.commit()
             db.session.close()
 
