@@ -10,25 +10,18 @@ pipeline {
         stage('Build') { 
 			agent { 
 				docker {
-					image 'python:3'
+					image 'python:3.9.5-slim-buster'
 				}
 			}
             steps {
                 sh 'pip install --no-cache-dir -r src/requirements.txt' 
+				sh 'pip install pytest'
+				sh 'pytest jenkins/scripts/loginTest.py'
             }
         }
 		stage('OWASP Dependency-Check'){
 			steps {
 				dependencyCheck additionalArguments: '--scan "src/" --format HTML --format XML', odcInstallation: '3x03_FMS'
-			}
-		}
-		stage('Login, Registration, Logout, Reset Test'){
-			steps {
-				withPythonEnv('python3'){
-					sh 'pip install --no-cache-dir -r src/requirements.txt'
-					sh 'pip install pytest'
-					sh 'pytest jenkins/scripts/loginTest.py'
-				}
 			}
 		}
     }
