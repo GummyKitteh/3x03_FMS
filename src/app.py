@@ -402,28 +402,6 @@ def login():
                             "%Y-%m-%d %H:%M:%S"
                         )
 
-                        logger_auth.warning(
-                            f"{user.Email} (ID: {user.EmployeeId}) account has been locked after 5 incorrect login attempts."
-                        )
-                    db.session.commit()
-
-                    # If user account is locked
-                    if user.AccountLocked:
-
-                        # Send email to notify user
-                        email = Message()
-                        email.subject = "You Account Has Been Locked"
-                        email.recipients = [form.Email.data]
-                        # email.recipients = ["b33p33p@gmail.com"]
-                        email.body = "Dear {},\n\nWe note that you have attempted to log in to your Bus FMS account multiple times without success.\nUnfortunately, your account has been locked after too many invalid login attempts.\n\nPlease contact your Manager or IT Administrator for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
-                            user.FullName
-                        )
-                        Thread(target=send_email, args=(server, email)).start()
-                        logger_auth.warning(
-                            f"{user.FullName} (ID: {user.EmployeeId}) (Account Locked) attempted to log in."
-                        )
-                        print("Mimic: Email sent (Account Locked)")
-
                         # Send email to notify Administrator
                         email = Message()
                         email.subject = (
@@ -438,6 +416,9 @@ def login():
                         Thread(target=send_email, args=(server, email)).start()
                         print("Mimic: Email sent to Admin (Account Locked)")
 
+                        logger_auth.warning(
+                            f"{user.Email} (ID: {user.EmployeeId}) account has been locked after 5 incorrect login attempts."
+                        )
                     db.session.commit()
 
                     # If user account is locked, render Account Locked page ONLY ONCE to prevent account guessing
