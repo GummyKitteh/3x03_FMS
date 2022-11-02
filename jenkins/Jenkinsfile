@@ -14,16 +14,18 @@ pipeline {
 					reuseNode true
 				}
 			}
-			stage('Build'){
-				steps {
-					sh 'apt update && apt install libmariadb-dev build-essential -y'
-					sh 'pip install --no-cache-dir -r src/requirements.txt' 
-					sh 'pip install pytest'  
+			stages{
+				stage('Build'){
+					steps {
+						sh 'apt update && apt install libmariadb-dev build-essential -y'
+						sh 'pip install --no-cache-dir -r src/requirements.txt' 
+						sh 'pip install pytest'  
+					}
 				}
-			}
-			stage('Feature Test') {
-				steps {
-					sh 'pytest jenkins/scripts/loginTest.py'
+				stage('Feature Test') {
+					steps {
+						sh 'pytest jenkins/scripts/loginTest.py'
+					}
 				}
 			}
 		}
