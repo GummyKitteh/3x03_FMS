@@ -24,6 +24,8 @@ pipeline {
 				}
 				stage('Feature Test') {
 					steps {
+						sh 'pwd'
+						sh 'ls -la'
 						sh 'pytest jenkins/scripts/loginTest.py'
 					}
 				}
