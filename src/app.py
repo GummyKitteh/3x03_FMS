@@ -958,15 +958,20 @@ def delete(id):
     if current_user.Role.value == "manager":
         if request.method == "GET":
             fleet_data = Fleet.query.get(id)
-            if fleet_data.Disabled == 1:
-                fleet_data.Disabled = 0
-                logger_crud.info(f"Vechicle (ID: {id}) ENABLED in Fleet.")
-                flash("Vehicle enabled sucessfully.")
-            else:
-                fleet_data.Disabled = 1
-                logger_crud.info(f"Vechicle (ID: {id}) DISABLED in Fleet.")
-                flash("Vehicle disabled sucessfully.")
+            # if fleet_data.Disabled == 1:
+            #     fleet_data.Disabled = 0
+            #     logger_crud.info(f"Vechicle (ID: {id}) ENABLED in Fleet.")
+            #     flash("Vehicle enabled sucessfully.")
+            # else:
+            #     fleet_data.Disabled = 1
+            #     logger_crud.info(f"Vechicle (ID: {id}) DISABLED in Fleet.")
+            #     flash("Vehicle disabled sucessfully.")
+            # db.session.commit()
+
+            db.session.delete(fleet_data)
             db.session.commit()
+            logger_crud.info(f"Vechicle (ID: {id}) Deleted from fleet.")
+            flash("Vehicle deleted sucessfully.")
 
             return redirect(url_for("fleet"))
     else:
@@ -1454,14 +1459,18 @@ def tripDelete(id):
     if current_user.Role.value == "manager":
         if request.method == "GET":
             trip_data = Trip.query.get(id)
-            if trip_data.Disabled == 1:
-                trip_data.Disabled = 0
-                logger_crud.info(f"Trip (ID: {id}) ENABLED in Trip.")
-                flash("Trip enabled sucessfully.")
-            else:
-                trip_data.Disabled = 1
-                logger_crud.info(f"Trip (ID: {id}) Disabled in Trip.")
-                flash("Trip disabled sucessfully.")
+            # if trip_data.Disabled == 1:
+            #     trip_data.Disabled = 0
+            #     logger_crud.info(f"Trip (ID: {id}) ENABLED in Trip.")
+            #     flash("Trip enabled sucessfully.")
+            # else:
+            #     trip_data.Disabled = 1
+            #     logger_crud.info(f"Trip (ID: {id}) Disabled in Trip.")
+            #     flash("Trip disabled sucessfully.")
+            db.session.delete(trip_data)
+            logger_crud.info(f"Trip (ID: {id}) Deleted from Trip.")
+            flash("Trip deleted sucessfully.")
+
             db.session.commit()
 
             return redirect(url_for("trip"))

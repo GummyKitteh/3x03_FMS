@@ -89,15 +89,16 @@ endblock %} {% block body %}
                   href="/delete/{{post.TripID}}"
                   class="btn btn-secondary btn-xs"
                   onclick="return confirm('Confirm?')"
-                  >{% if post.Disabled == 1 %} Enable {% else %} Disable{%
-                  endif%}</a
-                >
+                  >Delete
+                  <!-- {% if post.Disabled == 1 %} Enable {% else %} Disable{%
+                  endif%} -->
+                </a>
               </td>
             </tr>
             {% endfor %} {% endif %} {% for row in trip %}
             <tr>
               <td>{{row.TripID}}</td>
-              <td>{{row.DriverID}}</td>
+              <td>{{row.dname}}</td>
               <td>{{row.VehicleID}}</td>
               <td>{{row.Origin}}</td>
               <td>{{row.Destination}}</td>
@@ -117,9 +118,10 @@ endblock %} {% block body %}
                   href="/trip/delete/{{row.TripID}}"
                   class="btn btn-secondary btn-xs"
                   onclick="return confirm('Confirm?')"
-                  >{% if row.Disabled == 1 %} Enable {% else %} Disable{%
-                  endif%}</a
-                >
+                  >Delete
+                  <!-- {% if row.Disabled == 1 %} Enable {% else %} Disable{%
+                  endif%} -->
+                </a>
               </td>
             </tr>
             <!-- Modal Edit Trip -->
