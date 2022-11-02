@@ -1,7 +1,10 @@
 import pytest
 import os, sys
 from flask.testing import FlaskClient
+pythonpath = os.environ['WORKSPACE'] + "/src"
+sys.path.append(pythonpath)
 from app import server, db
+
 
 @pytest.fixture(scope='module')
 def flask_app():
@@ -48,7 +51,7 @@ def test_login_success(client):
         'submit': 'Login'
     })
     html = response.data.decode()   # Prints HTML that you are supposed to receive
-    assert response.status_code == 302
+    assert response.status_code == 302  # Redirected, unless fail; 200
 
 
 def test_register(client):
@@ -61,13 +64,13 @@ def test_register(client):
         'Password': 'JustForTesting',
         'submit': 'Submit'
     })
-    assert response.status_code == 302
+    assert response.status_code == 302  # Redirected, unless fail; 200
 
 
 def test_logout(client):
     response = client.get('/logout')
     html = response.data.decode()   # Prints HTML that you are supposed to receive
-    assert response.status_code == 302
+    assert response.status_code == 302  # Redirected, unless fail; 200
 
 
 def test_reset_pass(client):
@@ -76,4 +79,4 @@ def test_reset_pass(client):
         'Email': '2000524@sit.singaporetech.edu.sg',
         'submit': 'Reset'
     })
-    assert response.status_code == 200
+    assert response.status_code == 200  # 200 even if user is not registered, to avoid brute forcing
