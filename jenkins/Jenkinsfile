@@ -10,7 +10,7 @@ pipeline {
         stage('Build') { 
 			agent { 
 				docker {
-					image 'python:3.9.5-slim-buster'
+					image 'python:3.11.0-slim-buster'
 				}
 			}
             steps {
