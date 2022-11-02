@@ -614,7 +614,7 @@ def validate_otp():
                             ]
 
                         logger_auth.warning(
-                            f"{user.FullName} (ID: {user.EmployeeId}) attempted to log in: {user.LoginCounter} time(s)."
+                            f"{user.FullName} (ID: {user.EmployeeId}) attempted to submit OTP: {user.OTPCounter} time(s)."
                         )
                         return render_template(
                             "login/login-otp.html",
