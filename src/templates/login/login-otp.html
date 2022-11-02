@@ -1,0 +1,39 @@
+{% extends 'base.html' %} {% include 'header.html' %} {% block title %} Login OTP {%
+endblock %} {% block body %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login OTP</title>
+  </head>
+  <body class="">
+    <main class="form-signin w-100 m-auto">
+      {%for msg in message%}
+        {{msg}}<br />
+      {%endfor%}
+      {% if otp_form.OTP.errors %}
+        You have entered an invalid OTP format.<br />Please try again.<br />
+      {%endif%}
+      <!-- print recaptcha error -->
+      <h1 class="display-5 my-5">One-time Password (OTP)</h1>
+      <h6><i>Please <u>do not refresh</u> or <u>navigate away from</u> this page.</i></h6>
+      <form action="/otp" method="POST">
+        {{otp_form.hidden_tag()}}
+        <div class="input-group mb-3">
+          <span class="input-group-text" id="OTP">OTP</span>
+          {{otp_form.OTP(class="form-control")}}
+        </div>
+        <span hidden>{{otp_form.OTPUser(value=userid)}}</span>
+        {{otp_form.submit(class="w-50 btn btn-md btn-primary")}}
+      </form>
+      <form action="/resend-otp" method="POST">
+        {{resend_form.hidden_tag()}}
+        <span hidden>{{resend_form.OTPUser(value=userid)}}</span>
+        {{resend_form.submit(class="w-50 btn btn-md btn-primary")}}
+      </form>
+    </main>
+  </body>
+</html>
+{% endblock %}

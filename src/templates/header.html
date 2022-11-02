@@ -1,15 +1,20 @@
 {% extends 'base.html' %} {% block title %} FMS {% endblock %} {% block body %}
+
+
 <header class="p-3 bg-dark text-white sticky-top">
   <div class="container">
     <div
       class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start"
     >
+
       <ul
         class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0"
       >
         <li class="nav-item">
           <a href="/" class="nav-link active px-2 text-white">Home</a>
         </li>
+      {% if current_user.is_authenticated and current_user.Role.value == "manager" %}
+
         <li class="nav-item">
           <a href="/trip" class="nav-link px-2 text-white">Trips</a>
         </li>
@@ -25,6 +30,19 @@
         <li class="nav-item">
           <a href="/employees" class="nav-link px-2 text-white">Employees</a>
         </li>
+        {% elif current_user.is_authenticated and current_user.Role.value == "admin" %}
+        <li class="nav-item">
+          <a href="/employees" class="nav-link px-2 text-white">Employees</a>
+        </li>
+        {% elif current_user.is_authenticated and current_user.Role.value == "driver" %}
+        <li class="nav-item">
+          <a href="/tripview" class="nav-link px-2 text-white">Trips</a>
+        </li>
+        <li class="nav-item">
+          <a href="/fleetview" class="nav-link px-2 text-white">Vehicles</a>
+        </li>
+        
+        {% endif %}
         {% if current_user.is_authenticated %}
         <li class="nav-item">
           <a href="/profile" class="nav-link px-2 text-white">Profile</a>
