@@ -1,6 +1,8 @@
 import pytest
+import sys
 from flask.testing import FlaskClient
-from ...src.app import server, db
+sys.path.insert(1, '/var/jenkins_home/workspace/3x03_FMS_dev-wenjie/src')
+from app import server, db
 
 @pytest.fixture(scope='module')
 def flask_app():
