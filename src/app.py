@@ -1,4 +1,3 @@
-from tkinter import E
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_mail import Mail, Message
 from threading import Thread
