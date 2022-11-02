@@ -25,7 +25,7 @@ pipeline {
 				}
 				stage('Audit Python Packages'){
 					steps {
-						sh 'pip-audit -r src/requirements.txt'
+						sh 'pip-audit --no-cache-dir -r src/requirements.txt'
 					}
 				}
 				stage('Feature Test') {
