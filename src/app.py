@@ -394,6 +394,7 @@ def login():
                     logger_auth.warning(
                         f"{user.FullName} (ID: {user.EmployeeId}) attempted to log in: {user.LoginCounter} time(s)."
                     )
+                    db.session.commit()
 
                     # If accumulated 5 invalid attempts, lock user account
                     if user.LoginCounter == 5:
@@ -401,6 +402,7 @@ def login():
                         user.AccountLockedDateTime = datetime.utcnow().strftime(
                             "%Y-%m-%d %H:%M:%S"
                         )
+                        db.session.commit()
 
                         # Send email to notify Administrator
                         email = Message()
@@ -419,11 +421,9 @@ def login():
                         logger_auth.warning(
                             f"{user.Email} (ID: {user.EmployeeId}) account has been locked after 5 incorrect login attempts."
                         )
-                    db.session.commit()
 
-                    # If user account is locked, render Account Locked page ONLY ONCE to prevent account guessing
-                    if user.LoginCounter == 5:
-                        return render_template("login/account-locked.html")
+                        # Render Account Locked page ONLY ONCE to prevent account guessing
+                        return render_template("login/account-locked.html")                        
 
                     # If user account is Locked or Disabled
                     if user.AccountLocked or user.Disabled:
