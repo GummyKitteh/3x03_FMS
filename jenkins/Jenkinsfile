@@ -7,28 +7,24 @@ pipeline {
 				checkout scm
 			}
 		}
-		stage('Build') { 
+		stage('Both Build and Test in Docker') { 
 			agent {
 				docker {
 					image 'python:3.11.0-slim-buster'
 					reuseNode true
 				}
 			}
-			steps {
-				sh 'apt update && apt install libmariadb-dev build-essential -y'
-				sh 'pip install --no-cache-dir -r src/requirements.txt' 
-				sh 'pip install pytest'  
-			}
-		}
-		stage('Feature Test') {
-			agent {
-				docker {
-					image 'python:3.11.0-slim-buster'
-					reuseNode true
+			stage('Build'){
+				steps {
+					sh 'apt update && apt install libmariadb-dev build-essential -y'
+					sh 'pip install --no-cache-dir -r src/requirements.txt' 
+					sh 'pip install pytest'  
 				}
 			}
-			steps {
-				sh 'pytest jenkins/scripts/loginTest.py'
+			stage('Feature Test') {
+				steps {
+					sh 'pytest jenkins/scripts/loginTest.py'
+				}
 			}
 		}
 		stage('OWASP Dependency-Check'){
