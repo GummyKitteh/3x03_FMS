@@ -1,0 +1,34 @@
+2022-11-03 10:59:17,102 | AUTH | INFO | Xu Min (ID: 3) has logged IN.
+2022-11-03 11:03:07,260 | AUTH | INFO | Xu Min (ID: 3) has logged IN.
+2022-11-03 11:07:49,520 | AUTH | INFO | User has logged OUT.
+2022-11-03 11:08:55,658 | AUTH | INFO | Xu Min (ID: 3) has logged IN.
+2022-11-03 11:28:34,874 | AUTH | INFO | Xu Min (ID: 3) has logged IN.
+2022-11-03 11:37:22,226 | AUTH | INFO | Xu Min (ID: 3) has logged IN.
+2022-11-03 11:46:57,025 | AUTH | INFO | Xu Min (ID: 3) has logged IN.
+2022-11-03 11:51:54,935 | AUTH | INFO | Xu Min (ID: 3) has logged IN.
+2022-11-03 11:56:41,583 | AUTH | INFO | Xu Min (ID: 3) has logged IN.
+2022-11-03 11:57:30,605 | AUTH | INFO | User has logged OUT.
+2022-11-03 11:57:37,749 | AUTH | WARNING | Xu Min (ID: 30) attempted to log in: 1 time(s).
+2022-11-03 11:57:37,761 | AUTH | WARNING | Xu Min (ID: 30) (Account Locked) attempted to log in.
+2022-11-03 11:57:42,137 | AUTH | INFO | Xu Min (ID: 30) has logged IN.
+2022-11-03 12:36:43,456 | AUTH | INFO | Xu Min (ID: 30) has logged IN.
+2022-11-03 12:51:50,221 | AUTH | INFO | Xu Min (ID: 30) has logged IN.
+2022-11-03 12:58:31,833 | AUTH | INFO | Xu Min (ID: 3) has logged IN.
+2022-11-03 12:58:36,402 | AUTH | INFO | User has logged OUT.
+2022-11-03 12:58:43,968 | AUTH | INFO | Xu Min (ID: 30) has logged IN.
+2022-11-03 13:00:04,938 | AUTH | INFO | Xu Min (ID: 3) has logged IN.
+2022-11-03 13:00:24,894 | AUTH | INFO | User has logged OUT.
+2022-11-03 13:00:32,435 | AUTH | INFO | Xu Min (ID: 30) has logged IN.
+2022-11-03 13:07:35,444 | AUTH | INFO | Xu Min (ID: 30) has logged IN.
+2022-11-03 13:09:44,399 | AUTH | INFO | Xu Min (ID: 30) has logged IN.
+2022-11-03 13:11:09,595 | AUTH | INFO | User has logged OUT.
+2022-11-03 13:11:25,882 | AUTH | INFO | Xu Min (ID: 30) has logged IN.
+2022-11-03 13:13:30,631 | AUTH | INFO | Xu Min (ID: 30) has logged IN.
+2022-11-03 13:14:12,480 | AUTH | WARNING | Xu Min (ID: 30) attempted to log in: 1 time(s).
+2022-11-03 13:14:12,502 | AUTH | WARNING | Xu Min (ID: 30) (Account Locked) attempted to log in.
+2022-11-03 13:14:16,665 | AUTH | WARNING | Xu Min (ID: 30) attempted to log in: 2 time(s).
+2022-11-03 13:14:21,230 | AUTH | INFO | Xu Min (ID: 30) has logged IN.
+2022-11-03 13:14:58,170 | AUTH | INFO | User has logged OUT.
+2022-11-03 13:15:04,177 | AUTH | INFO | Xu Min (ID: 3) has logged IN.
+2022-11-03 13:16:04,483 | AUTH | INFO | User has logged OUT.
+2022-11-03 13:16:11,370 | AUTH | INFO | Xu Min (ID: 30) has logged IN.
