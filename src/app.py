@@ -67,11 +67,11 @@ server.config["SESSION_COOKIE_SAMESITE"] = "Strict"
 #sesh = Session(server)
 
 # Db configuration
-server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
+# server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
 # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwerty1234@localhost/fmssql"
-# server.config[
-#     "SQLALCHEMY_DATABASE_URI"
-# ] = f"mysql+pymysql://{db_user}:{db_pwd}@{db_add}/{db_db}"
+server.config[
+    "SQLALCHEMY_DATABASE_URI"
+] = f"mysql+pymysql://{db_user}:{db_pwd}@{db_add}/{db_db}"
 # # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwert54321@localhost/fmssql"
 # server.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(server)
@@ -361,7 +361,6 @@ def login():
                             userid=user.get_id(),
                             message=message,
                         )
-
                         return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, userid=user.get_id(), message=message)
                         """
 
@@ -1087,7 +1086,7 @@ def delete(id):
 
 @server.route("/fleet/fleetsearch", methods=["POST"])
 def fleetsearch():
-    if current_user.Role.value != "admin":
+    if current_user.Role.value == "manager":
         searchform = SearchFormFleet()
         posts = Fleet.query
         if request.method == "POST" and searchform.validate_on_submit():
@@ -1098,23 +1097,14 @@ def fleetsearch():
             logger_crud.info(f"[{postsearched}] searched.")
 
             if posts != 0:
-                if current_user.Role.value == "manager":
-                    return render_template(
-                        "fleet.html",
-                        searchform=searchform,
-                        searched=postsearched,
-                        posts=posts,
-                    )
-                else:
-                    return render_template(
-                        "fleetview.html",
-                        searchform=searchform,
-                        searched=postsearched,
-                        posts=posts,
-                    )
+                return render_template(
+                    "fleet.html",
+                    searchform=searchform,
+                    searched=postsearched,
+                    posts=posts,
+                )
             else:
                 flash("Cannot find Vehicle")
-    
     else:
         return redirect("/notauthorized")
 
@@ -1377,11 +1367,10 @@ def trip():
         fleetList = getFresh_Fleet()
         formTrip.EmployeeID.choices = employeeList
         formTrip.VehicleID.choices = fleetList
-        driver_data = Driver.query.all()
-        trip_data = Trip.query.join(Driver).join(Employee).join(Fleet).all()
+        trip_data = Trip.query.all()
         fleet_data = Fleet.query.all()
         return render_template(
-            "trip.html", trip=trip_data, fleet=fleet_data, formTrip=formTrip, driver = driver_data
+            "trip.html", trip=trip_data, fleet=fleet_data, formTrip=formTrip
         )
     else:
         return redirect("/notauthorized")
@@ -1397,7 +1386,7 @@ def tripview():
             .DriverId
         )
         trip_data = Trip.query.filter(Trip.DriverID == driver_data)
-        return render_template("tripview.html", trip=trip_data)
+        return render_template("trip.html", trip=trip_data)
     else:
         return redirect("/notauthorized")
 
@@ -1504,15 +1493,16 @@ def tripSearch():
         if request.method == "POST" and searchformTrip.validate_on_submit():
             postsearched = searchformTrip.searched.data
             searchformTrip.searched.data = ""
-            posts = posts.filter(Trip.TripID.like("%" + postsearched + "%")).join(Driver).join(Employee).join(Fleet)
+            posts = posts.filter(Trip.TripID.like("%" + postsearched + "%"))
             posts = posts.order_by(Trip.TripID).all()
             logger_crud.info(f"[{postsearched}] searched.")
+
             if posts != 0:
                 return render_template(
                     "trip.html",
                     searchformTrip=searchformTrip,
                     searched=postsearched,
-                    posts=posts
+                    posts=posts,
                 )
             else:
                 flash("Cannot find Trip")
@@ -1525,16 +1515,18 @@ def tripSearch():
                 .first()
                 .DriverId
             )
-            posts = posts.filter(Trip.TripID.like("%" + postsearched + "%"), Trip.DriverID == driver_data).join(Driver).join(Employee).join(Fleet)
+            posts = posts.filter(
+                Trip.TripID.like("%" + postsearched + "%"), Trip.DriverID == driver_data
+            )
             posts = posts.order_by(Trip.TripID).all()
             logger_crud.info(f"[{postsearched}] searched.")
 
             if posts != 0:
                 return render_template(
-                    "tripview.html",
+                    "trip.html",
                     searchformTrip=searchformTrip,
                     searched=postsearched,
-                    posts=posts
+                    posts=posts,
                 )
             else:
                 flash("Cannot find Trip")
