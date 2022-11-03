@@ -1,6 +1,8 @@
 import secrets, binascii, os, jwt, base64
 from hashlib import pbkdf2_hmac
 from datetime import datetime, timezone, timedelta
+from dotenv import load_dotenv
+
 
 # Generate CSPRNG 32-byte salt in hexadecimal based on PEP 506
 # https://docs.python.org/3/library/secrets.html#secrets.token_bytes
@@ -45,6 +47,8 @@ def process_password(password, hex_salt):
     return derived_password
 
 
+load_dotenv()  # take environment variables from .env.
+
 # Encoding password reset tokens with PyJWT, and must be unique and not easily guessable.
 # https://pyjwt.readthedocs.io/en/latest/usage.html
 def generate_reset_token(userid):
@@ -53,11 +57,9 @@ def generate_reset_token(userid):
     jwt_payload = {"reset_token": userid, "iat": token_issued, "exp": token_expiry}
     jwt_encode = jwt.encode(
         jwt_payload,
-        key="I really hope fking this work if never idk what to do :(",
+        key=os.getenv("secret_key"),
         algorithm="HS256",
     ).encode("utf-8", "strict")
-
-    # TODO: Update key to point to Config file.
 
     return base64.urlsafe_b64encode(jwt_encode).decode("utf-8", "strict")
 
@@ -68,8 +70,6 @@ def decode_reset_token(token):
     jwt_token = base64.urlsafe_b64decode(token).decode("utf-8", "strict")
     return jwt.decode(
         jwt_token,
-        key="I really hope fking this work if never idk what to do :(",
+        key=os.getenv("secret_key"),
         algorithms="HS256",
     )
-
-    # TODO: Update key to point to Config file.
