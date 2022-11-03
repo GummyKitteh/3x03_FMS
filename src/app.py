@@ -1,10 +1,12 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_mail import Mail, Message
 from threading import Thread
 
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import true, ForeignKey, or_
 from sqlalchemy.orm import declarative_base, relationship, backref
+
+from flask_session import Session
 
 from flask_wtf import FlaskForm
 from wtforms import (
@@ -53,13 +55,16 @@ Base = declarative_base()
 server = Flask(__name__)
 
 # Session Config
-server.secret_key = "abcd"
-server.config["SECRET_KEY"] = "I really hope fking this work if never idk what to do :("
+#server.secret_key = "abcd"
+server.config["SECRET_KEY"] = generate_csprng_token()
 server.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=1)
 server.config["SESSION_COOKIE_DOMAIN"] = None  # Might set to busfms.tk?
 server.config["SESSION_COOKIE_HTTPONLY"] = True
 server.config["SESSION_COOKIE_SECURE"] = True
 server.config["SESSION_COOKIE_SAMESITE"] = "Strict"
+#server.config["SESSION_TYPE"] = "sqlalchemy"
+
+#sesh = Session(server)
 
 # Db configuration
 # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
@@ -70,6 +75,7 @@ server.config[
 # # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwert54321@localhost/fmssql"
 # server.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(server)
+#server.config["SESSION_SQLALCHEMY"] = db
 
 # Mail configuration
 server.config["MAIL_SERVER"] = "smtp.gmail.com"
@@ -96,10 +102,10 @@ if (filename == "featureTest.py" and folder == "scripts") or (filename == "app.p
     location = path + "/logs"
 elif filename == "featureTest.py" and folder != "scripts":
     location = path + "/scripts/logs"
+elif filename == "app.py" and "flaskapp" in folder:
+    location = path + "/logs"
 elif filename == "app.py" and folder != "src":
     location = path + "/src/logs"
-elif filename == "app.py" and folder == "flaskapp":
-    location = path + "/logs"
 else:
     location = "ggwp"
     print("UNABLE TO FIND LOG FOLDER", full_path)
@@ -336,6 +342,9 @@ def login():
                         # Authorise login
                         login_user(user)  # , duration=timedelta(seconds=3))
 
+                        # Session
+                        #session["value"] = user
+
                         logger_auth.info(
                             f"{user.FullName} (ID: {user.EmployeeId}) has logged IN."
                         )
@@ -352,7 +361,6 @@ def login():
                             userid=user.get_id(),
                             message=message,
                         )
-
                         return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, userid=user.get_id(), message=message)
                         """
 
@@ -605,7 +613,7 @@ def validate_otp():
                             ]
 
                         logger_auth.warning(
-                            f"{user.FullName} (ID: {user.EmployeeId}) attempted to log in: {user.LoginCounter} time(s)."
+                            f"{user.FullName} (ID: {user.EmployeeId}) attempted to submit OTP: {user.OTPCounter} time(s)."
                         )
                         return render_template(
                             "login/login-otp.html",
@@ -677,6 +685,7 @@ def resend_otp():
 def logout():
     logout_user()
     logger_auth.info(f"User has logged OUT.")
+    #session.pop("value", None)
     return redirect(url_for("index"))
 
 
@@ -1079,7 +1088,6 @@ def delete(id):
             logger_crud.info(f"Vechicle (ID: {id}) Disabled in Fleet.")
             flash("Vehicle disabled sucessfully.")
         db.session.commit()
-
         return redirect(url_for("fleet"))
     """
     if current_user.Role.value == "manager":
