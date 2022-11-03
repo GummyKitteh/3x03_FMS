@@ -361,7 +361,6 @@ def login():
                             userid=user.get_id(),
                             message=message,
                         )
-
                         return render_template("login/login-otp.html", otp_form=otp_form, resend_form=resend_form, userid=user.get_id(), message=message)
                         """
 
@@ -614,7 +613,7 @@ def validate_otp():
                             ]
 
                         logger_auth.warning(
-                            f"{user.FullName} (ID: {user.EmployeeId}) attempted to log in: {user.LoginCounter} time(s)."
+                            f"{user.FullName} (ID: {user.EmployeeId}) attempted to submit OTP: {user.OTPCounter} time(s)."
                         )
                         return render_template(
                             "login/login-otp.html",
@@ -1009,21 +1008,6 @@ def fleet():
 
 @server.route("/fleet/fleetinsert", methods=["POST"])
 def addFleet():
-    """JM: Unsure whether to merge this?
-    formFleet = fleetInsert()
-    if request.method == "POST" and formFleet.validate_on_submit():
-        BusNumberPlate = formFleet.BusNumberPlate.data
-        VehicleCapacity = formFleet.VehicleCapacity.data
-        VehicleStatus = formFleet.VehicleStatus.data
-        Disabled = 0
-        fleet_data = Fleet(BusNumberPlate, VehicleCapacity, VehicleStatus, Disabled)
-        db.session.add(fleet_data)
-        db.session.commit()
-        flash("Vehicle inserted sucessfully")
-        obj = db.session.query(Fleet).order_by(Fleet.VehicleId.desc()).first()
-        logger_crud.info(f"Vechicle (ID: {obj.VehicleId}) inserted to Fleet.")
-        return redirect("/fleet")
-    """
     if current_user.Role.value == "manager":
         formFleet = fleetInsert()
         if request.method == "POST" and formFleet.validate_on_submit():
@@ -1077,21 +1061,6 @@ def fleetUpdate():
 
 @server.route("/fleet/delete/<id>", methods=["GET", "POST"])
 def delete(id):
-    """JM: Unsure whether to merge this?
-    if request.method == "GET":
-        fleet_data = Fleet.query.get(id)
-        if fleet_data.Disabled == 1:
-            fleet_data.Disabled = 0
-            logger_crud.info(f"Vechicle (ID: {id}) ENABLED in Fleet.")
-            flash("Vehicle enabled sucessfully.")
-        else:
-            fleet_data.Disabled = 1
-            logger_crud.info(f"Vechicle (ID: {id}) Disabled in Fleet.")
-            flash("Vehicle disabled sucessfully.")
-        db.session.commit()
-
-        return redirect(url_for("fleet"))
-    """
     if current_user.Role.value == "manager":
         if request.method == "GET":
             fleet_data = Fleet.query.get(id)

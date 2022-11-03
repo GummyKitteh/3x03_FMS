@@ -2,12 +2,28 @@ pipeline {
 	agent any
 	stages {
 		stage('Checkout') {
+			when{
+				anyOf {
+					branch "main"
+					branch "dev"
+					branch "dev-wenjie"
+					changeRequest()
+				}
+			}
 			steps {
 				echo 'Checking out code'
 				checkout scm
 			}
 		}
-		stage('Both Build and Test in Docker') { 
+		stage('Both Build and Test in Docker') {
+			when{
+				anyOf {
+					branch "main"
+					branch "dev"
+					branch "dev-wenjie"
+					changeRequest()
+				}
+			}
 			agent {
 				docker {
 					image 'python:3.11.0-slim-buster'
@@ -18,8 +34,14 @@ pipeline {
 				stage('Build'){
 					steps {
 						sh 'apt update && apt install libmariadb-dev build-essential -y'
-						sh 'pip install --no-cache-dir -r src/requirements.txt' 
+						sh 'pip install -r src/requirements.txt' 
 						sh 'pip install pytest'
+						sh 'pip install pip-audit'
+					}
+				}
+				stage('Audit Python Packages'){
+					steps {
+						sh 'pip-audit --desc -r src/requirements.txt'
 					}
 				}
 				stage('Feature Test') {
@@ -30,6 +52,14 @@ pipeline {
 			}
 		}
 		stage('OWASP Dependency-Check'){
+			when{
+				anyOf {
+					branch "main"
+					branch "dev"
+					branch "dev-wenjie"
+					changeRequest()
+				}
+			}
 			steps {
 				dependencyCheck additionalArguments: '--scan "src/" --format HTML --format XML', odcInstallation: '3x03_FMS'
 			}
