@@ -1,12 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_mail import Mail, Message
 from threading import Thread
 
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import true, ForeignKey, or_
 from sqlalchemy.orm import declarative_base, relationship, backref
-
-from flask_session import Session
 
 from flask_wtf import FlaskForm
 from wtforms import (
@@ -55,15 +53,14 @@ Base = declarative_base()
 server = Flask(__name__)
 
 # Session Config
-#server.secret_key = "abcd"
-server.config["SECRET_KEY"] = generate_csprng_token()
+server.secret_key = "abcd"
+server.config["SECRET_KEY"] = "I really hope fking this work if never idk what to do :("
 server.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=1)
 server.config["SESSION_COOKIE_DOMAIN"] = None  # Might set to busfms.tk?
 server.config["SESSION_COOKIE_HTTPONLY"] = True
 server.config["SESSION_COOKIE_SECURE"] = True
 server.config["SESSION_COOKIE_SAMESITE"] = "Strict"
 #server.config["SESSION_TYPE"] = "sqlalchemy"
-
 #sesh = Session(server)
 
 # Db configuration
