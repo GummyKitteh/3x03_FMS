@@ -38,7 +38,8 @@ def test_login_failure(client):
     response = client.post('/login', data={
         'Email': 'wrong@gmail.com',
         'password': 'wrongPass',
-        'submit': 'Login'
+        'submit': 'Login',
+        'g-recaptcha-response': 'Test'
     })
     html = response.data.decode()   # Prints HTML that you are supposed to receive
     assert response.status_code == 200
@@ -48,6 +49,7 @@ def test_login_success(client):
     response = client.post('/login', data={
         'Email': os.environ['USER_TEST'],
         'password': os.environ['PWD_TEST'],
+        'g-recaptcha-response': 'ILoveMyMama',
         'submit': 'Login'
     })
     html = response.data.decode()   # Prints HTML that you are supposed to receive
