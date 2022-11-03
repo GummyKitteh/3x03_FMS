@@ -1269,12 +1269,6 @@ def employees():
 
 @server.route("/employees/insert", methods=["POST"])
 def addEmployee():
-    try:
-        if current_user.Role.value == "manager" or current_user.Role.value == "admin":
-            pass
-    except:
-        return redirect("/login")
-
     if (current_user.Role.value == "manager" or current_user.Role.value == "admin"):
         formEmployee = employeeInsert()
         FullName = None
