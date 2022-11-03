@@ -2,29 +2,19 @@ import secrets, binascii, os, jwt, base64
 from hashlib import pbkdf2_hmac
 from datetime import datetime, timezone, timedelta
 
-"""
-Generate CSPRNG 32-byte salt in hexadecimal based on PEP 506
-https://docs.python.org/3/library/secrets.html#secrets.token_bytes
-"""
-
-
+# Generate CSPRNG 32-byte salt in hexadecimal based on PEP 506
+# https://docs.python.org/3/library/secrets.html#secrets.token_bytes
 def generate_csprng_token():
     csprng_salt = secrets.token_bytes(32)
     hex_salt = binascii.hexlify(csprng_salt).decode("utf-8", "strict")
 
-    # Check if salt exists in database if possble:
-
     return hex_salt  # 64 characters
 
 
-"""
-Passwords set shall be validated against a security list (SecList) of common passwords
-SecList: https://raw.githubusercontent.com/danielmiessler/SecLists/master/Passwords/Common-Credentials/10-million-password-list-top-100000.txt
-"""
-
-
+# Passwords set shall be validated against a security list (SecList) of common passwords
+# SecList: https://raw.githubusercontent.com/danielmiessler/SecLists/master/Passwords/Common-Credentials/10-million-password-list-top-100000.txt
 def check_common_password(password):
-    filepath = os.getcwd() + "/src/10-million-password-list-top-1000000.txt"
+    filepath = os.getcwd() + "/10-million-password-list-top-1000000.txt"
     if 'jenkins\\scripts' in filepath:
         return True
     else:
@@ -34,12 +24,12 @@ def check_common_password(password):
             return False
 
 
-"""
-Passwords must be uniquely salted for each user with 256 bits, hashed with SHA-256 and iterated 310,000 times with PBKDF2.
-https://cryptobook.nakov.com/mac-and-key-derivation/pbkdf2
-"""
+# Passwords shall be validated to ensure for only allowable characters
+# May not be doing.
 
 
+# Passwords must be uniquely salted for each user with 256 bits, hashed with SHA-256 and iterated 310,000 times with PBKDF2.
+# https://cryptobook.nakov.com/mac-and-key-derivation/pbkdf2
 def process_password(password, hex_salt):
     # Encode password to bytes in utf-8
     password = password.encode("utf-8", "strict")
@@ -55,12 +45,8 @@ def process_password(password, hex_salt):
     return derived_password
 
 
-"""
-Encoding password reset tokens with PyJWT, and must be unique and not easily guessable.
-https://pyjwt.readthedocs.io/en/latest/usage.html
-"""
-
-
+# Encoding password reset tokens with PyJWT, and must be unique and not easily guessable.
+# https://pyjwt.readthedocs.io/en/latest/usage.html
 def generate_reset_token(userid):
     token_issued = datetime.now(tz=timezone.utc)
     token_expiry = token_issued + timedelta(hours=1)
@@ -76,12 +62,8 @@ def generate_reset_token(userid):
     return base64.urlsafe_b64encode(jwt_encode).decode("utf-8", "strict")
 
 
-"""
-Decoding password reset tokens with PyJWT, and must be unique and not easily guessable.
-https://pyjwt.readthedocs.io/en/latest/usage.html
-"""
-
-
+# Decoding password reset tokens with PyJWT, and must be unique and not easily guessable.
+# https://pyjwt.readthedocs.io/en/latest/usage.html
 def decode_reset_token(token):
     jwt_token = base64.urlsafe_b64decode(token).decode("utf-8", "strict")
     return jwt.decode(
