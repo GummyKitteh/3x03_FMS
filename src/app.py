@@ -61,7 +61,7 @@ server.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=1)
 server.config["SESSION_COOKIE_DOMAIN"] = None  # Might set to busfms.tk?
 server.config["SESSION_COOKIE_HTTPONLY"] = True
 server.config["SESSION_COOKIE_SECURE"] = True
-server.config["SESSION_COOKIE_SAMESITE"] = "Strict"
+server.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 #server.config["SESSION_TYPE"] = "sqlalchemy"
 
 #sesh = Session(server)
@@ -110,13 +110,13 @@ else:
     location = "ggwp"
     print("UNABLE TO FIND LOG FOLDER", full_path)
 
-logging.basicConfig(
+"""logging.basicConfig(
      filename=location + "/generallog.log",
      encoding="utf-8",
      filemode="a",
      level=logging.INFO,
      format="%(asctime)s | %(levelname)s | %(message)s",
-)
+)"""
 
 # Create Logger
 # logger = logging.getLogger(__name__)
@@ -1050,6 +1050,11 @@ def notAuthorized():
 @server.route("/fleet")
 @login_required
 def fleet():
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login")  
     if current_user.Role.value == "driver" or current_user.Role.value == "admin":
         return redirect("/notauthorized")
     else:
@@ -1060,6 +1065,11 @@ def fleet():
 @server.route("/fleetview")
 @login_required
 def fleetview():
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login")  
     if current_user.Role.value == "driver":
         all_data = Fleet.query.all()
         return render_template("fleetview.html", fleet=all_data)
@@ -1081,6 +1091,11 @@ def fleet():
 
 @server.route("/fleet/fleetinsert", methods=["POST"])
 def addFleet():
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login")  
     if current_user.Role.value == "manager":
         formFleet = fleetInsert()
         if request.method == "POST" and formFleet.validate_on_submit():
@@ -1122,7 +1137,11 @@ def fleet():
 
 @server.route("/fleetUpdate", methods=["GET", "POST"])
 def fleetUpdate():
-    # fleetupdate = fleetInsert()
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login")
     if current_user.Role.value == "manager":
         fleetupdate = fleetInsert()
         if request.method == "POST" and fleetupdate.validate_on_submit:
@@ -1151,6 +1170,11 @@ def fleetUpdate():
 
 @server.route("/fleet/delete/<id>", methods=["GET", "POST"])
 def delete(id):
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login")    
     if current_user.Role.value == "manager":
         if request.method == "GET":
             fleet_data = Fleet.query.get(id)
@@ -1184,6 +1208,11 @@ def delete(id):
 
 @server.route("/fleet/fleetsearch", methods=["POST"])
 def fleetsearch():
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login")    
     if current_user.Role.value == "manager":
         searchform = SearchFormFleet()
         posts = Fleet.query
@@ -1232,6 +1261,11 @@ def fleetsearch():
 @server.route("/employees")
 @login_required
 def employees():
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login")    
     userrole = current_user.Role
     if userrole == RoleTypes.admin:
         manager_data = Employee.query.all()
@@ -1269,7 +1303,13 @@ def employees():
 
 @server.route("/employees/insert", methods=["POST"])
 def addEmployee():
-    if current_user.Role.value == "manager" or current_user.Role.value == "admin":
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login")
+
+    if (current_user.Role.value == "manager" or current_user.Role.value == "admin"):
         formEmployee = employeeInsert()
         FullName = None
         Email = None
@@ -1418,6 +1458,11 @@ def addEmployee():
 
 @server.route("/employees/delete/<id>", methods=["GET", "POST"])
 def employeeDelete(id):
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login")    
     if current_user.Role.value == "admin" or current_user.Role.value == "manager":
         if request.method == "GET":
             my_data = Employee.query.get(id)
@@ -1451,6 +1496,11 @@ def employeeDelete(id):
 
 @server.route("/employees/unlock/<id>", methods=["GET", "POST"])
 def employeeUnlock(id):
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login") 
     if current_user.Role.value == "admin":
         if request.method == "GET":
             my_data = Employee.query.get(id)
@@ -1478,6 +1528,11 @@ def employeeUnlock(id):
 
 @server.route("/employees/employeesearch", methods=["POST"])
 def employeesearch():
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login") 
     if current_user.Role.value == "manager" or current_user.Role.value == "admin":
         searchFormEmployee = SearchFormEmployee()
         posts = Employee.query
@@ -1537,6 +1592,11 @@ def employeesearch():
 @server.route("/trip")
 @login_required
 def trip():
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login")     
     if current_user.Role.value == "manager":
         formTrip = tripInsert()
         employeeList = getFresh_Employee()
@@ -1555,6 +1615,11 @@ def trip():
 @server.route("/tripview")
 @login_required
 def tripview():
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login") 
     if current_user.Role.value == "driver":
         driver_data = (
             Driver.query.filter(Driver.EmployeeId == current_user.EmployeeId)
@@ -1618,6 +1683,11 @@ class tripInsert(FlaskForm):
 
 @server.route("/trip/tripinsert", methods=["POST"])
 def addTrip():
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login") 
     if current_user.Role.value == "manager":
         formTrip = tripInsert()
         employeeList = getFresh_Employee()
@@ -1673,6 +1743,11 @@ def addTrip():
 
 @server.route("/trip/tripSearch", methods=["POST"])
 def tripSearch():
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login")     
     searchformTrip = SearchFormTrip()
     posts = Trip.query
     if current_user.Role.value == "manager":
@@ -1766,6 +1841,11 @@ def trip():
 
 @server.route("/trip/tripUpdate", methods=["GET", "POST"])
 def tripUpdate():
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login") 
     if current_user.Role.value == "manager":
         tripupdate = tripInsert()
         if request.method == "POST" and tripupdate.validate_on_submit:
@@ -1797,6 +1877,11 @@ def tripUpdate():
 
 @server.route("/trip/delete/<id>", methods=["GET", "POST"])
 def tripDelete(id):
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login")     
     if current_user.Role.value == "manager":
         if request.method == "GET":
             trip_data = Trip.query.get(id)
@@ -1831,6 +1916,11 @@ def tripDelete(id):
 @server.route("/profile", methods=["GET", "POST"])
 @login_required
 def profile():
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login") 
     updateFormEmployee = employeeUpdate()
     id = current_user.EmployeeId
     name_to_update = Employee.query.get_or_404(id)
