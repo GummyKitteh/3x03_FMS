@@ -1221,12 +1221,12 @@ def fleetsearch():
             searchform.searched.data = ""
             
             # If an invalid character was used in any search query field
-            posts = 0
             try:
                 posts = posts.filter(Fleet.BusNumberPlate.like("%" + postsearched + "%"))
                 posts = posts.order_by(Fleet.VehicleId).all()
                 logger_crud.info(f"[{postsearched}] searched.")
             except:
+                posts = 0
                 flash("At least 1 input field contains an invalid character. Please try again.")
                 return render_template(
                     "fleet.html",
@@ -1235,6 +1235,10 @@ def fleetsearch():
                     posts=posts,
                 )
 
+            # posts returns empty list if no results found
+            if len(posts) == 0:
+                posts = 0
+            
             if posts != 0:
                 return render_template(
                     "fleet.html",
@@ -1541,7 +1545,6 @@ def employeesearch():
             searchFormEmployee.searched.data = ""
 
             # Try if an invalid character was used in the Email input field
-            posts = 0
             try:
                 if current_user.Role.value == "admin":
                     posts = posts.filter(
@@ -1557,7 +1560,10 @@ def employeesearch():
                     )
                     posts = posts.order_by(Employee.EmployeeId).all()
                     logger_crud.info(f"[{postsearched}] searched.")
+                else:
+                    posts = 0
             except:
+                posts = 0
                 flash("At least 1 input field contains an invalid character. Please try again.")
                 return render_template(
                     "employees.html",
@@ -1565,6 +1571,10 @@ def employeesearch():
                     searched=postsearched,
                     posts=posts,
                 )
+
+            # posts returns empty list if no results found
+            if len(posts) == 0:
+                posts = 0
 
             if posts != 0:
                 return render_template(
@@ -1747,7 +1757,7 @@ def tripSearch():
         if current_user.Role.value != None:
             pass
     except:
-        return redirect("/login")     
+        return redirect("/login")
     searchformTrip = SearchFormTrip()
     posts = Trip.query
     if current_user.Role.value == "manager":
@@ -1756,12 +1766,12 @@ def tripSearch():
             searchformTrip.searched.data = ""
 
             # If an invalid character was used in any search query field
-            posts = 0
             try:
                 posts = posts.filter(Trip.TripID.like("%" + postsearched + "%"))
                 posts = posts.order_by(Trip.TripID).all()
                 logger_crud.info(f"[{postsearched}] searched.")
             except:
+                posts = 0
                 flash("At least 1 input field contains an invalid character. Please try again.")
                 return render_template(
                     "trip.html",
@@ -1769,6 +1779,10 @@ def tripSearch():
                     searched=postsearched,
                     posts=posts,
                 )
+
+            # posts returns empty list if no results found
+            if len(posts) == 0:
+                posts = 0
 
             if posts != 0:
                 return render_template(
@@ -1797,7 +1811,6 @@ def tripSearch():
             )
 
             # If an invalid character was used in any search query field
-            posts = 0
             try:
                 posts = posts.filter(
                     Trip.TripID.like("%" + postsearched + "%"), Trip.DriverID == driver_data
@@ -1805,6 +1818,7 @@ def tripSearch():
                 posts = posts.order_by(Trip.TripID).all()
                 logger_crud.info(f"[{postsearched}] searched.")
             except:
+                posts = 0
                 flash("At least 1 input field contains an invalid character. Please try again.")
                 return render_template(
                     "trip.html",
@@ -1812,6 +1826,10 @@ def tripSearch():
                     searched=postsearched,
                     posts=posts,
                 )
+
+            # posts returns empty list if no results found
+            if len(posts) == 0:
+                posts = 0
 
             if posts != 0:
                 return render_template(
