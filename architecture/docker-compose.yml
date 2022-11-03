@@ -1,0 +1,80 @@
+version: '3'
+
+services:
+  flask4nginx:
+    container_name: Flask4Nginx
+    restart: always
+    build: ./Flask4Nginx
+    ports:
+      - "5000:5000"
+    command: gunicorn -w 1 -b 0.0.0.0:5000 wsgi:server
+    env_file:
+      - Flask.env
+    
+  nginx4flask:
+    container_name: Nginx4Flask
+    restart: always
+    build: ./Nginx4Flask
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    depends_on:
+      - flask4nginx
+
+  #certbot:
+  #  image: certbot/certbot:latest
+  #  container_name: certbot
+  #  volumes:
+  #    - ./certbot/conf:/etc/letsencrypt
+  #    - ./certbot/www:/var/www/certbot
+  #    - ./certbot/logs:/var/log/letsencrypt
+  #  command: certonly --webroot --webroot-path=/var/www/certbot --force-renewal --email b33p33p@gmail.com -d busfms.tk -d jenkins.busfms.tk --agree-tos --no-eff-email
+
+  mysql:
+    container_name: mysql
+    restart: always
+    build: ./MySQL
+    ports:
+      - "3306:3306"
+    env_file:
+      - Database.env
+    volumes:
+      - ./MySQL/mysql-data:/var/lib/mysql
+
+  docker:
+    container_name: docker
+    restart: always
+    privileged: true
+    image: docker:dind
+    command: --storage-driver=overlay2
+    ports:
+      - "3000:3000"
+      - "5555:5555"
+      - "2376:2376"
+    environment:
+      DOCKER_TLS_CERTDIR: /certs
+    volumes:
+      - ./Jenkins/jenkins-docker-certs:/certs/client
+      - ./Jenkins/jenkins-data:/var/jenkins_home
+
+  jenkins:
+    container_name: jenkins
+    restart: always
+    privileged: true
+    build: ./Jenkins
+    user: root
+    environment:
+      DOCKER_HOST: tcp://docker:2376
+      DOCKER_CERT_PATH: /certs/client
+      DOCKER_TLS_VERIFY: 1
+      JAVA_OPTS: "-Dhudson.plugins.git.GitSCM.ALLOW_LOCAL_CHECKOUT=true"
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - ./Jenkins/jenkins-data:/var/jenkins_home
+      - ./Jenkins/jenkins-docker-certs:/certs/client:ro
+      - ./Flask4Nginx:/home
