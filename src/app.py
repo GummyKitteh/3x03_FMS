@@ -1116,6 +1116,11 @@ def fleetsearch():
 @server.route("/employees")
 @login_required
 def employees():
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login")    
     userrole = current_user.Role
     if userrole == RoleTypes.admin:
         manager_data = Employee.query.all()
@@ -1154,7 +1159,7 @@ def employees():
 @server.route("/employees/insert", methods=["POST"])
 def addEmployee():
     try:
-        if current_user.Role.value == "manager" or current_user.Role.value == "admin":
+        if current_user.Role.value != None:
             pass
     except:
         return redirect("/login")
@@ -1281,6 +1286,11 @@ def addEmployee():
 
 @server.route("/employees/delete/<id>", methods=["GET", "POST"])
 def employeeDelete(id):
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login")    
     if current_user.Role.value == "admin" or current_user.Role.value == "manager":
         if request.method == "GET":
             my_data = Employee.query.get(id)
@@ -1309,6 +1319,11 @@ def employeeDelete(id):
 
 @server.route("/employees/unlock/<id>", methods=["GET", "POST"])
 def employeeUnlock(id):
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login") 
     if current_user.Role.value == "admin":
         if request.method == "GET":
             my_data = Employee.query.get(id)
@@ -1331,6 +1346,11 @@ def employeeUnlock(id):
 
 @server.route("/employees/employeesearch", methods=["POST"])
 def employeesearch():
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login") 
     if current_user.Role.value == "manager" or current_user.Role.value == "admin":
         searchFormEmployee = SearchFormEmployee()
         posts = Employee.query
@@ -1371,6 +1391,11 @@ def employeesearch():
 @server.route("/trip")
 @login_required
 def trip():
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login")     
     if current_user.Role.value == "manager":
         formTrip = tripInsert()
         employeeList = getFresh_Employee()
@@ -1389,6 +1414,11 @@ def trip():
 @server.route("/tripview")
 @login_required
 def tripview():
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login") 
     if current_user.Role.value == "driver":
         driver_data = (
             Driver.query.filter(Driver.EmployeeId == current_user.EmployeeId)
@@ -1452,6 +1482,11 @@ class tripInsert(FlaskForm):
 
 @server.route("/trip/tripinsert", methods=["POST"])
 def addTrip():
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login") 
     if current_user.Role.value == "manager":
         formTrip = tripInsert()
         employeeList = getFresh_Employee()
@@ -1497,6 +1532,11 @@ def addTrip():
 
 @server.route("/trip/tripSearch", methods=["POST"])
 def tripSearch():
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login")     
     searchformTrip = SearchFormTrip()
     posts = Trip.query
     if current_user.Role.value == "manager":
@@ -1552,6 +1592,11 @@ def trip():
 
 @server.route("/trip/tripUpdate", methods=["GET", "POST"])
 def tripUpdate():
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login") 
     if current_user.Role.value == "manager":
         tripupdate = tripInsert()
         if request.method == "POST" and tripupdate.validate_on_submit:
@@ -1576,6 +1621,11 @@ def tripUpdate():
 
 @server.route("/trip/delete/<id>", methods=["GET", "POST"])
 def tripDelete(id):
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login")     
     if current_user.Role.value == "manager":
         if request.method == "GET":
             trip_data = Trip.query.get(id)
@@ -1605,6 +1655,11 @@ def tripDelete(id):
 @server.route("/profile", methods=["GET", "POST"])
 @login_required
 def profile():
+    try:
+        if current_user.Role.value != None:
+            pass
+    except:
+        return redirect("/login") 
     updateFormEmployee = employeeUpdate()
     id = current_user.EmployeeId
     name_to_update = Employee.query.get_or_404(id)
