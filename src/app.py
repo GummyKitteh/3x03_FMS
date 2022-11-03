@@ -61,7 +61,7 @@ server.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=1)
 server.config["SESSION_COOKIE_DOMAIN"] = None  # Might set to busfms.tk?
 server.config["SESSION_COOKIE_HTTPONLY"] = True
 server.config["SESSION_COOKIE_SECURE"] = True
-server.config["SESSION_COOKIE_SAMESITE"] = "Strict"
+server.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 #server.config["SESSION_TYPE"] = "sqlalchemy"
 
 #sesh = Session(server)
@@ -110,13 +110,13 @@ else:
     location = "ggwp"
     print("UNABLE TO FIND LOG FOLDER", full_path)
 
-logging.basicConfig(
+"""logging.basicConfig(
      filename=location + "/generallog.log",
      encoding="utf-8",
      filemode="a",
      level=logging.INFO,
      format="%(asctime)s | %(levelname)s | %(message)s",
-)
+)"""
 
 # Create Logger
 # logger = logging.getLogger(__name__)
@@ -1182,7 +1182,13 @@ def employees():
 
 @server.route("/employees/insert", methods=["POST"])
 def addEmployee():
-    if current_user.Role.value == "manager" or current_user.Role.value == "admin":
+    try:
+        if current_user.Role.value == "manager" or current_user.Role.value == "admin":
+            pass
+    except:
+        return redirect("/login")
+
+    if (current_user.Role.value == "manager" or current_user.Role.value == "admin"):
         formEmployee = employeeInsert()
         FullName = None
         Email = None
@@ -1251,8 +1257,12 @@ def addEmployee():
                     OTPCounter,
                     Disabled,
                 )
-                db.session.add(emp_data)
-                db.session.commit()
+                try:
+                    db.session.add(emp_data)
+                    db.session.commit()
+                except:
+                    flash("Data Input is Invalidated")
+                    return redirect("/employees")
                 obj = (
                     db.session.query(Employee)
                     .order_by(Employee.EmployeeId.desc())
