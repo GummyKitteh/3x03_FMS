@@ -62,9 +62,8 @@ server.config["SESSION_COOKIE_DOMAIN"] = None  # Might set to busfms.tk?
 server.config["SESSION_COOKIE_HTTPONLY"] = True
 server.config["SESSION_COOKIE_SECURE"] = True
 server.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-#server.config["SESSION_TYPE"] = "sqlalchemy"
-
-#sesh = Session(server)
+server.config["SESSION_TYPE"] = "sqlalchemy"
+Session(server)
 
 # Db configuration
 # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
@@ -75,7 +74,7 @@ server.config[
 # # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwert54321@localhost/fmssql"
 # server.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(server)
-#server.config["SESSION_SQLALCHEMY"] = db
+server.config["SESSION_SQLALCHEMY"] = db
 
 # Mail configuration
 server.config["MAIL_SERVER"] = "smtp.gmail.com"
@@ -284,6 +283,20 @@ class Trip(db.Model):
         self.TripStatus = TripStatus
         self.Disabled = Disabled
 
+class Sessions(db.Model):
+    SessionIndex = db.Column(db.Integer, primary_key=True)
+    SessionID = db.Column(db.String(255), nullable=False, unique=True)
+    SessionData = db.Column(db.Blob)
+    SessionExpiry = db.Column(db.DateTime, nullable=False)
+    SessionEmployeeId = db.Column(db.Integer, db.ForeignKey("employee.EmployeeId", ondelete="CASCADE")) # FK: "Employee_ID"
+
+    def __init__(self, SessionIndex, SessionID, SessionData, SessionExpiry, SessionEmployeeId):
+        self.SessionIndex = SessionIndex
+        self.SessionID = SessionID
+        self.SessionData = SessionData
+        self.SessionExpiry = SessionExpiry
+        self.SessionEmployeeId = SessionEmployeeId
+
 
 # ----- END CLASSES -------------------------------------------------------------------
 # ----- LOGIN STUFF -------------------------------------------------------------------
@@ -353,9 +366,6 @@ def login():
 
                         # Authorise login
                         login_user(user)  # , duration=timedelta(seconds=3))
-
-                        # Session
-                        #session["value"] = user
 
                         logger_auth.info(
                             f"{user.FullName} (ID: {user.EmployeeId}) has logged IN."
