@@ -25,12 +25,12 @@ endblock %} {% block body %}
           <span class="input-group-text" id="OTP">OTP</span>
           {{otp_form.OTP(class="form-control")}}
         </div>
-        <span hidden>{{otp_form.OTPUser(value=userid)}}</span>
+        <span hidden>{{otp_form.OTPToken(value=otp_token)}}</span>
         {{otp_form.submit(class="w-50 btn btn-md btn-primary")}}
       </form>
       <form action="/resend-otp" method="POST">
         {{resend_form.hidden_tag()}}
-        <span hidden>{{resend_form.OTPUser(value=userid)}}</span>
+        <span hidden>{{resend_form.OTPToken(value=otp_token)}}</span>
         {{resend_form.submit(class="w-50 btn btn-md btn-primary")}}
       </form>
     </main>
