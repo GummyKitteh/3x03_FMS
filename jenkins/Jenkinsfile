@@ -6,6 +6,11 @@ pipeline {
 				anyOf {
 					branch "main"
 					branch "dev"
+					branch "dev-wenjie"
+					branch "dev-shahmizan"
+					branch "dev-JunMing"
+					branch "dev-xumin"
+					branch "dev-Jas"
 					changeRequest()
 				}
 			}
@@ -19,6 +24,11 @@ pipeline {
 				anyOf {
 					branch "main"
 					branch "dev"
+					branch "dev-wenjie"
+					branch "dev-shahmizan"
+					branch "dev-JunMing"
+					branch "dev-xumin"
+					branch "dev-Jas"
 					changeRequest()
 				}
 			}
@@ -54,6 +64,11 @@ pipeline {
 				anyOf {
 					branch "main"
 					branch "dev"
+					branch "dev-wenjie"
+					branch "dev-shahmizan"
+					branch "dev-JunMing"
+					branch "dev-xumin"
+					branch "dev-Jas"
 					changeRequest()
 				}
 			}
