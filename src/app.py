@@ -422,7 +422,7 @@ def login():
                             # Print for testing
                             print(reset_link)
 
-                        return render_template("reset/reset-message.html")
+                        return render_template("login/login-first-time-message.html")
 
                 # Else unauthenticated credentials
                 else:
@@ -794,12 +794,6 @@ def reset():
                     # If user account is locked (after 5 invalid attempts) but NOT disabled (by IT Admin), send email without reset token
                     if user.AccountLocked and not user.Disabled:
 
-                        ## Update ResetDateTime to prevent user email spam
-                        # user.ResetDateTime = datetime.utcnow().strftime(
-                        #    "%Y-%m-%d %H:%M:%S"
-                        # )
-                        #db.session.commit()
-
                         if user.Role == "driver":
                             supervisor = "your Manager or IT Administrator"
                         elif user.Role == "manager":
@@ -829,9 +823,6 @@ def reset():
 
                         # Generate reset token (output in Base64) for password reset
                         email_token = generate_reset_token(user.get_id())
-                        # user.ResetDateTime = datetime.utcnow().strftime(
-                        #    "%Y-%m-%d %H:%M:%S"
-                        # )
                         user.ResetFlag = (
                             1  # 1 means reset token is STILL VALID & has not been used
                         )
