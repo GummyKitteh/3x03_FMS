@@ -17,7 +17,7 @@ def generate_csprng_token():
 # SecList: https://raw.githubusercontent.com/danielmiessler/SecLists/master/Passwords/Common-Credentials/10-million-password-list-top-100000.txt
 def check_common_password(password):
     filepath = os.getcwd() + "/10-million-password-list-top-1000000.txt"
-    if 'jenkins/scripts' in filepath:
+    if 'jenkins' in filepath:
         return True
     else:
         with open(filepath, "r") as file:
