@@ -364,7 +364,6 @@ def login():
                         return redirect(url_for("employees"))
 
                         """ UNDO this for OTP.
-                        user.LastLogin = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
                         message = send_otp(user)
                         otp_form = OTPForm(request.form)
                         resend_form = ResendOTPForm(request.form)
@@ -372,7 +371,7 @@ def login():
                             "login/login-otp.html",
                             otp_form=otp_form,
                             resend_form=resend_form,
-                            userid=user.get_id(),
+                            otp_token=generate_jwt_token(user.get_id(), "otp"),
                             message=message,
                         )
                         """
@@ -401,7 +400,7 @@ def login():
                             ##email.recipients = ["b33p33p@gmail.com"]
 
                             # Generate reset token (output in Base64) for password reset
-                            email_token = generate_reset_token(user.get_id())
+                            email_token = generate_jwt_token(user.get_id(), "reset")
                             user.ResetDateTime = datetime.utcnow().strftime(
                                 "%Y-%m-%d %H:%M:%S"
                             )
@@ -578,10 +577,21 @@ def validate_otp():
         if otp_form.validate_on_submit():
             account = Employee.query
 
-            # Try if an invalid character was used in the hidden OTPUser input field
+            # Validate if JWT token for OTPToken is still valid (within 5 minutes)
             try:
-                int(otp_form.OTPUser.data)
-                user = account.filter_by(EmployeeId=otp_form.OTPUser.data).first()
+                token_payload = decode_jwt_token(otp_form.OTPToken.data)
+                print(token_payload)
+                employeeID = token_payload["otp_userid"]
+            except:
+                form = LoginForm(request.form)
+                message = ["Your Login session has expired.", "Please try again."]
+                return render_template("login/login.html", form=form, message=message)
+
+            # If JWT Token is compromised,
+            # continue to try if an invalid character was used in the hidden OTPToken input field
+            try:
+                int(employeeID)
+                user = account.filter_by(EmployeeId=employeeID).first()
                 if user == None:
                     raise
             except:
@@ -602,19 +612,9 @@ def validate_otp():
                         "login/login-otp.html",
                         otp_form=otp_form,
                         resend_form=resend_form,
-                        userid=user.get_id(),
+                        otp_token=otp_form.OTPToken.data,
                         message=message,
                     )
-
-                # Calculate time delta between current time and time of credential authentication
-                lastLogin_delta = (datetime.utcnow() - user.LastLogin).total_seconds()
-
-                # If credential was authenticated more than 5 minutes ago, re-login
-                if lastLogin_delta > 300:
-                    db.session.close()
-                    form = LoginForm(request.form)
-                    message = ["Your Login session has expired.", "Please try again."]
-                    return render_template("login/login.html", form=form, message=message)
 
                 # Calculate time delta between current time and time of OTP creation
                 otp_delta = (datetime.utcnow() - user.OTPDateTime).total_seconds()
@@ -664,7 +664,7 @@ def validate_otp():
                             "login/login-otp.html",
                             otp_form=otp_form,
                             resend_form=resend_form,
-                            userid=user.get_id(),
+                            otp_token=otp_form.OTPToken.data,
                             message=message,
                         )
 
@@ -675,7 +675,7 @@ def validate_otp():
                         "login/login-otp.html",
                         otp_form=otp_form,
                         resend_form=resend_form,
-                        userid=user.get_id(),
+                        otp_token=otp_form.OTPToken.data,
                         message=message,
                     )
 
@@ -684,7 +684,7 @@ def validate_otp():
             "login/login-otp.html",
             otp_form=otp_form,
             resend_form=resend_form,
-            userid=otp_form.OTPUser.data,
+            otp_token=otp_form.OTPToken.data,
         )
 
     # Else GET request
@@ -701,10 +701,20 @@ def resend_otp():
     if resend_form.validate_on_submit():
         account = Employee.query
 
-        # Try if an invalid character was used in the hidden OTPUser input field
+        # Validate if JWT token for OTPToken is still valid (within 5 minutes)
         try:
-            int(resend_form.OTPUser.data)
-            user = account.filter_by(EmployeeId=resend_form.OTPUser.data).first()
+            token_payload = decode_jwt_token(resend_form.OTPToken.data)
+            employeeID = token_payload["otp_userid"]
+        except:
+            form = LoginForm(request.form)
+            message = ["Your Login session has expired.", "Please try again."]
+            return render_template("login/login.html", form=form, message=message)
+
+        # If JWT Token is compromised,
+        # continue to try if an invalid character was used in the hidden OTPToken input field
+        try:
+            int(employeeID)
+            user = account.filter_by(EmployeeId=employeeID).first()
             if user == None:
                 raise
         except:
@@ -725,7 +735,7 @@ def resend_otp():
                 "login/login-otp.html",
                 otp_form=otp_form,
                 resend_form=resend_form,
-                userid=user.get_id(),
+                otp_token=resend_form.OTPToken.data,
                 message=message,
             )
 
@@ -735,6 +745,7 @@ def resend_otp():
         "login/login-otp.html",
         otp_form=otp_form,
         resend_form=resend_form,
+        otp_token=resend_form.OTPToken.data,
         message=message,
     )
 
@@ -836,7 +847,7 @@ def reset():
                     else:
 
                         # Generate reset token (output in Base64) for password reset
-                        email_token = generate_reset_token(user.get_id())
+                        email_token = generate_jwt_token(user.get_id(), "reset")
                         user.ResetFlag = (
                             1  # 1 means reset token is STILL VALID & has not been used
                         )
@@ -873,7 +884,7 @@ def newPassword(email_token):
 
     try:
         # Validate if email_token is still valid (within 1 hour)
-        token_payload = decode_reset_token(email_token)
+        token_payload = decode_jwt_token(email_token)
 
         # Validate if email_token has not been used yet
         account = Employee.query
@@ -907,7 +918,7 @@ def postPassword():
 
     try:
         # Validate if email_token is still valid (within 1 hour)
-        token_payload = decode_reset_token(form.EmailToken.data)
+        token_payload = decode_jwt_token(form.EmailToken.data)
 
         # Validate if email_token has not been used yet
         account = Employee.query
@@ -962,7 +973,10 @@ def postPassword():
                     # user.ResetDateTime = datetime.utcnow().strftime(
                     #    "%Y-%m-%d %H:%M:%S"
                     # )
-                    user.LastLogin = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
+                    # If this is the first time resetting a password
+                    if user.LastLogin > datetime.utcnow():
+                        user.LastLogin = "1970-01-01 00:00:01"
 
                     # WONT HAVE ERROR HERE
                     db.session.commit()
