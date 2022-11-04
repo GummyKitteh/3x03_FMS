@@ -8,6 +8,8 @@ services:
     ports:
       - "5000:5000"
     command: gunicorn -w 1 -b 0.0.0.0:5000 wsgi:server
+    volumes:
+      - ./Flask4Nginx/logs:/usr/src/flaskapp/logs
     env_file:
       - Flask.env
     
