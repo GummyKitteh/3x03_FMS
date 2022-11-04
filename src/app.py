@@ -284,6 +284,7 @@ class Trip(db.Model):
         self.Disabled = Disabled
 
 class Sessions(db.Model):
+    __tablename__ = "sessions"
     SessionIndex = db.Column(db.Integer, primary_key=True)
     SessionID = db.Column(db.String(255), nullable=False, unique=True)
     SessionData = db.Column(db.Blob)
