@@ -58,12 +58,12 @@ def test_login_success(client):
 
 def test_register(client):
     response = client.post('/employees/insert', data={
-        'FullName': 'Just Test',
-        'Email': 'JustTest@gmail.com',
+        'FullName': 'JustTest Case',
+        'Email': 'JustTestCase@gmail.com',
         'ContactNumber': '81234567',
         'DOB': '2000-01-01',
         'Role': 'driver',
-        'Password': 'JustForTesting',
+        'Password': 'JustForTesting0124',
         'submit': 'Submit'
     })
     assert response.status_code == 302  # Redirected, unless fail; 200
