@@ -6,7 +6,6 @@ pipeline {
 				anyOf {
 					branch "main"
 					branch "dev"
-					branch "dev-wenjie"
 					changeRequest()
 				}
 			}
@@ -20,7 +19,6 @@ pipeline {
 				anyOf {
 					branch "main"
 					branch "dev"
-					branch "dev-wenjie"
 					changeRequest()
 				}
 			}
@@ -56,7 +54,6 @@ pipeline {
 				anyOf {
 					branch "main"
 					branch "dev"
-					branch "dev-wenjie"
 					changeRequest()
 				}
 			}
