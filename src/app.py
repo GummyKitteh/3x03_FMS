@@ -341,6 +341,7 @@ def login():
                 # If authenticated credentials
                 if user.Password == derived_password:
 
+                    # If user has logged in before
                     if datetime.utcnow() > user.LastLogin:
 
                         """Temporarily Bypass OTP"""
@@ -363,7 +364,8 @@ def login():
                         return redirect(url_for("employees"))
 
                         """ UNDO this for OTP.
-                        message = send_otp(user, form)
+                        user.LastLogin = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+                        message = send_otp(user)
                         otp_form = OTPForm(request.form)
                         resend_form = ResendOTPForm(request.form)
                         return render_template(
@@ -389,6 +391,7 @@ def login():
                             # If there is no timestamp in user.ResetDateTime
                             delta_hour = 1
 
+                        # If user has NOT sent a reset link in the last 1 hour
                         if delta_hour >= 1:
 
                             # Craft email object
@@ -522,7 +525,7 @@ def login():
     return render_template("login/login.html", form=form)
 
 
-def send_otp(user, form):
+def send_otp(user):
     if user.OTPCounter == 0:
         message = [
             "An OTP has been sent to your email.",
@@ -577,19 +580,17 @@ def validate_otp():
 
             # Try if an invalid character was used in the hidden OTPUser input field
             try:
+                int(otp_form.OTPUser.data)
                 user = account.filter_by(EmployeeId=otp_form.OTPUser.data).first()
+                if user == None:
+                    raise
             except:
+                form = LoginForm(request.form)
                 message = [
                     "You do not have the rights to do that.",
                     "Please try again.",
                 ]
-                return render_template(
-                        "login/login-otp.html",
-                        otp_form=otp_form,
-                        resend_form=resend_form,
-                        userid=user.get_id(),
-                        message=message,
-                )
+                return render_template("login/login.html", form=form, message=message)
 
             # If user exists in db
             if user:
@@ -605,6 +606,16 @@ def validate_otp():
                         message=message,
                     )
 
+                # Calculate time delta between current time and time of credential authentication
+                lastLogin_delta = (datetime.utcnow() - user.LastLogin).total_seconds()
+
+                # If credential was authenticated more than 5 minutes ago, re-login
+                if lastLogin_delta > 300:
+                    db.session.close()
+                    form = LoginForm(request.form)
+                    message = ["Your Login session has expired.", "Please try again."]
+                    return render_template("login/login.html", form=form, message=message)
+
                 # Calculate time delta between current time and time of OTP creation
                 otp_delta = (datetime.utcnow() - user.OTPDateTime).total_seconds()
                 if otp_delta <= 120:  # If OTP validity is within 120 seconds
@@ -616,6 +627,11 @@ def validate_otp():
                         user.LoginCounter = 0
                         user.LastLogin = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
                         user.OTP = 0
+
+                        # Log out from / Destroy existing sessions
+                        # << Shah's implementation here >>
+
+                        # Commit to DB
                         db.session.commit()
 
                         # Authorise login
@@ -687,25 +703,23 @@ def resend_otp():
 
         # Try if an invalid character was used in the hidden OTPUser input field
         try:
+            int(resend_form.OTPUser.data)
             user = account.filter_by(EmployeeId=resend_form.OTPUser.data).first()
+            if user == None:
+                raise
         except:
+            form = LoginForm(request.form)
             message = [
                 "You do not have the rights to do that.",
                 "Please try again.",
             ]
-            return render_template(
-                "login/login-otp.html",
-                otp_form=otp_form,
-                resend_form=resend_form,
-                userid=user.get_id(),
-                message=message,
-            )
+            return render_template("login/login.html", form=form, message=message)
 
         # If user exists in db
         if user:
 
             # Resend OTP
-            message = send_otp(user, resend_form)
+            message = send_otp(user)
             resend_form = ResendOTPForm(request.form)
             return render_template(
                 "login/login-otp.html",
@@ -875,6 +889,8 @@ def newPassword(email_token):
                 return render_template("login/account-locked.html")
             if user.Disabled:  # 1 means user account is disabled (by IT Admin)
                 return render_template("login/account-disabled.html")
+        else:
+            return render_template("reset/reset-expired.html")
 
     except:
         return render_template("reset/reset-expired.html")
@@ -907,6 +923,8 @@ def postPassword():
                 return render_template("login/account-locked.html")
             if user.Disabled:  # 1 means user account is disabled (by IT Admin)
                 return render_template("login/account-disabled.html")
+        else:
+            return render_template("reset/reset-expired.html")
 
     except:
         return render_template("reset/reset-expired.html")
@@ -916,8 +934,6 @@ def postPassword():
 
         # If Form is validated
         if form.validate_on_submit():
-            # account = Employee.query
-            # user = account.filter_by(EmployeeId=token_payload["reset_token"]).first()
 
             # If user exists in db
             if user:
@@ -1435,14 +1451,14 @@ def addEmployee():
                     db.session.close()
                     flash("Driver inserted sucessfully")
                     return redirect("/employees")
+
+            # If email does exist in db
             else:
                 db.session.close()
                 flash("Email already exists. Please choose another.")
                 return redirect("/employees")
 
         else:
-            # Choose 1 messsage
-            # flash("Email already exists. Please choose another.")
             logger_crud.error(f"Employee insert failed.")
             db.session.close()
             flash("Employee insert failed. Please check your fields again.")
