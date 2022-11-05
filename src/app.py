@@ -55,16 +55,16 @@ Base = declarative_base()
 server = Flask(__name__)
 
 # Session Config
-# server.secret_key = "abcd"
 server.config["SECRET_KEY"] = generate_csprng_token()
 server.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=1)
 server.config["SESSION_COOKIE_DOMAIN"] = None  # Might set to busfms.tk?
 server.config["SESSION_COOKIE_HTTPONLY"] = True
 server.config["SESSION_COOKIE_SECURE"] = True
-server.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-# server.config["SESSION_TYPE"] = "sqlalchemy"
-
-# sesh = Session(server)
+server.config["SESSION_COOKIE_SAMESITE"] = "Strict"
+server.config["REMEMBER_COOKIE_HTTPONLY"] = True
+server.config["REMEMBER_COOKIE_SECURE"] = True
+server.config["SESSION_TYPE"] = "sqlalchemy"
+Session(server)
 
 # Db configuration
 # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
@@ -75,7 +75,7 @@ server.config[
 # # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwert54321@localhost/fmssql"
 # server.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(server)
-# server.config["SESSION_SQLALCHEMY"] = db
+server.config["SESSION_SQLALCHEMY"] = db
 
 # Mail configuration
 server.config["MAIL_SERVER"] = "smtp.gmail.com"
@@ -287,6 +287,22 @@ class Trip(db.Model):
         self.Disabled = Disabled
 
 
+class Sessions(db.Model):
+    __tablename__ = "sessions"
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(255), nullable=False, unique=True)
+    data = db.Column(db.LargeBinary)
+    expiry = db.Column(db.DateTime, nullable=False)
+    Employee_ID = db.Column(db.Integer, db.ForeignKey("employee.EmployeeId", ondelete="CASCADE")) # FK: "Employee_ID"
+
+    def __init__(self, id, session_id, data, expiry, Employee_ID):
+        self.id = id
+        self.session_id = session_id
+        self.data = data
+        self.expiry = expiry
+        self.Employee_ID = Employee_ID
+
+
 # ----- END CLASSES -------------------------------------------------------------------
 # ----- LOGIN STUFF -------------------------------------------------------------------
 
@@ -319,6 +335,7 @@ def login():
         # If Form is validated
         if form.validate_on_submit():
             account = Employee.query
+            sessioning = Sessions.query
 
             # Try if an invalid character was used in the Email input field
             try:
@@ -359,7 +376,9 @@ def login():
                         login_user(user)  # , duration=timedelta(seconds=3))
 
                         # Session
-                        # session["value"] = user
+                        user_session = sessioning.filter_by(session_id="session:"+session.sid).first()
+                        user_session.Employee_ID = user.EmployeeId
+                        db.session.commit()
 
                         db.session.close()
                         return redirect(url_for("employees"))
@@ -577,6 +596,7 @@ def validate_otp():
         # If Form is validated
         if otp_form.validate_on_submit():
             account = Employee.query
+            sessioning = Sessions.query
 
             # Validate if JWT token for OTPToken is still valid (within 5 minutes)
             try:
@@ -630,7 +650,10 @@ def validate_otp():
                         user.OTP = 0
 
                         # Log out from / Destroy existing sessions
-                        # << Shah's implementation here >>
+                        # Set Sessions
+                        user_session = sessioning.filter_by(session_id="session:"+session.sid).first()
+                        user_session.Employee_ID = user.EmployeeId
+                        db.session.commit()
 
                         # Commit to DB
                         db.session.commit()
