@@ -342,7 +342,7 @@ def login():
                 user = account.filter_by(Email=form.Email.data).first()
             except:
                 message = [
-                    "At least 1 input field contains an invalid character.",
+                    "You have entered an invalid Email and/or Password.",
                     "Please try again.",
                 ]
                 db.session.close()
@@ -351,11 +351,61 @@ def login():
             # If user exists in db
             if user:
 
+                # If user account is Locked or Disabled
+                if user.AccountLocked or user.Disabled:
+
+                    # Calculate time delta between current time and account locked time
+                    try:
+                        # If there is a timestamp in user.AccountLockedDateTime
+                        email_token_delta = (
+                            datetime.utcnow() - user.AccountLockedDateTime
+                        ).total_seconds()
+                        delta_minute = email_token_delta // 60
+                    except:
+                        # If there is no timestamp in user.AccountLockedDateTime
+                        delta_minute = 10
+
+                    # If user has NOT been notified of account lock or disable in the last 10 minutes
+                    if delta_minute >= 10:
+
+                        # Update AccountLockedDateTime to prevent user email spam
+                        user.AccountLockedDateTime = datetime.utcnow().strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        )
+                        db.session.commit()
+
+                        if user.Disabled:
+                            logger_auth.warning(
+                                f"{user.FullName} (ID: {user.EmployeeId}) (Account Disabled) attempted to log in."
+                            )
+                        else:
+                            logger_auth.warning(
+                                f"{user.FullName} (ID: {user.EmployeeId}) (Account Locked) attempted to log in."
+                            )
+
+                        # Send email to notify User
+                        email = Message()
+                        email.subject = "You Account Has Been Locked or Disabled"
+                        email.recipients = [form.Email.data]
+
+                        administrator, supervisor = email_role(user.Role)
+                        email.body = "Dear {},\n\nWe note that you have attempted to log in to your Bus FMS account without success.\nUnfortunately, your account has either been locked after too many invalid login attempts, or it has been disabled by {}.\n\nPlease contact {} for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
+                            user.FullName, administrator, supervisor
+                        )
+                        Thread(target=send_email, args=(server, email)).start()
+                        print("Mimic: Email sent (Account Locked/Disabled)")
+
+                    message = [
+                        "You have entered an invalid Email and/or Password.",
+                        "Please try again.",
+                    ]
+                    db.session.close()
+                    return render_template("login/login.html", form=form, message=message)
+
                 # Security Control
                 derived_password = process_password(
                     form.password.data, user.PasswordSalt
                 )
-
                 # If authenticated credentials
                 if user.Password == derived_password:
 
@@ -494,62 +544,6 @@ def login():
 
                         # Render Account Locked page ONLY ONCE to prevent account guessing
                         return render_template("login/account-locked.html")
-
-                    # If user account is Locked or Disabled
-                    if user.AccountLocked or user.Disabled:
-
-                        # Calculate time delta between current time and account locked time
-                        try:
-                            # If there is a timestamp in user.AccountLockedDateTime
-                            email_token_delta = (
-                                datetime.utcnow() - user.AccountLockedDateTime
-                            ).total_seconds()
-                            delta_minute = email_token_delta // 60
-                        except:
-                            # If there is no timestamp in user.AccountLockedDateTime
-                            delta_minute = 10
-
-                        # If user has NOT been notified of account lock or disable in the last 10 minutes
-                        if delta_minute >= 10:
-
-                            # Update AccountLockedDateTime to prevent user email spam
-                            user.AccountLockedDateTime = datetime.utcnow().strftime(
-                                "%Y-%m-%d %H:%M:%S"
-                            )
-                            db.session.commit()
-
-                            if user.AccountLocked:
-                                logger_auth.warning(
-                                    f"{user.FullName} (ID: {user.EmployeeId}) (Account Locked) attempted to log in."
-                                )
-                            else:
-                                logger_auth.warning(
-                                    f"{user.FullName} (ID: {user.EmployeeId}) (Account Disabled) attempted to log in."
-                                )
-
-                            """
-                            if user.Role == "driver":
-                                administrator = "the IT Administrator"
-                                supervisor = "your Manager or IT Administrator"
-                            elif user.Role == "manager":
-                                administrator = "the IT Administrator"
-                                supervisor = "the IT Administrator"
-                            else:
-                                administrator = "an IT Administrator"
-                                supervisor = "an IT Administrator"
-                            """
-
-                            # Send email to notify User
-                            email = Message()
-                            email.subject = "You Account Has Been Locked or Disabled"
-                            email.recipients = [form.Email.data]
-
-                            administrator, supervisor = email_role(user.Role)
-                            email.body = "Dear {},\n\nWe note that you have attempted to log in to your Bus FMS account without success.\nUnfortunately, your account has either been locked after too many invalid login attempts, or it has been disabled by {}.\n\nPlease contact {} for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
-                                user.FullName, administrator, supervisor
-                            )
-                            Thread(target=send_email, args=(server, email)).start()
-                            print("Mimic: Email sent (Account Locked)")
 
         # Else Form is invalidated OR User does not exist in db
         message = [
