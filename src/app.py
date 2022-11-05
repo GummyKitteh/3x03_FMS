@@ -288,7 +288,7 @@ class Sessions(db.Model):
     __tablename__ = "sessions"
     id = db.Column(db.Integer, primary_key=True)
     session_id = db.Column(db.String(255), nullable=False, unique=True)
-    data = db.Column(db.Blob)
+    data = db.Column(db.LargeBinary)
     expiry = db.Column(db.DateTime, nullable=False)
     Employee_ID = db.Column(db.Integer, db.ForeignKey("employee.EmployeeId", ondelete="CASCADE")) # FK: "Employee_ID"
 
