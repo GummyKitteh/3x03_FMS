@@ -98,13 +98,13 @@ class OTPForm(FlaskForm):
     OTP = PasswordField(
         "OTP", [DataRequired(), Length(min=6, max=6), Regexp(regex="^[0-9]+$")]
     )
-    OTPUser = IntegerField([DataRequired()])
+    OTPToken = StringField([DataRequired()])
     # recaptcha = RecaptchaField()
     submit = SubmitField("Submit")
 
 
 class ResendOTPForm(FlaskForm):
-    OTPUser = IntegerField([DataRequired()])
+    OTPToken = StringField([DataRequired()])
     submit = SubmitField("Request New OTP")
 
 
