@@ -345,7 +345,7 @@ def login():
                     "You have entered an invalid Email and/or Password.",
                     "Please try again.",
                 ]
-                db.session.close()
+                # db.session.close()
                 return render_template("login/login.html", form=form, message=message)
 
             # If user exists in db
@@ -399,7 +399,7 @@ def login():
                         "You have entered an invalid Email and/or Password.",
                         "Please try again.",
                     ]
-                    db.session.close()
+                    # db.session.close()
                     return render_template("login/login.html", form=form, message=message)
 
                 # Security Control
@@ -429,7 +429,7 @@ def login():
                         user_session.Employee_ID = user.EmployeeId
                         db.session.commit()
 
-                        db.session.close()
+                        #db.session.close()
                         return redirect(url_for("employees"))
 
                         """ UNDO this for OTP.
@@ -477,7 +477,7 @@ def login():
                             db.session.commit()
 
                             # Send email object
-                            reset_link = "http://localhost:5000/new-password/{}".format(
+                            reset_link = "https://busfms.tk/new-password/{}".format(
                                 email_token
                             )
                             # reset_link = "http://busfms.tk/new-password/{}".format(email_token)
@@ -550,10 +550,10 @@ def login():
             "You have entered an invalid Email and/or Password.",
             "Please try again.",
         ]
-        db.session.close()
+        #db.session.close()
         return render_template("login/login.html", form=form, message=message)
 
-    db.session.close()
+    #db.session.close()
     # Else GET request
     return render_template("login/login.html", form=form)
 
@@ -682,7 +682,7 @@ def validate_otp():
                         # Authorise login
                         login_user(user)
 
-                        db.session.close()
+                        #db.session.close()
                         return redirect(url_for("employees"))
 
                     # Else GET OTP page
@@ -722,7 +722,7 @@ def validate_otp():
                         message=message,
                     )
 
-        db.session.close()
+        #db.session.close()
         return render_template(
             "login/login-otp.html",
             otp_form=otp_form,
@@ -902,7 +902,7 @@ def reset():
                         db.session.commit()
 
                         # Send email object
-                        reset_link = "http://localhost:5000/new-password/{}".format(
+                        reset_link = "https://busfms.tk/new-password/{}".format(
                             email_token
                         )
                         # reset_link = "http://busfms.tk/new-password/{}".format(email_token)
@@ -918,7 +918,7 @@ def reset():
                         # Print for testing
                         print(reset_link)
 
-            db.session.close()
+            #db.session.close()
             # Regardless if user exists or not, display generic message
             return render_template("reset/reset-message.html")
 
@@ -1064,10 +1064,10 @@ def postPassword():
                 f"{user.FullName} (ID: {user.EmployeeId}) has performed a password reset. Notification email has been sent to the User."
             )
 
-            db.session.close()
+            #db.session.close()
             return render_template("reset/reset-success.html")
 
-    db.session.close()
+    #db.session.close()
     return render_template(
         "reset/new-password.html", form=form, email_token=form.EmailToken.data
     )
@@ -1177,7 +1177,7 @@ def addFleet():
                 db.session.add(fleet_data)
                 db.session.commit()
             except:
-                db.session.close()
+                #db.session.close()
                 flash(
                     "At least 1 input field contains an invalid character. Please try again."
                 )
@@ -1187,17 +1187,17 @@ def addFleet():
             logger_crud.info(
                 f"Vechicle (ID: {obj.VehicleId}) inserted to Fleet by EmployeeID: {current_user.EmployeeId}."
             )
-            db.session.close()
+            #db.session.close()
             flash("Vehicle inserted sucessfully.")
             return redirect("/fleet")
         else:
             logger_crud.error(
                 f"Vehicle insert failed by EmployeeID: {current_user.EmployeeId}."
             )
-            db.session.close()
+            #db.session.close()
             flash("Vehicle insert failed.")
             return redirect("/fleet")
-        db.session.close()
+        #db.session.close()
     else:
         return redirect("/notauthorized")
 
@@ -1238,7 +1238,7 @@ def fleetUpdate():
             )
             flash("Vehicle Updated Successfully")
             return redirect(url_for("fleet", fleetupdate=fleetupdate))
-        db.session.close()
+        #db.session.close()
     else:
         vID = request.form.get("VehicleId")
         logger_crud.error(
@@ -1277,13 +1277,13 @@ def delete(id):
                 logger_crud.error(
                     f"Vechicle (ID: {id}) delete failed by EmployeeID: {current_user.EmployeeId}."
                 )
-                db.session.close()
+                #db.session.close()
                 return redirect(url_for("fleet"))
 
             logger_crud.info(
                 f"Vechicle (ID: {id}) deleted from fleet by EmployeeID: {current_user.EmployeeId}."
             )
-            db.session.close()
+            #db.session.close()
             flash("Vehicle deleted sucessfully.")
             return redirect(url_for("fleet"))
     else:
@@ -1433,7 +1433,7 @@ def addEmployee():
             try:
                 user = account.filter_by(Email=formEmployee.Email.data).first()
             except:
-                db.session.close()
+                #db.session.close()
                 logger_crud.warning(
                     f"Employee insert failed by EmployeeID: {current_user.EmployeeId}."
                 )
@@ -1457,7 +1457,7 @@ def addEmployee():
                 is_common_password = check_common_password(formEmployee.Password.data)
                 # If password chosen is a common password
                 if is_common_password:
-                    db.session.close()
+                    #db.session.close()
                     flash(
                         "Password chosen is a commonly used password. Please choose another.",
                         "error",
@@ -1498,7 +1498,7 @@ def addEmployee():
                     db.session.add(emp_data)
                     db.session.commit()
                 except:
-                    db.session.close()
+                    #db.session.close()
                     logger_crud.warning(
                         f"Employee insert failed by EmployeeID: {current_user.EmployeeId}."
                     )
@@ -1517,7 +1517,7 @@ def addEmployee():
                 )
 
                 if Role != "driver":
-                    db.session.close()
+                    #db.session.close()
                     flash("Employee inserted sucessfully")
                     return redirect("/employees")
                 else:
@@ -1533,7 +1533,7 @@ def addEmployee():
                     try:
                         db.session.commit()
                     except:
-                        db.session.close()
+                        #db.session.close()
 
                         flash("Employee is unable to be inserted. Please try again.")
                         return redirect("/employees")
@@ -1549,13 +1549,13 @@ def addEmployee():
                     # db.session.close()
                     # db.session.expire_all()
 
-                    db.session.close()
+                    #db.session.close()
                     flash("Driver inserted sucessfully")
                     return redirect("/employees")
 
             # If email does exist in db
             else:
-                db.session.close()
+                #db.session.close()
                 flash("Email already exists. Please choose another.")
                 return redirect("/employees")
 
@@ -1563,7 +1563,7 @@ def addEmployee():
             logger_crud.error(
                 f"Employee insert failed by EmployeeID: {current_user.EmployeeId}."
             )
-            db.session.close()
+            #db.session.close()
             flash("Employee insert failed. Please check your fields again.")
             return redirect("/employees")
     else:
@@ -1606,7 +1606,7 @@ def employeeDelete(id):
             except:
                 flash("Employee is unable to be disabled. Please try again.")
 
-            db.session.close()
+            #db.session.close()
             return redirect(url_for("employees"))
     else:
         return redirect("/notauthorized")
@@ -1640,7 +1640,7 @@ def employeeUnlock(id):
             except:
                 flash("Employee is unable to be enabled. Please try again.")
 
-            db.session.close()
+            #db.session.close()
             return redirect(url_for("employees"))
     else:
         return redirect("/notauthorized")
@@ -1857,7 +1857,7 @@ def addTrip():
             try:
                 db.session.commit()
             except:
-                db.session.close()
+                #db.session.close()
                 flash(
                     "At least 1 input field contains an invalid character. Please try again."
                 )
@@ -1867,14 +1867,14 @@ def addTrip():
             logger_crud.info(
                 f"Trip (ID: {obj.TripID}) inserted to Trip by Employee (ID: {current_user.EmployeeId})."
             )
-            db.session.close()
+            #db.session.close()
             flash("Trip inserted sucessfully")
             return redirect("/trip")
         else:
             logger_crud.warning(
                 f"Trip insert failed by Employee (ID: {current_user.EmployeeId})."
             )
-            db.session.close()
+            #db.session.close()
             flash("Trip insert failed.")
             return redirect("/trip")
     else:
@@ -2025,7 +2025,7 @@ def tripUpdate():
             try:
                 db.session.commit()
             except:
-                db.session.close()
+                #db.session.close()
                 flash("Trip is unable to be updated. Please try again.")
                 logger_crud.error(
                     f"Trip (ID: {id}) update failed by Employee (ID: {current_user.EmployeeId})."
@@ -2035,7 +2035,7 @@ def tripUpdate():
             logger_crud.info(f"Trip (ID: {tID}) was updated in Trip.")
             flash("Trip Updated Successfully")
             return redirect(url_for("trip", tripupdate=tripupdate))
-        db.session.close()
+        #db.session.close()
     else:
         return redirect("/notauthorized")
 
