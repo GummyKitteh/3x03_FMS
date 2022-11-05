@@ -12,6 +12,7 @@ def flask_app():
     with app.app_context():
         app.config['WTF_CSRF_ENABLED'] = False
         app.config['TESTING'] = True
+        app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
         yield app
 
 
