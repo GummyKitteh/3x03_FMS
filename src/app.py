@@ -352,7 +352,6 @@ def login():
             if user:
 
                 # Security Control
-                # Need to check for Emoji
                 derived_password = process_password(
                     form.password.data, user.PasswordSalt
                 )
@@ -462,6 +461,19 @@ def login():
                         )
                         db.session.commit()
 
+                        # Send email to notify User
+                        email = Message()
+                        email.subject = "You Account Has Been Locked or Disabled"
+                        email.recipients = [form.Email.data]
+
+                        administrator, supervisor = email_role(user.Role)
+                        email.body = "Dear {},\n\nWe note that you have attempted to log in to your Bus FMS account without success.\nUnfortunately, your account has either been locked after too many invalid login attempts, or it has been disabled by {}.\n\nPlease contact {} for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
+                            user.FullName, administrator, supervisor
+                        )
+                        Thread(target=send_email, args=(server, email)).start()
+                        print("Mimic: Email sent (Account Locked)")
+
+
                         # Send email to notify Administrator
                         email = Message()
                         email.subject = (
@@ -506,10 +518,16 @@ def login():
                             )
                             db.session.commit()
 
-                            logger_auth.warning(
-                                f"{user.FullName} (ID: {user.EmployeeId}) (Account Locked) attempted to log in."
-                            )
+                            if user.AccountLocked:
+                                logger_auth.warning(
+                                    f"{user.FullName} (ID: {user.EmployeeId}) (Account Locked) attempted to log in."
+                                )
+                            else:
+                                logger_auth.warning(
+                                    f"{user.FullName} (ID: {user.EmployeeId}) (Account Disabled) attempted to log in."
+                                )
 
+                            """
                             if user.Role == "driver":
                                 administrator = "the IT Administrator"
                                 supervisor = "your Manager or IT Administrator"
@@ -519,12 +537,14 @@ def login():
                             else:
                                 administrator = "an IT Administrator"
                                 supervisor = "an IT Administrator"
+                            """
 
                             # Send email to notify User
                             email = Message()
                             email.subject = "You Account Has Been Locked or Disabled"
                             email.recipients = [form.Email.data]
-                            # email.recipients = ["b33p33p@gmail.com"]
+
+                            administrator, supervisor = email_role(user.Role)
                             email.body = "Dear {},\n\nWe note that you have attempted to log in to your Bus FMS account without success.\nUnfortunately, your account has either been locked after too many invalid login attempts, or it has been disabled by {}.\n\nPlease contact {} for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
                                 user.FullName, administrator, supervisor
                             )
@@ -569,7 +589,6 @@ def send_otp(user):
     email = Message()
     email.subject = "Your Bus FMS OTP"
     email.recipients = [user.Email]
-    # email.recipients = ["b33p33p@gmail.com"]
     email.body = "Dear {}, \n\nYour OTP is {}.\nPlease note that your OTP is only valid for 2 minutes.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
         user.FullName, user.OTP
     )
@@ -605,7 +624,7 @@ def validate_otp():
                 employeeID = token_payload["otp_userid"]
             except:
                 form = LoginForm(request.form)
-                message = ["Your Login session has expired.", "Please try again."]
+                message = ["Your OTP session has expired.", "Please try again."]
                 return render_template("login/login.html", form=form, message=message)
 
             # If JWT Token is compromised,
@@ -636,6 +655,12 @@ def validate_otp():
                         otp_token=otp_form.OTPToken.data,
                         message=message,
                     )
+
+                # If user account is Locked or Disabled during OTP authentication, render relevant page
+                if user.AccountLocked:
+                    return render_template("login/account-locked.html")
+                elif user.Disabled:
+                    return render_template("login/account-disabled.html")
 
                 # Calculate time delta between current time and time of OTP creation
                 otp_delta = (datetime.utcnow() - user.OTPDateTime).total_seconds()
@@ -731,7 +756,7 @@ def resend_otp():
             employeeID = token_payload["otp_userid"]
         except:
             form = LoginForm(request.form)
-            message = ["Your Login session has expired.", "Please try again."]
+            message = ["Your OTP session has expired.", "Please try again."]
             return render_template("login/login.html", form=form, message=message)
 
         # If JWT Token is compromised,
@@ -842,17 +867,27 @@ def reset():
                     user.ResetDateTime = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
                     db.session.commit()
 
-                    # If user account is locked (after 5 invalid attempts) but NOT disabled (by IT Admin), send email without reset token
-                    if user.AccountLocked and not user.Disabled:
+                    # If user account is disabled (by IT Admin), don't do anything
+                    if user.Disabled:
+                        logger_auth.warning(
+                            f"{user.FullName} (ID: {user.EmployeeId}) (Account Disabled) attempted to request for a password reset."
+                        )
+                        pass
 
+                    # If user account is locked (after 5 invalid attempts), send email without reset token
+                    elif user.AccountLocked:
+
+                        """
                         if user.Role == "driver":
                             supervisor = "your Manager or IT Administrator"
                         elif user.Role == "manager":
                             supervisor = "the IT Administrator"
                         else:
                             supervisor = "an IT Administrator"
+                        """
 
                         # Send email object
+                        administrator, supervisor = email_role(user.Role)
                         email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nUnfortunately, your account has been locked after too many invalid attempts.\nPlease contact {} for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
                             user.FullName, supervisor
                         )
@@ -861,13 +896,6 @@ def reset():
                             f"{user.FullName} (ID: {user.EmployeeId}) (Account Locked) requested a password reset via Email."
                         )
                         print("Mimic: Email sent")
-
-                    # If user account is disabled (by IT Admin), don't do anything
-                    elif user.Disabled:
-                        logger_auth.warning(
-                            f"{user.FullName} (ID: {user.EmployeeId}) (Account Disabled) attempted to request for a password reset."
-                        )
-                        pass
 
                     # If user account is NOT locked, send email with reset token
                     else:
@@ -972,83 +1000,78 @@ def postPassword():
         # If Form is validated
         if form.validate_on_submit():
 
-            # If user exists in db
-            if user:
-                PasswordSalt = generate_csprng_token()  # 32-byte salt in hexadecimal
+            PasswordSalt = generate_csprng_token()  # 32-byte salt in hexadecimal
 
-                # If password chosen is a common password
-                is_common_password = check_common_password(form.NewPassword.data)
-                if is_common_password:
-                    message = [
-                        "Password chosen is a commonly used password.",
-                        "Please choose another.",
-                    ]
-                    return render_template(
-                        "reset/new-password.html",
-                        form=form,
-                        email_token=form.EmailToken.data,
-                        message=message,
-                    )
-
-                # Try if an invalid character was used in the Password input field
-                try:
-                    # Need to check for Emoji
-                    user.Password = process_password(
-                        form.NewPassword.data, PasswordSalt
-                    )
-                    user.PasswordSalt = PasswordSalt
-                    user.ResetFlag = (
-                        0  # 0 means reset token is NOT VALID & has been used
-                    )
-                    # user.ResetDateTime = datetime.utcnow().strftime(
-                    #    "%Y-%m-%d %H:%M:%S"
-                    # )
-
-                    # If this is the first time resetting a password
-                    if user.LastLogin > datetime.utcnow():
-                        user.LastLogin = "1970-01-01 00:00:01"
-
-                    # WONT HAVE ERROR HERE
-                    db.session.commit()
-                except:
-                    message = [
-                        "Password chosen contains invalid characters.",
-                        "Please choose another.",
-                    ]
-                    return render_template(
-                        "reset/new-password.html",
-                        form=form,
-                        email_token=form.EmailToken.data,
-                        message=message,
-                    )
-
-                # Send Email to notify user that Password has been changed
-                if user.Role == "driver":
-                    supervisor = "your Manager or IT Administrator"
-                elif user.Role == "manager":
-                    supervisor = "the IT Administrator"
-                else:
-                    supervisor = "an IT Administrator"
-
-                # Craft email object
-                email = Message()
-                email.subject = "Your Bus FMS Password Has Been Changed"
-                email.recipients = [user.Email]
-                # email.recipients = ["b33p33p@gmail.com"]
-
-                email.body = "Dear {},\n\nYour Bus FMS password has just been changed.\n\nIf you did not perform this request, please contact {} as soon as possible.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
-                    user.FullName, supervisor
+            # If password chosen is a common password
+            is_common_password = check_common_password(form.NewPassword.data)
+            if is_common_password:
+                message = [
+                    "Password chosen is a commonly used password.",
+                    "Please choose another.",
+                ]
+                return render_template(
+                    "reset/new-password.html",
+                    form=form,
+                    email_token=form.EmailToken.data,
+                    message=message,
                 )
-                Thread(target=send_email, args=(server, email)).start()
-                print("Mimic: Email sent")
-                logger_auth.info(
-                    f"{user.FullName} (ID: {user.EmployeeId}) has performed a password reset. Notification email has been sent to the User."
-                )
-                # Log user out of all logged-in sessions.
-                logout_user()
 
-                db.session.close()
-                return render_template("reset/reset-success.html")
+            # Try if an invalid character was used in the Password input field
+            try:
+                user.Password = process_password(form.NewPassword.data, PasswordSalt)
+                user.PasswordSalt = PasswordSalt
+                user.ResetFlag = 0  # 0 means reset token is NOT VALID & has been used
+                # user.ResetDateTime = datetime.utcnow().strftime(
+                #    "%Y-%m-%d %H:%M:%S"
+                # )
+
+                # If this is the first time resetting a password
+                if user.LastLogin > datetime.utcnow():
+                    user.LastLogin = "1970-01-01 00:00:01"
+
+                db.session.commit()
+            except:
+                message = [
+                    "Password chosen contains invalid characters.",
+                    "Please choose another.",
+                ]
+                return render_template(
+                    "reset/new-password.html",
+                    form=form,
+                    email_token=form.EmailToken.data,
+                    message=message,
+                )
+
+            """
+            if user.Role == "driver":
+                supervisor = "your Manager or IT Administrator"
+            elif user.Role == "manager":
+                supervisor = "the IT Administrator"
+            else:
+                supervisor = "an IT Administrator"
+            """
+
+            # Send Email to notify user that Password has been changed
+            # Craft email object
+            email = Message()
+            email.subject = "Your Bus FMS Password Has Been Changed"
+            email.recipients = [user.Email]
+
+            administrator, supervisor = email_role(user.Role)
+            email.body = "Dear {},\n\nYour Bus FMS password has just been changed.\n\nIf you did not perform this request, please contact {} as soon as possible.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
+                user.FullName, supervisor
+            )
+            Thread(target=send_email, args=(server, email)).start()
+            print("Mimic: Email sent")
+
+            # Log user out of all logged-in sessions.
+            logout_user()
+            logger_auth.info(
+                f"{user.FullName} (ID: {user.EmployeeId}) has performed a password reset. Notification email has been sent to the User."
+            )
+
+            db.session.close()
+            return render_template("reset/reset-success.html")
 
     db.session.close()
     return render_template(
@@ -2154,6 +2177,19 @@ def profile():
 
 
 # ----- END PROFILE INFO ---------------------------------------------------------------
+
+
+def email_role(role):
+    if role == "driver":
+        administrator = "the IT Administrator"
+        supervisor = "your Manager or IT Administrator"
+    elif role == "manager":
+        administrator = "the IT Administrator"
+        supervisor = "the IT Administrator"
+    else:
+        administrator = "an IT Administrator"
+        supervisor = "an IT Administrator"
+    return administrator, supervisor
 
 
 def send_email(app, email):
