@@ -16,7 +16,6 @@ endblock %} {% block body %}
       {% if otp_form.OTP.errors %}
         You have entered an invalid OTP format.<br />Please try again.<br />
       {%endif%}
-      <!-- print recaptcha error -->
       <h1 class="display-5 my-5">One-time Password (OTP)</h1>
       <h6><i>Please <u>do not refresh</u> or <u>navigate away from</u> this page.</i></h6>
       <form action="/otp" method="POST">
@@ -25,12 +24,12 @@ endblock %} {% block body %}
           <span class="input-group-text" id="OTP">OTP</span>
           {{otp_form.OTP(class="form-control")}}
         </div>
-        <span hidden>{{otp_form.OTPUser(value=userid)}}</span>
+        <span hidden>{{otp_form.OTPToken(value=otp_token)}}</span>
         {{otp_form.submit(class="w-50 btn btn-md btn-primary")}}
       </form>
       <form action="/resend-otp" method="POST">
         {{resend_form.hidden_tag()}}
-        <span hidden>{{resend_form.OTPUser(value=userid)}}</span>
+        <span hidden>{{resend_form.OTPToken(value=otp_token)}}</span>
         {{resend_form.submit(class="w-50 btn btn-md btn-primary")}}
       </form>
     </main>

@@ -49,12 +49,19 @@ def process_password(password, hex_salt):
 
 load_dotenv()  # take environment variables from .env.
 
-# Encoding password reset tokens with PyJWT, and must be unique and not easily guessable.
+# Encode password reset tokens & OTP UserID with PyJWT, and must be unique and not easily guessable.
 # https://pyjwt.readthedocs.io/en/latest/usage.html
-def generate_reset_token(userid):
+def generate_jwt_token(userid, token_type):
     token_issued = datetime.now(tz=timezone.utc)
-    token_expiry = token_issued + timedelta(hours=1)
-    jwt_payload = {"reset_token": userid, "iat": token_issued, "exp": token_expiry}
+
+    if token_type == "reset":
+        token_expiry = token_issued + timedelta(hours=1)
+        jwt_payload = {"reset_token": userid, "iat": token_issued, "exp": token_expiry}
+
+    elif token_type == "otp":
+        token_expiry = token_issued + timedelta(minutes=5)
+        jwt_payload = {"otp_userid": userid, "iat": token_issued, "exp": token_expiry}
+
     jwt_encode = jwt.encode(
         jwt_payload,
         key=os.getenv("secret_key"),
@@ -64,9 +71,9 @@ def generate_reset_token(userid):
     return base64.urlsafe_b64encode(jwt_encode).decode("utf-8", "strict")
 
 
-# Decoding password reset tokens with PyJWT, and must be unique and not easily guessable.
+# Decode password reset tokens & OTP UserID with PyJWT, and must be unique and not easily guessable.
 # https://pyjwt.readthedocs.io/en/latest/usage.html
-def decode_reset_token(token):
+def decode_jwt_token(token):
     jwt_token = base64.urlsafe_b64decode(token).decode("utf-8", "strict")
     return jwt.decode(
         jwt_token,

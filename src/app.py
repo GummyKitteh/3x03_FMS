@@ -55,16 +55,16 @@ Base = declarative_base()
 server = Flask(__name__)
 
 # Session Config
-#server.secret_key = "abcd"
 server.config["SECRET_KEY"] = generate_csprng_token()
 server.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=1)
 server.config["SESSION_COOKIE_DOMAIN"] = None  # Might set to busfms.tk?
 server.config["SESSION_COOKIE_HTTPONLY"] = True
 server.config["SESSION_COOKIE_SECURE"] = True
-server.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-#server.config["SESSION_TYPE"] = "sqlalchemy"
-
-#sesh = Session(server)
+server.config["SESSION_COOKIE_SAMESITE"] = "Strict"
+server.config["REMEMBER_COOKIE_HTTPONLY"] = True
+server.config["REMEMBER_COOKIE_SECURE"] = True
+server.config["SESSION_TYPE"] = "sqlalchemy"
+Session(server)
 
 # Db configuration
 # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:Barney-123@localhost/fmssql"
@@ -75,7 +75,7 @@ server.config[
 # # server.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:qwert54321@localhost/fmssql"
 # server.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(server)
-#server.config["SESSION_SQLALCHEMY"] = db
+server.config["SESSION_SQLALCHEMY"] = db
 
 # Mail configuration
 server.config["MAIL_SERVER"] = "smtp.gmail.com"
@@ -98,7 +98,9 @@ path, filename = os.path.split(full_path)
 directory, folder = os.path.split(path)
 
 # If as intended location
-if (filename == "featureTest.py" and folder == "scripts") or (filename == "app.py" and folder == "src"):
+if (filename == "featureTest.py" and folder == "scripts") or (
+    filename == "app.py" and folder == "src"
+):
     location = path + "/logs"
 elif filename == "featureTest.py" and folder != "scripts":
     location = path + "/scripts/logs"
@@ -285,6 +287,22 @@ class Trip(db.Model):
         self.Disabled = Disabled
 
 
+class Sessions(db.Model):
+    __tablename__ = "sessions"
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(255), nullable=False, unique=True)
+    data = db.Column(db.LargeBinary)
+    expiry = db.Column(db.DateTime, nullable=False)
+    Employee_ID = db.Column(db.Integer, db.ForeignKey("employee.EmployeeId", ondelete="CASCADE")) # FK: "Employee_ID"
+
+    def __init__(self, id, session_id, data, expiry, Employee_ID):
+        self.id = id
+        self.session_id = session_id
+        self.data = data
+        self.expiry = expiry
+        self.Employee_ID = Employee_ID
+
+
 # ----- END CLASSES -------------------------------------------------------------------
 # ----- LOGIN STUFF -------------------------------------------------------------------
 
@@ -317,30 +335,81 @@ def login():
         # If Form is validated
         if form.validate_on_submit():
             account = Employee.query
+            sessioning = Sessions.query
 
             # Try if an invalid character was used in the Email input field
             try:
                 user = account.filter_by(Email=form.Email.data).first()
             except:
                 message = [
-                    "At least 1 input field contains an invalid character.",
+                    "You have entered an invalid Email and/or Password.",
                     "Please try again.",
                 ]
-                db.session.close()
+                # db.session.close()
                 return render_template("login/login.html", form=form, message=message)
 
             # If user exists in db
             if user:
 
+                # If user account is Locked or Disabled
+                if user.AccountLocked or user.Disabled:
+
+                    # Calculate time delta between current time and account locked time
+                    try:
+                        # If there is a timestamp in user.AccountLockedDateTime
+                        email_token_delta = (
+                            datetime.utcnow() - user.AccountLockedDateTime
+                        ).total_seconds()
+                        delta_minute = email_token_delta // 60
+                    except:
+                        # If there is no timestamp in user.AccountLockedDateTime
+                        delta_minute = 10
+
+                    # If user has NOT been notified of account lock or disable in the last 10 minutes
+                    if delta_minute >= 10:
+
+                        # Update AccountLockedDateTime to prevent user email spam
+                        user.AccountLockedDateTime = datetime.utcnow().strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        )
+                        db.session.commit()
+
+                        if user.Disabled:
+                            logger_auth.warning(
+                                f"{user.FullName} (ID: {user.EmployeeId}) (Account Disabled) attempted to log in."
+                            )
+                        else:
+                            logger_auth.warning(
+                                f"{user.FullName} (ID: {user.EmployeeId}) (Account Locked) attempted to log in."
+                            )
+
+                        # Send email to notify User
+                        email = Message()
+                        email.subject = "You Account Has Been Locked or Disabled"
+                        email.recipients = [form.Email.data]
+
+                        administrator, supervisor = email_role(user.Role)
+                        email.body = "Dear {},\n\nWe note that you have attempted to log in to your Bus FMS account without success.\nUnfortunately, your account has either been locked after too many invalid login attempts, or it has been disabled by {}.\n\nPlease contact {} for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
+                            user.FullName, administrator, supervisor
+                        )
+                        Thread(target=send_email, args=(server, email)).start()
+                        print("Mimic: Email sent (Account Locked/Disabled)")
+
+                    message = [
+                        "You have entered an invalid Email and/or Password.",
+                        "Please try again.",
+                    ]
+                    # db.session.close()
+                    return render_template("login/login.html", form=form, message=message)
+
                 # Security Control
-                # Need to check for Emoji
                 derived_password = process_password(
                     form.password.data, user.PasswordSalt
                 )
-
                 # If authenticated credentials
                 if user.Password == derived_password:
 
+                    # If user has logged in before
                     if datetime.utcnow() > user.LastLogin:
 
                         """Temporarily Bypass OTP"""
@@ -349,28 +418,29 @@ def login():
                         user.LastLogin = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
                         user.OTP = 0
                         db.session.commit()
-
+                        logger_auth.info(
+                            f"{user.FullName} (ID: {user.EmployeeId}) has logged IN."
+                        )
                         # Authorise login
                         login_user(user)  # , duration=timedelta(seconds=3))
 
                         # Session
-                        #session["value"] = user
+                        user_session = sessioning.filter_by(session_id="session:"+session.sid).first()
+                        user_session.Employee_ID = user.EmployeeId
+                        db.session.commit()
 
-                        logger_auth.info(
-                            f"{user.FullName} (ID: {user.EmployeeId}) has logged IN."
-                        )
-                        db.session.close()
+                        #db.session.close()
                         return redirect(url_for("employees"))
 
                         """ UNDO this for OTP.
-                        message = send_otp(user, form)
+                        message = send_otp(user)
                         otp_form = OTPForm(request.form)
                         resend_form = ResendOTPForm(request.form)
                         return render_template(
                             "login/login-otp.html",
                             otp_form=otp_form,
                             resend_form=resend_form,
-                            userid=user.get_id(),
+                            otp_token=generate_jwt_token(user.get_id(), "otp"),
                             message=message,
                         )
                         """
@@ -389,6 +459,7 @@ def login():
                             # If there is no timestamp in user.ResetDateTime
                             delta_hour = 1
 
+                        # If user has NOT sent a reset link in the last 1 hour
                         if delta_hour >= 1:
 
                             # Craft email object
@@ -398,7 +469,7 @@ def login():
                             ##email.recipients = ["b33p33p@gmail.com"]
 
                             # Generate reset token (output in Base64) for password reset
-                            email_token = generate_reset_token(user.get_id())
+                            email_token = generate_jwt_token(user.get_id(), "reset")
                             user.ResetDateTime = datetime.utcnow().strftime(
                                 "%Y-%m-%d %H:%M:%S"
                             )
@@ -406,7 +477,7 @@ def login():
                             db.session.commit()
 
                             # Send email object
-                            reset_link = "http://localhost:5000/new-password/{}".format(
+                            reset_link = "https://busfms.tk/new-password/{}".format(
                                 email_token
                             )
                             # reset_link = "http://busfms.tk/new-password/{}".format(email_token)
@@ -440,6 +511,19 @@ def login():
                         )
                         db.session.commit()
 
+                        # Send email to notify User
+                        email = Message()
+                        email.subject = "You Account Has Been Locked or Disabled"
+                        email.recipients = [form.Email.data]
+
+                        administrator, supervisor = email_role(user.Role)
+                        email.body = "Dear {},\n\nWe note that you have attempted to log in to your Bus FMS account without success.\nUnfortunately, your account has either been locked after too many invalid login attempts, or it has been disabled by {}.\n\nPlease contact {} for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
+                            user.FullName, administrator, supervisor
+                        )
+                        Thread(target=send_email, args=(server, email)).start()
+                        print("Mimic: Email sent (Account Locked)")
+
+
                         # Send email to notify Administrator
                         email = Message()
                         email.subject = (
@@ -459,70 +543,22 @@ def login():
                         )
 
                         # Render Account Locked page ONLY ONCE to prevent account guessing
-                        return render_template("login/account-locked.html")                        
-
-                    # If user account is Locked or Disabled
-                    if user.AccountLocked or user.Disabled:
-
-                        # Calculate time delta between current time and account locked time
-                        try:
-                            # If there is a timestamp in user.AccountLockedDateTime
-                            email_token_delta = (
-                                datetime.utcnow() - user.AccountLockedDateTime
-                            ).total_seconds()
-                            delta_minute = email_token_delta // 60
-                        except:
-                            # If there is no timestamp in user.AccountLockedDateTime
-                            delta_minute = 10
-
-                        # If user has NOT been notified of account lock or disable in the last 10 minutes
-                        if delta_minute >= 10:
-
-                            # Update AccountLockedDateTime to prevent user email spam
-                            user.AccountLockedDateTime = datetime.utcnow().strftime(
-                                "%Y-%m-%d %H:%M:%S"
-                            )
-                            db.session.commit()
-
-                            logger_auth.warning(
-                                f"{user.FullName} (ID: {user.EmployeeId}) (Account Locked) attempted to log in."
-                            )
-
-                            if user.Role == "driver":
-                                administrator = "the IT Administrator"
-                                supervisor = "your Manager or IT Administrator"
-                            elif user.Role == "manager":
-                                administrator = "the IT Administrator"
-                                supervisor = "the IT Administrator"
-                            else:
-                                administrator = "an IT Administrator"
-                                supervisor = "an IT Administrator"
-
-                            # Send email to notify User
-                            email = Message()
-                            email.subject = "You Account Has Been Locked or Disabled"
-                            email.recipients = [form.Email.data]
-                            # email.recipients = ["b33p33p@gmail.com"]
-                            email.body = "Dear {},\n\nWe note that you have attempted to log in to your Bus FMS account without success.\nUnfortunately, your account has either been locked after too many invalid login attempts, or it has been disabled by {}.\n\nPlease contact {} for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
-                                user.FullName, administrator, supervisor
-                            )
-                            Thread(target=send_email, args=(server, email)).start()
-                            print("Mimic: Email sent (Account Locked)")
+                        return render_template("login/account-locked.html")
 
         # Else Form is invalidated OR User does not exist in db
         message = [
             "You have entered an invalid Email and/or Password.",
             "Please try again.",
         ]
-        db.session.close()
+        #db.session.close()
         return render_template("login/login.html", form=form, message=message)
 
-    db.session.close()
+    #db.session.close()
     # Else GET request
     return render_template("login/login.html", form=form)
 
 
-def send_otp(user, form):
+def send_otp(user):
     if user.OTPCounter == 0:
         message = [
             "An OTP has been sent to your email.",
@@ -547,7 +583,6 @@ def send_otp(user, form):
     email = Message()
     email.subject = "Your Bus FMS OTP"
     email.recipients = [user.Email]
-    # email.recipients = ["b33p33p@gmail.com"]
     email.body = "Dear {}, \n\nYour OTP is {}.\nPlease note that your OTP is only valid for 2 minutes.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
         user.FullName, user.OTP
     )
@@ -574,22 +609,32 @@ def validate_otp():
         # If Form is validated
         if otp_form.validate_on_submit():
             account = Employee.query
+            sessioning = Sessions.query
 
-            # Try if an invalid character was used in the hidden OTPUser input field
+            # Validate if JWT token for OTPToken is still valid (within 5 minutes)
             try:
-                user = account.filter_by(EmployeeId=otp_form.OTPUser.data).first()
+                token_payload = decode_jwt_token(otp_form.OTPToken.data)
+                print(token_payload)
+                employeeID = token_payload["otp_userid"]
             except:
+                form = LoginForm(request.form)
+                message = ["Your OTP session has expired.", "Please try again."]
+                return render_template("login/login.html", form=form, message=message)
+
+            # If JWT Token is compromised,
+            # continue to try if an invalid character was used in the hidden OTPToken input field
+            try:
+                int(employeeID)
+                user = account.filter_by(EmployeeId=employeeID).first()
+                if user == None:
+                    raise
+            except:
+                form = LoginForm(request.form)
                 message = [
                     "You do not have the rights to do that.",
                     "Please try again.",
                 ]
-                return render_template(
-                        "login/login-otp.html",
-                        otp_form=otp_form,
-                        resend_form=resend_form,
-                        userid=user.get_id(),
-                        message=message,
-                )
+                return render_template("login/login.html", form=form, message=message)
 
             # If user exists in db
             if user:
@@ -601,9 +646,15 @@ def validate_otp():
                         "login/login-otp.html",
                         otp_form=otp_form,
                         resend_form=resend_form,
-                        userid=user.get_id(),
+                        otp_token=otp_form.OTPToken.data,
                         message=message,
                     )
+
+                # If user account is Locked or Disabled during OTP authentication, render relevant page
+                if user.AccountLocked:
+                    return render_template("login/account-locked.html")
+                elif user.Disabled:
+                    return render_template("login/account-disabled.html")
 
                 # Calculate time delta between current time and time of OTP creation
                 otp_delta = (datetime.utcnow() - user.OTPDateTime).total_seconds()
@@ -616,14 +667,22 @@ def validate_otp():
                         user.LoginCounter = 0
                         user.LastLogin = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
                         user.OTP = 0
+
+                        # Log out from / Destroy existing sessions
+                        # Set Sessions
+                        user_session = sessioning.filter_by(session_id="session:"+session.sid).first()
+                        user_session.Employee_ID = user.EmployeeId
                         db.session.commit()
 
-                        # Authorise login
-                        login_user(user)
+                        # Commit to DB
+                        db.session.commit()
                         logger_auth.info(
                             f"{user.FullName} (ID: {user.EmployeeId}) has logged IN."
                         )
-                        db.session.close()
+                        # Authorise login
+                        login_user(user)
+
+                        #db.session.close()
                         return redirect(url_for("employees"))
 
                     # Else GET OTP page
@@ -648,7 +707,7 @@ def validate_otp():
                             "login/login-otp.html",
                             otp_form=otp_form,
                             resend_form=resend_form,
-                            userid=user.get_id(),
+                            otp_token=otp_form.OTPToken.data,
                             message=message,
                         )
 
@@ -659,16 +718,16 @@ def validate_otp():
                         "login/login-otp.html",
                         otp_form=otp_form,
                         resend_form=resend_form,
-                        userid=user.get_id(),
+                        otp_token=otp_form.OTPToken.data,
                         message=message,
                     )
 
-        db.session.close()
+        #db.session.close()
         return render_template(
             "login/login-otp.html",
             otp_form=otp_form,
             resend_form=resend_form,
-            userid=otp_form.OTPUser.data,
+            otp_token=otp_form.OTPToken.data,
         )
 
     # Else GET request
@@ -685,33 +744,41 @@ def resend_otp():
     if resend_form.validate_on_submit():
         account = Employee.query
 
-        # Try if an invalid character was used in the hidden OTPUser input field
+        # Validate if JWT token for OTPToken is still valid (within 5 minutes)
         try:
-            user = account.filter_by(EmployeeId=resend_form.OTPUser.data).first()
+            token_payload = decode_jwt_token(resend_form.OTPToken.data)
+            employeeID = token_payload["otp_userid"]
         except:
+            form = LoginForm(request.form)
+            message = ["Your OTP session has expired.", "Please try again."]
+            return render_template("login/login.html", form=form, message=message)
+
+        # If JWT Token is compromised,
+        # continue to try if an invalid character was used in the hidden OTPToken input field
+        try:
+            int(employeeID)
+            user = account.filter_by(EmployeeId=employeeID).first()
+            if user == None:
+                raise
+        except:
+            form = LoginForm(request.form)
             message = [
                 "You do not have the rights to do that.",
                 "Please try again.",
             ]
-            return render_template(
-                "login/login-otp.html",
-                otp_form=otp_form,
-                resend_form=resend_form,
-                userid=user.get_id(),
-                message=message,
-            )
+            return render_template("login/login.html", form=form, message=message)
 
         # If user exists in db
         if user:
 
             # Resend OTP
-            message = send_otp(user, resend_form)
+            message = send_otp(user)
             resend_form = ResendOTPForm(request.form)
             return render_template(
                 "login/login-otp.html",
                 otp_form=otp_form,
                 resend_form=resend_form,
-                userid=user.get_id(),
+                otp_token=resend_form.OTPToken.data,
                 message=message,
             )
 
@@ -721,6 +788,7 @@ def resend_otp():
         "login/login-otp.html",
         otp_form=otp_form,
         resend_form=resend_form,
+        otp_token=resend_form.OTPToken.data,
         message=message,
     )
 
@@ -728,9 +796,11 @@ def resend_otp():
 @server.route("/logout", methods=["GET", "POST"])
 @login_required
 def logout():
+    logger_auth.info(
+        f"{current_user.FullName} (ID: {current_user.EmployeeId}) has logged OUT."
+    )
     logout_user()
-    logger_auth.info(f"User has logged OUT.")
-    #session.pop("value", None)
+    # session.pop("value", None)
     return redirect(url_for("index"))
 
 
@@ -791,17 +861,27 @@ def reset():
                     user.ResetDateTime = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
                     db.session.commit()
 
-                    # If user account is locked (after 5 invalid attempts) but NOT disabled (by IT Admin), send email without reset token
-                    if user.AccountLocked and not user.Disabled:
+                    # If user account is disabled (by IT Admin), don't do anything
+                    if user.Disabled:
+                        logger_auth.warning(
+                            f"{user.FullName} (ID: {user.EmployeeId}) (Account Disabled) attempted to request for a password reset."
+                        )
+                        pass
 
+                    # If user account is locked (after 5 invalid attempts), send email without reset token
+                    elif user.AccountLocked:
+
+                        """
                         if user.Role == "driver":
                             supervisor = "your Manager or IT Administrator"
                         elif user.Role == "manager":
                             supervisor = "the IT Administrator"
                         else:
                             supervisor = "an IT Administrator"
+                        """
 
                         # Send email object
+                        administrator, supervisor = email_role(user.Role)
                         email.body = "Dear {},\n\nYou have requested a password reset for your Bus FMS account.\n\nUnfortunately, your account has been locked after too many invalid attempts.\nPlease contact {} for assistance.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
                             user.FullName, supervisor
                         )
@@ -811,25 +891,18 @@ def reset():
                         )
                         print("Mimic: Email sent")
 
-                    # If user account is disabled (by IT Admin), don't do anything
-                    elif user.Disabled:
-                        logger_auth.warning(
-                            f"{user.FullName} (ID: {user.EmployeeId}) (Account Disabled) attempted to request for a password reset."
-                        )
-                        pass
-
                     # If user account is NOT locked, send email with reset token
                     else:
 
                         # Generate reset token (output in Base64) for password reset
-                        email_token = generate_reset_token(user.get_id())
+                        email_token = generate_jwt_token(user.get_id(), "reset")
                         user.ResetFlag = (
                             1  # 1 means reset token is STILL VALID & has not been used
                         )
                         db.session.commit()
 
                         # Send email object
-                        reset_link = "http://localhost:5000/new-password/{}".format(
+                        reset_link = "https://busfms.tk/new-password/{}".format(
                             email_token
                         )
                         # reset_link = "http://busfms.tk/new-password/{}".format(email_token)
@@ -845,7 +918,7 @@ def reset():
                         # Print for testing
                         print(reset_link)
 
-            db.session.close()
+            #db.session.close()
             # Regardless if user exists or not, display generic message
             return render_template("reset/reset-message.html")
 
@@ -859,7 +932,7 @@ def newPassword(email_token):
 
     try:
         # Validate if email_token is still valid (within 1 hour)
-        token_payload = decode_reset_token(email_token)
+        token_payload = decode_jwt_token(email_token)
 
         # Validate if email_token has not been used yet
         account = Employee.query
@@ -875,6 +948,8 @@ def newPassword(email_token):
                 return render_template("login/account-locked.html")
             if user.Disabled:  # 1 means user account is disabled (by IT Admin)
                 return render_template("login/account-disabled.html")
+        else:
+            return render_template("reset/reset-expired.html")
 
     except:
         return render_template("reset/reset-expired.html")
@@ -891,7 +966,7 @@ def postPassword():
 
     try:
         # Validate if email_token is still valid (within 1 hour)
-        token_payload = decode_reset_token(form.EmailToken.data)
+        token_payload = decode_jwt_token(form.EmailToken.data)
 
         # Validate if email_token has not been used yet
         account = Employee.query
@@ -907,6 +982,8 @@ def postPassword():
                 return render_template("login/account-locked.html")
             if user.Disabled:  # 1 means user account is disabled (by IT Admin)
                 return render_template("login/account-disabled.html")
+        else:
+            return render_template("reset/reset-expired.html")
 
     except:
         return render_template("reset/reset-expired.html")
@@ -916,82 +993,81 @@ def postPassword():
 
         # If Form is validated
         if form.validate_on_submit():
-            # account = Employee.query
-            # user = account.filter_by(EmployeeId=token_payload["reset_token"]).first()
 
-            # If user exists in db
-            if user:
-                PasswordSalt = generate_csprng_token()  # 32-byte salt in hexadecimal
+            PasswordSalt = generate_csprng_token()  # 32-byte salt in hexadecimal
 
-                # If password chosen is a common password
-                is_common_password = check_common_password(form.NewPassword.data)
-                if is_common_password:
-                    message = [
-                        "Password chosen is a commonly used password.",
-                        "Please choose another.",
-                    ]
-                    return render_template(
-                        "reset/new-password.html",
-                        form=form,
-                        email_token=form.EmailToken.data,
-                        message=message,
-                    )
-
-                # Try if an invalid character was used in the Password input field
-                try:
-                    # Need to check for Emoji
-                    user.Password = process_password(form.NewPassword.data, PasswordSalt)
-                    user.PasswordSalt = PasswordSalt
-                    user.ResetFlag = 0  # 0 means reset token is NOT VALID & has been used
-                    # user.ResetDateTime = datetime.utcnow().strftime(
-                    #    "%Y-%m-%d %H:%M:%S"
-                    # )
-                    user.LastLogin = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-
-                    # WONT HAVE ERROR HERE
-                    db.session.commit()
-                except:
-                    message = [
-                        "Password chosen contains invalid characters.",
-                        "Please choose another.",
-                    ]
-                    return render_template(
-                        "reset/new-password.html",
-                        form=form,
-                        email_token=form.EmailToken.data,
-                        message=message,
-                    )
-
-                # Send Email to notify user that Password has been changed
-                if user.Role == "driver":
-                    supervisor = "your Manager or IT Administrator"
-                elif user.Role == "manager":
-                    supervisor = "the IT Administrator"
-                else:
-                    supervisor = "an IT Administrator"
-
-                # Craft email object
-                email = Message()
-                email.subject = "Your Bus FMS Password Has Been Changed"
-                email.recipients = [user.Email]
-                # email.recipients = ["b33p33p@gmail.com"]
-
-                email.body = "Dear {},\n\nYour Bus FMS password has just been changed.\n\nIf you did not perform this request, please contact {} as soon as possible.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
-                    user.FullName, supervisor
-                )
-                Thread(target=send_email, args=(server, email)).start()
-                print("Mimic: Email sent")
-
-                # Log user out of all logged-in sessions.
-                logout_user()
-                logger_auth.info(
-                    f"{user.FullName} (ID: {user.EmployeeId}) has performed a password reset. Notification email has been sent to the User."
+            # If password chosen is a common password
+            is_common_password = check_common_password(form.NewPassword.data)
+            if is_common_password:
+                message = [
+                    "Password chosen is a commonly used password.",
+                    "Please choose another.",
+                ]
+                return render_template(
+                    "reset/new-password.html",
+                    form=form,
+                    email_token=form.EmailToken.data,
+                    message=message,
                 )
 
-                db.session.close()
-                return render_template("reset/reset-success.html")
+            # Try if an invalid character was used in the Password input field
+            try:
+                user.Password = process_password(form.NewPassword.data, PasswordSalt)
+                user.PasswordSalt = PasswordSalt
+                user.ResetFlag = 0  # 0 means reset token is NOT VALID & has been used
+                # user.ResetDateTime = datetime.utcnow().strftime(
+                #    "%Y-%m-%d %H:%M:%S"
+                # )
 
-    db.session.close()
+                # If this is the first time resetting a password
+                if user.LastLogin > datetime.utcnow():
+                    user.LastLogin = "1970-01-01 00:00:01"
+
+                db.session.commit()
+            except:
+                message = [
+                    "Password chosen contains invalid characters.",
+                    "Please choose another.",
+                ]
+                return render_template(
+                    "reset/new-password.html",
+                    form=form,
+                    email_token=form.EmailToken.data,
+                    message=message,
+                )
+
+            """
+            if user.Role == "driver":
+                supervisor = "your Manager or IT Administrator"
+            elif user.Role == "manager":
+                supervisor = "the IT Administrator"
+            else:
+                supervisor = "an IT Administrator"
+            """
+
+            # Send Email to notify user that Password has been changed
+            # Craft email object
+            email = Message()
+            email.subject = "Your Bus FMS Password Has Been Changed"
+            email.recipients = [user.Email]
+
+            administrator, supervisor = email_role(user.Role)
+            email.body = "Dear {},\n\nYour Bus FMS password has just been changed.\n\nIf you did not perform this request, please contact {} as soon as possible.\n\nThank you for your continued support in Bus FMS.\n\nBest regards,\nBus FMS".format(
+                user.FullName, supervisor
+            )
+            Thread(target=send_email, args=(server, email)).start()
+            print("Mimic: Email sent")
+
+            # Log user out of all logged-in sessions.
+            logout_user()
+            logger_auth.info(
+                f"{user.FullName} (ID: {user.EmployeeId}) has performed a password reset. Notification email has been sent to the User."
+            )
+
+            #db.session.close()
+            return render_template("reset/reset-success.html")
+
+    #db.session.close()
     return render_template(
         "reset/new-password.html", form=form, email_token=form.EmailToken.data
     )
@@ -1045,7 +1121,7 @@ def fleet():
         if current_user.Role.value != None:
             pass
     except:
-        return redirect("/login")  
+        return redirect("/login")
     if current_user.Role.value == "driver" or current_user.Role.value == "admin":
         return redirect("/notauthorized")
     else:
@@ -1060,7 +1136,7 @@ def fleetview():
         if current_user.Role.value != None:
             pass
     except:
-        return redirect("/login")  
+        return redirect("/login")
     if current_user.Role.value == "driver":
         all_data = Fleet.query.all()
         return render_template("fleetview.html", fleet=all_data)
@@ -1086,7 +1162,7 @@ def addFleet():
         if current_user.Role.value != None:
             pass
     except:
-        return redirect("/login")  
+        return redirect("/login")
     if current_user.Role.value == "manager":
         formFleet = fleetInsert()
         if request.method == "POST" and formFleet.validate_on_submit():
@@ -1101,21 +1177,27 @@ def addFleet():
                 db.session.add(fleet_data)
                 db.session.commit()
             except:
-                db.session.close()
-                flash("At least 1 input field contains an invalid character. Please try again.")
+                #db.session.close()
+                flash(
+                    "At least 1 input field contains an invalid character. Please try again."
+                )
                 return redirect("/fleet")
 
             obj = db.session.query(Fleet).order_by(Fleet.VehicleId.desc()).first()
-            logger_crud.info(f"Vechicle (ID: {obj.VehicleId}) inserted to Fleet.")
-            db.session.close()
-            flash("Vehicle inserted sucessfully")
+            logger_crud.info(
+                f"Vechicle (ID: {obj.VehicleId}) inserted to Fleet by EmployeeID: {current_user.EmployeeId}."
+            )
+            #db.session.close()
+            flash("Vehicle inserted sucessfully.")
             return redirect("/fleet")
         else:
-            logger_crud.error(f"Vehicle insert failed.")
-            db.session.close()
+            logger_crud.error(
+                f"Vehicle insert failed by EmployeeID: {current_user.EmployeeId}."
+            )
+            #db.session.close()
             flash("Vehicle insert failed.")
             return redirect("/fleet")
-        db.session.close()
+        #db.session.close()
     else:
         return redirect("/notauthorized")
 
@@ -1146,16 +1228,22 @@ def fleetUpdate():
             try:
                 db.session.commit()
             except:
-                flash("At least 1 input field contains an invalid character. Please try again.")
+                flash(
+                    "At least 1 input field contains an invalid character. Please try again."
+                )
                 return redirect(url_for("fleet", fleetupdate=fleetupdate))
 
-            logger_crud.info(f"Vechicle (ID: {vID}) was updated in Fleet.")
+            logger_crud.info(
+                f"Vechicle (ID: {vID}) was updated in Fleet by EmployeeID: {current_user.EmployeeId}."
+            )
             flash("Vehicle Updated Successfully")
             return redirect(url_for("fleet", fleetupdate=fleetupdate))
-        db.session.close()
+        #db.session.close()
     else:
         vID = request.form.get("VehicleId")
-        logger_crud.error(f"Vechicle (ID: {vID}) update failed.")
+        logger_crud.error(
+            f"Vechicle (ID: {vID}) update failed by EmployeeID: {current_user.EmployeeId}."
+        )
         return redirect("/notauthorized")
 
 
@@ -1165,7 +1253,7 @@ def delete(id):
         if current_user.Role.value != None:
             pass
     except:
-        return redirect("/login")    
+        return redirect("/login")
     if current_user.Role.value == "manager":
         if request.method == "GET":
             fleet_data = Fleet.query.get(id)
@@ -1186,11 +1274,16 @@ def delete(id):
                 db.session.commit()
             except:
                 flash("Fleet is unable to be deleted. Please try again.")
-                db.session.close()
+                logger_crud.error(
+                    f"Vechicle (ID: {id}) delete failed by EmployeeID: {current_user.EmployeeId}."
+                )
+                #db.session.close()
                 return redirect(url_for("fleet"))
 
-            logger_crud.info(f"Vechicle (ID: {id}) Deleted from fleet.")
-            db.session.close()
+            logger_crud.info(
+                f"Vechicle (ID: {id}) deleted from fleet by EmployeeID: {current_user.EmployeeId}."
+            )
+            #db.session.close()
             flash("Vehicle deleted sucessfully.")
             return redirect(url_for("fleet"))
     else:
@@ -1203,22 +1296,30 @@ def fleetsearch():
         if current_user.Role.value != None:
             pass
     except:
-        return redirect("/login")    
+        return redirect("/login")
     if current_user.Role.value == "manager":
         searchform = SearchFormFleet()
         posts = Fleet.query
         if request.method == "POST" and searchform.validate_on_submit():
             postsearched = searchform.searched.data
             searchform.searched.data = ""
-            
+            logger_crud.info(
+                f"[{postsearched}] searched in fleet by Employee (ID: {current_user.EmployeeId})."
+            )
             # If an invalid character was used in any search query field
             try:
-                posts = posts.filter(Fleet.BusNumberPlate.like("%" + postsearched + "%"))
+                posts = posts.filter(
+                    Fleet.BusNumberPlate.like("%" + postsearched + "%")
+                )
                 posts = posts.order_by(Fleet.VehicleId).all()
-                logger_crud.info(f"[{postsearched}] searched.")
             except:
                 posts = 0
-                flash("At least 1 input field contains an invalid character. Please try again.")
+                flash(
+                    "At least 1 input field contains an invalid character. Please try again."
+                )
+                logger_crud.warning(
+                    f"Empty search done by by EmployeeID: {current_user.EmployeeId}."
+                )
                 return render_template(
                     "fleet.html",
                     searchform=searchform,
@@ -1229,7 +1330,10 @@ def fleetsearch():
             # posts returns empty list if no results found
             if len(posts) == 0:
                 posts = 0
-            
+                logger_crud.warning(
+                    f"No results found in fleet search by Employee (ID: {current_user.EmployeeId})."
+                )
+
             if posts != 0:
                 return render_template(
                     "fleet.html",
@@ -1260,7 +1364,7 @@ def employees():
         if current_user.Role.value != None:
             pass
     except:
-        return redirect("/login")    
+        return redirect("/login")
     userrole = current_user.Role
     if userrole == RoleTypes.admin:
         manager_data = Employee.query.all()
@@ -1304,7 +1408,7 @@ def addEmployee():
     except:
         return redirect("/login")
 
-    if (current_user.Role.value == "manager" or current_user.Role.value == "admin"):
+    if current_user.Role.value == "manager" or current_user.Role.value == "admin":
         formEmployee = employeeInsert()
         FullName = None
         Email = None
@@ -1329,8 +1433,13 @@ def addEmployee():
             try:
                 user = account.filter_by(Email=formEmployee.Email.data).first()
             except:
-                db.session.close()
-                flash("At least 1 input field contains an invalid character. Please try again.")
+                #db.session.close()
+                logger_crud.warning(
+                    f"Employee insert failed by EmployeeID: {current_user.EmployeeId}."
+                )
+                flash(
+                    "At least 1 input field contains an invalid character. Please try again."
+                )
                 return redirect("/employees")
 
             # If email does not exist in db
@@ -1348,7 +1457,7 @@ def addEmployee():
                 is_common_password = check_common_password(formEmployee.Password.data)
                 # If password chosen is a common password
                 if is_common_password:
-                    db.session.close()
+                    #db.session.close()
                     flash(
                         "Password chosen is a commonly used password. Please choose another.",
                         "error",
@@ -1389,8 +1498,13 @@ def addEmployee():
                     db.session.add(emp_data)
                     db.session.commit()
                 except:
-                    db.session.close()
-                    flash("At least 1 input field contains an invalid character. Please try again.")
+                    #db.session.close()
+                    logger_crud.warning(
+                        f"Employee insert failed by EmployeeID: {current_user.EmployeeId}."
+                    )
+                    flash(
+                        "At least 1 input field contains an invalid character. Please try again."
+                    )
                     return redirect("/employees")
 
                 obj = (
@@ -1399,11 +1513,11 @@ def addEmployee():
                     .first()
                 )
                 logger_crud.info(
-                    f"Employee (ID: {obj.EmployeeId}) inserted to Employee."
+                    f"Employee (ID: {obj.EmployeeId}) inserted to Employee by EmployeeID: {current_user.EmployeeId}."
                 )
 
                 if Role != "driver":
-                    db.session.close()
+                    #db.session.close()
                     flash("Employee inserted sucessfully")
                     return redirect("/employees")
                 else:
@@ -1415,12 +1529,13 @@ def addEmployee():
                     driver_data = Driver(obj.EmployeeId, 1, "Account Created")
                     emp_data.driver_child.append(driver_data)
 
-                    # If driver is unable to be updated
+                    # If driver is unable to be inserted
                     try:
                         db.session.commit()
                     except:
-                        db.session.close()
-                        flash("Employee is unable to be updated. Please try again.")
+                        #db.session.close()
+
+                        flash("Employee is unable to be inserted. Please try again.")
                         return redirect("/employees")
 
                     obj = (
@@ -1428,23 +1543,27 @@ def addEmployee():
                         .order_by(Driver.DriverId.desc())
                         .first()
                     )
-                    logger_crud.info(f"Driver (ID: {obj.DriverId}) inserted to Driver.")
+                    logger_crud.info(
+                        f"Driver (ID: {obj.DriverId}) inserted to Driver by EmployeeID: {current_user.EmployeeId}."
+                    )
                     # db.session.close()
                     # db.session.expire_all()
 
-                    db.session.close()
+                    #db.session.close()
                     flash("Driver inserted sucessfully")
                     return redirect("/employees")
+
+            # If email does exist in db
             else:
-                db.session.close()
+                #db.session.close()
                 flash("Email already exists. Please choose another.")
                 return redirect("/employees")
 
         else:
-            # Choose 1 messsage
-            # flash("Email already exists. Please choose another.")
-            logger_crud.error(f"Employee insert failed.")
-            db.session.close()
+            logger_crud.error(
+                f"Employee insert failed by EmployeeID: {current_user.EmployeeId}."
+            )
+            #db.session.close()
             flash("Employee insert failed. Please check your fields again.")
             return redirect("/employees")
     else:
@@ -1457,7 +1576,7 @@ def employeeDelete(id):
         if current_user.Role.value != None:
             pass
     except:
-        return redirect("/login")    
+        return redirect("/login")
     if current_user.Role.value == "admin" or current_user.Role.value == "manager":
         if request.method == "GET":
             my_data = Employee.query.get(id)
@@ -1469,21 +1588,25 @@ def employeeDelete(id):
                 my_data.OTPCount = 0
                 my_data.OTP = 0
 
-                logger_crud.info(f"Employee (ID: {id}) ENABLED in Employee.")
+                logger_crud.info(
+                    f"Employee (ID: {id}) ENABLED in Employee by EmployeeID: {current_user.EmployeeId}."
+                )
                 flash("Employee enabled sucessfully.")
             else:
                 my_data.Disabled = 1
                 my_data.AccountLocked = 1
-                logger_crud.info(f"Trip (ID: {id}) Disabled in Employee.")
+                logger_crud.info(
+                    f"Trip (ID: {id}) Disabled in Employee by EmployeeID: {current_user.EmployeeId}."
+                )
                 flash("Employee disabled sucessfully.")
-            
+
             # If employee is unable to be disabled
             try:
                 db.session.commit()
             except:
                 flash("Employee is unable to be disabled. Please try again.")
 
-            db.session.close()
+            #db.session.close()
             return redirect(url_for("employees"))
     else:
         return redirect("/notauthorized")
@@ -1495,7 +1618,7 @@ def employeeUnlock(id):
         if current_user.Role.value != None:
             pass
     except:
-        return redirect("/login") 
+        return redirect("/login")
     if current_user.Role.value == "admin":
         if request.method == "GET":
             my_data = Employee.query.get(id)
@@ -1506,7 +1629,9 @@ def employeeUnlock(id):
             # my_data.OTPCount = 0
             # my_data.OTP = 0
 
-            logger_crud.info(f"Employee (ID: {id}) UNLOCKED in Employee.")
+            logger_crud.info(
+                f"Employee (ID: {id}) UNLOCKED in Employee by EmployeeID: {current_user.EmployeeId}."
+            )
             flash("Employee UNLOCKED sucessfully.")
 
             # If employee is unable to be unlocked
@@ -1515,7 +1640,7 @@ def employeeUnlock(id):
             except:
                 flash("Employee is unable to be enabled. Please try again.")
 
-            db.session.close()
+            #db.session.close()
             return redirect(url_for("employees"))
     else:
         return redirect("/notauthorized")
@@ -1527,14 +1652,16 @@ def employeesearch():
         if current_user.Role.value != None:
             pass
     except:
-        return redirect("/login") 
+        return redirect("/login")
     if current_user.Role.value == "manager" or current_user.Role.value == "admin":
         searchFormEmployee = SearchFormEmployee()
         posts = Employee.query
         if request.method == "POST" and searchFormEmployee.validate_on_submit():
             postsearched = searchFormEmployee.searched.data
             searchFormEmployee.searched.data = ""
-
+            logger_crud.info(
+                f"[{postsearched}] searched in employee by Employee (ID: {current_user.EmployeeId})."
+            )
             # Try if an invalid character was used in the Email input field
             try:
                 if current_user.Role.value == "admin":
@@ -1543,19 +1670,22 @@ def employeesearch():
                         Employee.Role == "manager",
                     )
                     posts = posts.order_by(Employee.EmployeeId).all()
-                    logger_crud.info(f"[{postsearched}] searched.")
+                    logger_crud.info(
+                        f"[{postsearched}] searched in employee by Employee (ID: {current_user.EmployeeId})."
+                    )
                 elif current_user.Role.value == "manager":
                     posts = posts.filter(
                         Employee.FullName.like("%" + postsearched + "%"),
                         Employee.Role == "driver",
                     )
                     posts = posts.order_by(Employee.EmployeeId).all()
-                    logger_crud.info(f"[{postsearched}] searched.")
                 else:
                     posts = 0
             except:
                 posts = 0
-                flash("At least 1 input field contains an invalid character. Please try again.")
+                flash(
+                    "At least 1 input field contains an invalid character. Please try again."
+                )
                 return render_template(
                     "employees.html",
                     SearchFormEmployee=searchFormEmployee,
@@ -1566,6 +1696,9 @@ def employeesearch():
             # posts returns empty list if no results found
             if len(posts) == 0:
                 posts = 0
+                logger_crud.warning(
+                    f"No results found in employee search by Employee (ID: {current_user.EmployeeId})."
+                )
 
             if posts != 0:
                 return render_template(
@@ -1597,7 +1730,7 @@ def trip():
         if current_user.Role.value != None:
             pass
     except:
-        return redirect("/login")     
+        return redirect("/login")
     if current_user.Role.value == "manager":
         formTrip = tripInsert()
         employeeList = getFresh_Employee()
@@ -1620,7 +1753,7 @@ def tripview():
         if current_user.Role.value != None:
             pass
     except:
-        return redirect("/login") 
+        return redirect("/login")
     if current_user.Role.value == "driver":
         driver_data = (
             Driver.query.filter(Driver.EmployeeId == current_user.EmployeeId)
@@ -1688,7 +1821,7 @@ def addTrip():
         if current_user.Role.value != None:
             pass
     except:
-        return redirect("/login") 
+        return redirect("/login")
     if current_user.Role.value == "manager":
         formTrip = tripInsert()
         employeeList = getFresh_Employee()
@@ -1724,18 +1857,24 @@ def addTrip():
             try:
                 db.session.commit()
             except:
-                db.session.close()
-                flash("At least 1 input field contains an invalid character. Please try again.")
+                #db.session.close()
+                flash(
+                    "At least 1 input field contains an invalid character. Please try again."
+                )
                 return redirect("/trip")
-            
+
             obj = db.session.query(Trip).order_by(Trip.TripID.desc()).first()
-            logger_crud.info(f"Trip (ID: {obj.TripID}) inserted to Trip.")
-            db.session.close()
+            logger_crud.info(
+                f"Trip (ID: {obj.TripID}) inserted to Trip by Employee (ID: {current_user.EmployeeId})."
+            )
+            #db.session.close()
             flash("Trip inserted sucessfully")
             return redirect("/trip")
         else:
-            logger_crud.warning(f"Trip insert failed.")
-            db.session.close()
+            logger_crud.warning(
+                f"Trip insert failed by Employee (ID: {current_user.EmployeeId})."
+            )
+            #db.session.close()
             flash("Trip insert failed.")
             return redirect("/trip")
     else:
@@ -1755,15 +1894,18 @@ def tripSearch():
         if request.method == "POST" and searchformTrip.validate_on_submit():
             postsearched = searchformTrip.searched.data
             searchformTrip.searched.data = ""
-
+            logger_crud.info(
+                f"[{postsearched}] searched in trip by Employee (ID: {current_user.EmployeeId})."
+            )
             # If an invalid character was used in any search query field
             try:
                 posts = posts.filter(Trip.TripID.like("%" + postsearched + "%"))
                 posts = posts.order_by(Trip.TripID).all()
-                logger_crud.info(f"[{postsearched}] searched.")
             except:
                 posts = 0
-                flash("At least 1 input field contains an invalid character. Please try again.")
+                flash(
+                    "At least 1 input field contains an invalid character. Please try again."
+                )
                 return render_template(
                     "trip.html",
                     searchformTrip=searchformTrip,
@@ -1774,6 +1916,9 @@ def tripSearch():
             # posts returns empty list if no results found
             if len(posts) == 0:
                 posts = 0
+                logger_crud.warning(
+                    f"No results found in trip search by Employee (ID: {current_user.EmployeeId})."
+                )
 
             if posts != 0:
                 return render_template(
@@ -1804,13 +1949,18 @@ def tripSearch():
             # If an invalid character was used in any search query field
             try:
                 posts = posts.filter(
-                    Trip.TripID.like("%" + postsearched + "%"), Trip.DriverID == driver_data
+                    Trip.TripID.like("%" + postsearched + "%"),
+                    Trip.DriverID == driver_data,
                 )
                 posts = posts.order_by(Trip.TripID).all()
-                logger_crud.info(f"[{postsearched}] searched.")
+                logger_crud.info(
+                    f"[{postsearched}] searched by Employee (ID: {current_user.EmployeeId})."
+                )
             except:
                 posts = 0
-                flash("At least 1 input field contains an invalid character. Please try again.")
+                flash(
+                    "At least 1 input field contains an invalid character. Please try again."
+                )
                 return render_template(
                     "trip.html",
                     searchformTrip=searchformTrip,
@@ -1821,6 +1971,9 @@ def tripSearch():
             # posts returns empty list if no results found
             if len(posts) == 0:
                 posts = 0
+                logger_crud.warning(
+                    f"No results found in trip search by Employee (ID: {current_user.EmployeeId})."
+                )
 
             if posts != 0:
                 return render_template(
@@ -1854,7 +2007,7 @@ def tripUpdate():
         if current_user.Role.value != None:
             pass
     except:
-        return redirect("/login") 
+        return redirect("/login")
     if current_user.Role.value == "manager":
         tripupdate = tripInsert()
         if request.method == "POST" and tripupdate.validate_on_submit:
@@ -1872,14 +2025,17 @@ def tripUpdate():
             try:
                 db.session.commit()
             except:
-                db.session.close()
+                #db.session.close()
                 flash("Trip is unable to be updated. Please try again.")
+                logger_crud.error(
+                    f"Trip (ID: {id}) update failed by Employee (ID: {current_user.EmployeeId})."
+                )
                 return redirect("/trip")
 
             logger_crud.info(f"Trip (ID: {tID}) was updated in Trip.")
             flash("Trip Updated Successfully")
             return redirect(url_for("trip", tripupdate=tripupdate))
-        db.session.close()
+        #db.session.close()
     else:
         return redirect("/notauthorized")
 
@@ -1890,7 +2046,7 @@ def tripDelete(id):
         if current_user.Role.value != None:
             pass
     except:
-        return redirect("/login")     
+        return redirect("/login")
     if current_user.Role.value == "manager":
         if request.method == "GET":
             trip_data = Trip.query.get(id)
@@ -1902,7 +2058,7 @@ def tripDelete(id):
             #     trip_data.Disabled = 1
             #     logger_crud.info(f"Trip (ID: {id}) Disabled in Trip.")
             #     flash("Trip disabled sucessfully.")
-            
+
             # If Trip is unable to be deleted
             try:
                 db.session.delete(trip_data)
@@ -1911,7 +2067,9 @@ def tripDelete(id):
                 flash("Trip is unable to be deleted. Please try again.")
                 return redirect(url_for("trip"))
 
-            logger_crud.info(f"Trip (ID: {id}) Deleted from Trip.")
+            logger_crud.info(
+                f"Trip (ID: {id}) update failed by Employee (ID: {current_user.EmployeeId})."
+            )
             flash("Trip deleted sucessfully.")
             return redirect(url_for("trip"))
     else:
@@ -1929,7 +2087,7 @@ def profile():
         if current_user.Role.value != None:
             pass
     except:
-        return redirect("/login") 
+        return redirect("/login")
     updateFormEmployee = employeeUpdate()
     id = current_user.EmployeeId
     name_to_update = Employee.query.get_or_404(id)
@@ -1955,7 +2113,7 @@ def profile():
                         "error",
                     )
                     logger_auth.info(
-                        f"Common Password attempted when updating profile by (ID: {id})."
+                        f"Common Password attempted when updating profile by EmployeeID (ID: {id})."
                     )
                 else:
                     # Need to check for Emoji
@@ -1969,15 +2127,25 @@ def profile():
                     try:
                         db.session.commit()
                     except:
-                        flash("At least 1 input field contains an invalid character. Please try again.")
+                        flash(
+                            "At least 1 input field contains an invalid character. Please try again."
+                        )
+                        logger_crud.warning(
+                            f"Profile update failed by EmployeeID: {current_user.EmployeeId}."
+                        )
+
                         return render_template(
                             "profile.html",
                             updateFormEmployee=updateFormEmployee,
                             name_to_update=name_to_update,
                         )
 
-                    logger_auth.info(f"Employee (ID: {id}) was updated in Employee.")
-                    logger_crud.info(f"Employee (ID: {id}) was updated in Employee.")
+                    logger_auth.info(
+                        f"Employee (ID: {id}) was updated in Employee by EmployeeID: {current_user.EmployeeId}."
+                    )
+                    logger_crud.info(
+                        f"Employee (ID: {id}) was updated in Employee by EmployeeID: {current_user.EmployeeId}."
+                    )
                     flash("Profile has been updated")
                     return render_template(
                         "profile.html",
@@ -1987,12 +2155,12 @@ def profile():
 
             else:
                 logger_auth.info(
-                    f"Password re-used when updating profile by (ID: {id})."
+                    f"Password re-used when updating profile by Employee (ID: {id})."
                 )
                 flash("Does not match new password or confirm password")
         else:
-            logger_auth.info(
-                f"Password is incorrect when updating profile by (ID: {id})."
+            logger_auth.warning(
+                f"Password is incorrect when updating profile by Employee (ID: {id})."
             )
             flash("Password Incorrect")
     return render_template(
@@ -2003,6 +2171,19 @@ def profile():
 
 
 # ----- END PROFILE INFO ---------------------------------------------------------------
+
+
+def email_role(role):
+    if role == "driver":
+        administrator = "the IT Administrator"
+        supervisor = "your Manager or IT Administrator"
+    elif role == "manager":
+        administrator = "the IT Administrator"
+        supervisor = "the IT Administrator"
+    else:
+        administrator = "an IT Administrator"
+        supervisor = "an IT Administrator"
+    return administrator, supervisor
 
 
 def send_email(app, email):
