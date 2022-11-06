@@ -334,7 +334,6 @@ def login():
         # If Form is validated
         if form.validate_on_submit():
             account = Employee.query
-            sessioning = Sessions.query
 
             # Try if an invalid character was used in the Email input field
             try:
@@ -401,27 +400,7 @@ def login():
                     # If user has logged in before
                     if datetime.utcnow() > user.LastLogin:
 
-                        """Temporarily Bypass OTP
-                        # Reset LoginCounter
-                        user.LoginCounter = 0
-                        user.LastLogin = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-                        user.OTP = 0
-                        db.session.commit()
-                        logger_auth.info(
-                            f"{user.FullName} (ID: {user.EmployeeId}) has logged IN."
-                        )
-                        # Authorise login
-                        login_user(user)  # , duration=timedelta(seconds=3))
-
-                        # Session
-                        user_session = sessioning.filter_by(session_id="session:"+session.sid).first()
-                        user_session.Employee_ID = user.EmployeeId
-                        # session["employee_id"] = user.EmployeeId
-                        db.session.commit()
-
-                        return redirect(url_for("employees"))
-
-                        UNDO this for OTP."""
+                        # Perform 2FA
                         message = send_otp(user)
                         otp_form = OTPForm(request.form)
                         resend_form = ResendOTPForm(request.form)
@@ -432,7 +411,6 @@ def login():
                             otp_token=GenerateJWTToken(user.get_id(), "otp"),
                             message=message,
                         )
-                        #"""
 
                     # Else user has never logged in before (i.e. First login)
                     else:
