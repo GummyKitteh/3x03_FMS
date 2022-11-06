@@ -559,11 +559,9 @@ def validate_otp():
                         user.LastLogin = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
                         user.OTP = 0
 
-                        # Log out from / Destroy existing sessions
                         # Set Sessions
                         user_session = sessioning.filter_by(session_id="session:"+session.sid).first()
                         user_session.Employee_ID = user.EmployeeId
-                        # session["employee_id"] = user.EmployeeId
 
                         # Commit to DB
                         db.session.commit()
@@ -698,7 +696,6 @@ def logout():
     )
     logout_user()
     session.clear()
-    #session.pop("employee_id")
     return redirect(url_for("index"))
 
 
@@ -880,7 +877,6 @@ def postPassword():
             # Log user out of all logged-in sessions.
             logout_user()
             session.clear()
-            #session.pop("employee_id")
             return render_template("reset/reset-success.html")
 
         # Else Form is invalidated
