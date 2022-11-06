@@ -90,7 +90,7 @@ class fleetInsert(FlaskForm):
 class LoginForm(FlaskForm):
     Email = StringField("Email", [DataRequired(), Email(), Length(max=100)])
     password = PasswordField("Password", [DataRequired(), Length(max=50)])
-    # recaptcha = RecaptchaField()
+    recaptcha = RecaptchaField()
     submit = SubmitField("Login")
 
 
@@ -113,15 +113,15 @@ class ResetPasswordForm(FlaskForm):
         [DataRequired(), Length(min=8, max=8), Regexp(regex="^[0-9]+$")],
     )
     Email = StringField("Email", [DataRequired(), Email(), Length(max=100)])
-    # recaptcha = RecaptchaField()
+    recaptcha = RecaptchaField()
     submit = SubmitField("Reset", [DataRequired()])
 
 
 class NewPasswordForm(FlaskForm):
-    NewPassword = PasswordField("New Password", [DataRequired(), Length(min=8)])
+    NewPassword = PasswordField("New Password", [DataRequired(), Length(min=8, max=50)])
     ConfirmPassword = PasswordField(
-        "Confirm Password", [DataRequired(), Length(min=8), EqualTo("NewPassword")]
+        "Confirm Password", [DataRequired(), Length(min=8, max=50), EqualTo("NewPassword")]
     )
     EmailToken = StringField([DataRequired()])
-    # recaptcha = RecaptchaField()
+    recaptcha = RecaptchaField()
     submit = SubmitField("Reset", [DataRequired()])

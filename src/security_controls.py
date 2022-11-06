@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 # Generate CSPRNG 32-byte salt in hexadecimal based on PEP 506
 # https://docs.python.org/3/library/secrets.html#secrets.token_bytes
-def generate_csprng_token():
+def GenerateCSPRNGToken():
     csprng_salt = secrets.token_bytes(32)
     hex_salt = binascii.hexlify(csprng_salt).decode("utf-8", "strict")
 
@@ -15,7 +15,7 @@ def generate_csprng_token():
 
 # Passwords set shall be validated against a security list (SecList) of common passwords
 # SecList: https://raw.githubusercontent.com/danielmiessler/SecLists/master/Passwords/Common-Credentials/10-million-password-list-top-100000.txt
-def check_common_password(password):
+def CheckCommonPassword(password):
     filepath = os.getcwd() + "/10-million-password-list-top-1000000.txt"
     if 'jenkins' in filepath:
         return True
@@ -32,7 +32,7 @@ def check_common_password(password):
 
 # Passwords must be uniquely salted for each user with 256 bits, hashed with SHA-256 and iterated 310,000 times with PBKDF2.
 # https://cryptobook.nakov.com/mac-and-key-derivation/pbkdf2
-def process_password(password, hex_salt):
+def ProcessPassword(password, hex_salt):
     # Encode password to bytes in utf-8
     password = password.encode("utf-8", "strict")
 
@@ -51,7 +51,7 @@ load_dotenv()  # take environment variables from .env.
 
 # Encode password reset tokens & OTP UserID with PyJWT, and must be unique and not easily guessable.
 # https://pyjwt.readthedocs.io/en/latest/usage.html
-def generate_jwt_token(userid, token_type):
+def GenerateJWTToken(userid, token_type):
     token_issued = datetime.now(tz=timezone.utc)
 
     if token_type == "reset":
@@ -73,7 +73,7 @@ def generate_jwt_token(userid, token_type):
 
 # Decode password reset tokens & OTP UserID with PyJWT, and must be unique and not easily guessable.
 # https://pyjwt.readthedocs.io/en/latest/usage.html
-def decode_jwt_token(token):
+def DecodeJWTToken(token):
     jwt_token = base64.urlsafe_b64decode(token).decode("utf-8", "strict")
     return jwt.decode(
         jwt_token,
