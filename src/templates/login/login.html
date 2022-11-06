@@ -13,8 +13,10 @@ endblock %} {% block body %}
       {%for msg in message%}
         {{msg}}<br />
       {%endfor%}
-      {% if form.Email.errors or form.password.errors %}
-        You have entered an invalid Email and/or Password. Please try again.<br />
+      {% if not message %}
+        {% if form.Email.errors or form.password.errors %}
+          You have entered an invalid Email and/or Password. Please try again.<br />
+        {% endif %}
       {%endif%}
       <!-- print recaptcha error -->
       <h1 class="display-5 my-5">Login</h1>

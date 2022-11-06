@@ -99,7 +99,6 @@ class OTPForm(FlaskForm):
         "OTP", [DataRequired(), Length(min=6, max=6), Regexp(regex="^[0-9]+$")]
     )
     OTPToken = StringField([DataRequired()])
-    # recaptcha = RecaptchaField()
     submit = SubmitField("Submit")
 
 

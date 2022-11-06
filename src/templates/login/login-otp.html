@@ -16,7 +16,6 @@ endblock %} {% block body %}
       {% if otp_form.OTP.errors %}
         You have entered an invalid OTP format.<br />Please try again.<br />
       {%endif%}
-      <!-- print recaptcha error -->
       <h1 class="display-5 my-5">One-time Password (OTP)</h1>
       <h6><i>Please <u>do not refresh</u> or <u>navigate away from</u> this page.</i></h6>
       <form action="/otp" method="POST">
