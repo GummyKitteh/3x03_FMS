@@ -25,11 +25,6 @@ def CheckCommonPassword(password):
                 return True
             return False
 
-
-# Passwords shall be validated to ensure for only allowable characters
-# May not be doing.
-
-
 # Passwords must be uniquely salted for each user with 256 bits, hashed with SHA-256 and iterated 310,000 times with PBKDF2.
 # https://cryptobook.nakov.com/mac-and-key-derivation/pbkdf2
 def ProcessPassword(password, hex_salt):
