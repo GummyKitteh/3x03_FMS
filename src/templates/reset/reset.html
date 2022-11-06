@@ -10,13 +10,15 @@ endblock %} {% block body %}
   </head>
   <body class="">
     <main class="form-signin w-100 m-auto">
-      {%for msg in message%}
-        {{msg}}<br />
-      {%endfor%}
-      {% if form.Phone.errors or form.Email.errors %}
+      {% if form.recaptcha.errors %}
+        Please check the ReCaptcha and try again.<br />
+      {% elif form.Phone.errors or form.Email.errors %}
         The format of your Phone and/or Email is wrong. Please try again.<br />
-      {%endif%}
-      <!-- print recaptcha error -->
+      {% elif message %}
+        {% for msg in message %}
+          {{msg}}<br />
+        {% endfor %}
+      {% endif %}
       <h1 class="display-5 my-5">Reset Password</h1>
       <form action="/reset" method="POST">
         {{form.hidden_tag()}}
@@ -28,7 +30,7 @@ endblock %} {% block body %}
           <span class="input-group-text" id="email">Email</span>
           {{form.Email(class="form-control")}}
         </div>
-        <!-- {{form.recaptcha}}<br /> -->
+        {{form.recaptcha}}<br />
         {{form.submit(class="w-100 btn btn-md btn-primary")}}
         <hr class="my-4" />
         <small class="text-muted">

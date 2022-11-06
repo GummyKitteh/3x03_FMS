@@ -84,12 +84,10 @@ def EmailNotificationTimed(db, server, email_service, user, message):
             datetime.utcnow() - user.ResetDateTime
         ).total_seconds()
         delta_hour = email_token_delta // 3600
-        print("email_token_delta:",email_token_delta)
     except:
         # If there is no timestamp in user.ResetDateTime
         delta_hour = 1
 
-    print("delta_hour:",delta_hour)
     # If user has NOT been sent a Reset Link in the last 1 hour
     if delta_hour >= 1:
 
@@ -144,9 +142,6 @@ def EmailNotificationTimed(db, server, email_service, user, message):
 
             # Send email object
             Thread(target=SendEmail, args=(server, email_service, email)).start()
-
-            # Print for testing
-            print("Reset Link:",reset_link)
 
     # Else user HAS requested / been sent a Reset Link in the last 1 hour
     else:

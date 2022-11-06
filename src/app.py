@@ -58,17 +58,17 @@ server = Flask(__name__)
 # Session Config
 server.config["SECRET_KEY"] = GenerateCSPRNGToken()
 server.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=1)
-server.config["SESSION_COOKIE_DOMAIN"] = None  # Might set to busfms.tk?
+server.config["SESSION_COOKIE_DOMAIN"] = None
 server.config["SESSION_COOKIE_HTTPONLY"] = True
 server.config["SESSION_COOKIE_SECURE"] = True
 server.config["SESSION_COOKIE_SAMESITE"] = "Strict"
-# server.config["REMEMBER_COOKIE_HTTPONLY"] = True  # Duplicated?
-# server.config["REMEMBER_COOKIE_SECURE"] = True    # Duplicated?
+server.config["REMEMBER_COOKIE_HTTPONLY"] = True
+server.config["REMEMBER_COOKIE_SECURE"] = True
 server.config["SESSION_TYPE"] = "sqlalchemy"
 server.config["SESSION_USE_SIGNER"] = True
 Session(server)
 
-# Db configuration
+# DB configuration
 server.config[
     "SQLALCHEMY_DATABASE_URI"
 ] = f"mysql+pymysql://{db_user}:{db_pwd}@{db_add}/{db_db}"
@@ -89,7 +89,6 @@ email_service = Mail(server)
 server.config["RECAPTCHA_PUBLIC_KEY"] = recaptcha_pub
 server.config["RECAPTCHA_PRIVATE_KEY"] = recaptcha_prv
 
-# http://127.0.0.1:5000
 
 # ----- LOGGGING ----------------------------------------------------------------------
 full_path = os.path.realpath(__file__)
@@ -111,13 +110,13 @@ else:
     location = "ggwp"
     print("UNABLE TO FIND LOG FOLDER", full_path)
 
-"""logging.basicConfig(
+logging.basicConfig(
      filename=location + "/generallog.log",
      encoding="utf-8",
      filemode="a",
      level=logging.INFO,
      format="%(asctime)s | %(levelname)s | %(message)s",
-)"""
+)
 
 # Create Logger
 # logger = logging.getLogger(__name__)
@@ -143,6 +142,7 @@ handler_crud.setFormatter(formatter_crud)
 # Attach Handler to Logger
 logger_auth.addHandler(handler_auth)
 logger_crud.addHandler(handler_crud)
+
 
 # ----- END LOGGGING ------------------------------------------------------------------
 # ----- CLASSES -----------------------------------------------------------------------
@@ -373,7 +373,6 @@ def login():
 
                         # Send email to notify User
                         EmailNotificationUntimed(db, server, email_service, user, "login-locked-disabled")
-                        print("Mimic: Email sent (Account Locked/Disabled)")
 
                         if user.Disabled:
                             logger_auth.warning(
@@ -417,11 +416,9 @@ def login():
 
                         # Send email w/ Reset Link to welcome User
                         EmailNotificationTimed(db, server, email_service, user, "login-welcome")
-                        print("Mimic: Email sent")
                         logger_auth.warning(
                             f"{user.FullName} (ID: {user.EmployeeId}) logs in for the first time and has requested a password reset via Email."
                         )
-
                         return render_template("login/login-first-time-message.html")
 
                 # Else unauthenticated credentials
@@ -442,11 +439,9 @@ def login():
 
                         # Send email to notify User
                         EmailNotificationUntimed(db, server, email_service, user, "login-locked-disabled")
-                        print("Mimic: Email sent (Account Locked/Disabled)")
 
                         # Send email to notify Administrator
                         EmailNotificationUntimed(db, server, email_service, user, "login-admin")
-                        print("Mimic: Email sent to Admin (Account Locked)")
                         logger_auth.warning(
                             f"{user.Email} (ID: {user.EmployeeId}) account has been locked after 5 incorrect login attempts."
                         )
@@ -488,13 +483,9 @@ def send_otp(user):
 
     # Send email to notify User the requested OTP
     EmailNotificationUntimed(db, server, email_service, user, "send-otp")
-    print("Mimic: Email sent")
     logger_auth.warning(
         f"{user.FullName} (ID: {user.EmployeeId}) requested an OTP via Email."
     )
-
-    # Print for testing
-    print(user.OTP)
 
     return message
 
@@ -515,7 +506,6 @@ def validate_otp():
             # Validate if JWT token for OTPToken is still valid (within 5 minutes)
             try:
                 token_payload = DecodeJWTToken(otp_form.OTPToken.data)
-                print(token_payload)
                 employeeID = token_payload["otp_userid"]
             except:
                 form = LoginForm(request.form)
@@ -582,7 +572,6 @@ def validate_otp():
                         )
                         # Authorise login
                         login_user(user)
-
                         return redirect(url_for("employees"))
 
                     # Else GET OTP page
@@ -763,10 +752,16 @@ def reset():
                     logger_auth.warning(
                         f"{user.FullName} (ID: {user.EmployeeId}) requested a password reset via Email."
                     )
-                print("Mimic: Email sent")
 
             # Regardless if user exists or not, display generic message
             return render_template("reset/reset-message.html")
+
+        # Else Form is invalidated
+        message = [
+            "This form is not validated correctly.",
+            "Please try again.",
+        ]
+        return render_template("reset/reset.html", form=form, message=message)
 
     # Else GET request OR Form is invalidated
     return render_template("reset/reset.html", form=form)
@@ -835,7 +830,6 @@ def postPassword():
 
         # If Form is validated
         if form.validate_on_submit():
-
             PasswordSalt = GenerateCSPRNGToken()  # 32-byte salt in hexadecimal
 
             # If password chosen is a common password
@@ -864,6 +858,7 @@ def postPassword():
                     user.LastLogin = "1970-01-01 00:00:01"
 
                 db.session.commit()
+
             except:
                 message = [
                     "Password chosen contains invalid characters.",
@@ -878,17 +873,14 @@ def postPassword():
 
             # Send Email to notify User that Password has been changed
             EmailNotificationUntimed(db, server, email_service, user, "new-password")
-            print("Mimic: Email sent")
+            logger_auth.info(
+                f"{user.FullName} (ID: {user.EmployeeId}) has performed a password reset. Notification email has been sent to the User."
+            )
 
             # Log user out of all logged-in sessions.
             logout_user()
             session.clear()
             #session.pop("employee_id")
-
-            logger_auth.info(
-                f"{user.FullName} (ID: {user.EmployeeId}) has performed a password reset. Notification email has been sent to the User."
-            )
-
             return render_template("reset/reset-success.html")
 
         # Else Form is invalidated
@@ -1279,6 +1271,7 @@ def addEmployee():
                 DOB = formEmployee.DOB.data
                 PasswordSalt = GenerateCSPRNGToken()  # 32-byte salt in hexadecimal
                 is_common_password = CheckCommonPassword(formEmployee.Password.data)
+
                 # If password chosen is a common password
                 if is_common_password:
                     flash(
@@ -1287,8 +1280,6 @@ def addEmployee():
                     )
                     return redirect("/employees")
 
-                # Need to check for Emoji
-                # DB WONT HAVE ERROR
                 Password = ProcessPassword(formEmployee.Password.data, PasswordSalt)
 
                 formEmployee.FullName.data = ""
@@ -1406,11 +1397,9 @@ def employeeDelete(id):
 
                 # Send Email to notify User that Account has been enabled
                 EmailNotificationTimed(my_data, "Re-Enabled")
-                print("Mimic: Email sent")
                 logger_crud.info(
                     f"Employee (ID: {id}) ENABLED in Employee by EmployeeID: {current_user.EmployeeId}."
                 )
-
                 flash("Employee enabled sucessfully.")
 
             # Disable employee account if Enabled
@@ -1450,11 +1439,9 @@ def employeeUnlock(id):
 
             # Send Email to notify User that Account has been unlocked
             EmailNotificationTimed(my_data, "Unlocked")
-            print("Mimic: Email sent")
             logger_crud.info(
                 f"Employee (ID: {id}) UNLOCKED in Employee by EmployeeID: {current_user.EmployeeId}."
             )
-
             flash("Employee UNLOCKED sucessfully.")
 
             # If employee is unable to be unlocked
@@ -1937,7 +1924,6 @@ def profile():
                         f"Common Password attempted when updating profile by EmployeeID (ID: {id})."
                     )
                 else:
-                    # Need to check for Emoji
                     NewPassword = ProcessPassword(
                         request.form["NewPassword"], PasswordSalt
                     )
