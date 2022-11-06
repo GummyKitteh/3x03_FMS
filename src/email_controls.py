@@ -112,10 +112,7 @@ def EmailNotificationTimed(db, server, email_service, user, message):
             user.ResetFlag = 1  # 1 means Reset Link is STILL VALID & has not been used
 
             # Craft email body with Reset Link
-            reset_link = "http://localhost:5000/new-password/{}".format(
-                email_token
-            )
-            # reset_link = "http://busfms.tk/new-password/{}".format(email_token)
+            reset_link = "https://busfms.tk/new-password/{}".format(email_token)
 
             # If user account is NOT locked
             if message == "reset-not-locked":
