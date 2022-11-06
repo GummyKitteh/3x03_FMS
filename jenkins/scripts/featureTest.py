@@ -42,8 +42,8 @@ def test_login_failure(client):
         'submit': 'Login',
         'g-recaptcha-response': 'Test'
     })
-    html = response.data.decode()   # Prints HTML that you are supposed to receive
-    assert response.status_code == 200
+    html = response.data.decode()
+    assert "You have entered an invalid Email and/or Password." in html and response.status_code == 200
 
 
 def test_login_success(client):
@@ -53,8 +53,8 @@ def test_login_success(client):
         'g-recaptcha-response': 'ILoveMyMama',
         'submit': 'Login'
     })
-    html = response.data.decode()   # Prints HTML that you are supposed to receive
-    assert response.status_code == 302  # Redirected, unless fail; 200
+    html = response.data.decode()
+    assert "An OTP has been sent to your email." in html and response.status_code == 200
 
 
 def test_register(client):
