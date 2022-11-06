@@ -64,6 +64,7 @@ server.config["SESSION_COOKIE_SAMESITE"] = "Strict"
 server.config["REMEMBER_COOKIE_HTTPONLY"] = True
 server.config["REMEMBER_COOKIE_SECURE"] = True
 server.config["SESSION_TYPE"] = "sqlalchemy"
+server.config["SESSION_USE_SIGNER"] = True
 Session(server)
 
 # Db configuration
@@ -427,6 +428,7 @@ def login():
                         # Session
                         user_session = sessioning.filter_by(session_id="session:"+session.sid).first()
                         user_session.Employee_ID = user.EmployeeId
+                        #session["employee_id"] = user.EmployeeId
                         db.session.commit()
 
                         #db.session.close()
@@ -672,6 +674,7 @@ def validate_otp():
                         # Set Sessions
                         user_session = sessioning.filter_by(session_id="session:"+session.sid).first()
                         user_session.Employee_ID = user.EmployeeId
+                        #session["employee_id"] = user.EmployeeId
                         db.session.commit()
 
                         # Commit to DB
@@ -800,7 +803,8 @@ def logout():
         f"{current_user.FullName} (ID: {current_user.EmployeeId}) has logged OUT."
     )
     logout_user()
-    # session.pop("value", None)
+    session.clear()
+    #session.pop("employee_id")
     return redirect(url_for("index"))
 
 
@@ -1060,6 +1064,8 @@ def postPassword():
 
             # Log user out of all logged-in sessions.
             logout_user()
+            session.clear()
+            #session.pop("employee_id")
             logger_auth.info(
                 f"{user.FullName} (ID: {user.EmployeeId}) has performed a password reset. Notification email has been sent to the User."
             )
