@@ -562,6 +562,9 @@ def validate_otp():
                         # Set Sessions
                         user_session = sessioning.filter_by(session_id="session:"+session.sid).first()
                         user_session.Employee_ID = user.EmployeeId
+                        logger_auth.info(
+                            f"Session (ID: {session.sid}) has been assigned to Employee (ID: {user.EmployeeId})."
+                        )
 
                         # Commit to DB
                         db.session.commit()
@@ -695,6 +698,9 @@ def logout():
         f"{current_user.FullName} (ID: {current_user.EmployeeId}) has logged OUT."
     )
     logout_user()
+    logger_auth.info(
+        f"Session (ID: {session.sid}) belonging to Employee (ID: {current_user.EmployeeId}) has been terminated."
+    )
     session.clear()
     return redirect(url_for("index"))
 
@@ -876,6 +882,9 @@ def postPassword():
 
             # Log user out of all logged-in sessions.
             logout_user()
+            logger_auth.info(
+                f"Session (ID: {session.sid}) belonging to Employee (ID: {user.EmployeeId}) has been terminated."
+            )
             session.clear()
             return render_template("reset/reset-success.html")
 
