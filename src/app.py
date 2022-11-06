@@ -72,7 +72,6 @@ Session(server)
 server.config[
     "SQLALCHEMY_DATABASE_URI"
 ] = f"mysql+pymysql://{db_user}:{db_pwd}@{db_add}/{db_db}"
-# server.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(server)
 server.config["SESSION_SQLALCHEMY"] = db
 
